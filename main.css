@@ -1,0 +1,422 @@
+html, body{
+    width:100%;
+    height:100%;
+}
+
+body{
+    margin:0;
+    font-family: Segoe UI,sans-serif;
+}
+
+#viewport{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+.title-bar{
+    height:25px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2a2929;
+    color: #c3bebe;
+    cursor: default;
+    user-select: none;
+    -webkit-app-region: drag;
+}
+
+.title{
+    font-size: 12px;
+    flex: 1 1 auto;
+    text-align: center;
+    height: 15px;
+    color: #b9acac;
+    line-height: 15px;
+}
+
+.playlist{
+    background-color: #272626;
+    color:#c3bebe;
+    height:100%;
+    width: 100%;
+    cursor: default;
+    box-shadow: 0 4px 10px 0 rgb(255 255 255 / 35%);
+}
+
+.playlist-title-bar{
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    height: 4%;
+    width: 100%;
+    color: #c3bebe;
+    border-bottom: 1px solid #3c3939;
+    -webkit-app-region: drag;
+}
+
+.playlist-close-btn{
+    position: absolute;
+    top:0;
+    width: 45px;
+    height: auto;
+    text-align: center;
+    line-height: 30px;
+    user-select: none;
+    -webkit-app-region:no-drag;
+}
+
+.playlist-viewport{
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 95%;
+    border-bottom-left-radius:15px;
+    border-bottom-right-radius:15px;
+}
+
+.file-list{
+    list-style: none;
+    margin: 5px;
+    padding: 0;
+    font-size: 12px;
+    user-select: none;
+}
+
+.file-list li{
+    word-break: break-all;
+    padding: 5px;
+    cursor: default;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    color:#959292;
+    font-size: 12px;
+}
+
+.file-list .current{
+    color: #ef6161
+}
+
+.file-list .selected:not(.current){
+    color: #ebe8e8;
+}
+
+.file-list .selected{
+    outline: 1px dotted rgb(255 255 255 / 0.5);
+}
+
+.icon-area{
+    font-size: 12px;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ico{
+    width: 16px;
+    height: 16px;
+    margin: 0 5px;
+}
+
+.window-area{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+.minimize,
+.maximize,
+.close{
+    width: 45px;
+    height: 100%;
+    text-align: center;
+    user-select: none;
+    position: relative;
+    -webkit-app-region: no-drag;
+}
+
+.maximize{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+}
+
+.minimize:hover,
+.maximize:hover{
+    background-color: #5f5b5b;
+}
+
+.maximize:hover .minbtn,
+.maximize:hover .maxbtn{
+    background-color: #5f5b5b;
+}
+
+.minbtn,
+.maxbtn{
+    position: relative;
+    width: 7px;
+    height: 7px;
+    border: 1px solid #c3bebe;
+    background-color: #383737;
+    pointer-events: none;
+}
+
+.maxbtn::after{
+    content: "";
+    width: 7px;
+    height: 7px;
+    position: absolute;
+    top: -3px;
+    left: 1px;
+    z-index: -1;
+    border: 1px solid #c3bebe;
+}
+
+.close:hover{
+    background-color: #da0707c4;
+    color: #fff;
+}
+
+.viewport{
+    display:flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.video-container{
+    display: flex;
+    width:100%;
+    height:auto;
+    position: relative;
+    flex: 1 1 auto;
+    overflow: hidden;
+    background-color: #000;
+    color:#c3bebe;
+    justify-content: center;
+    align-items: center;
+}
+
+.video{
+    max-width: 100%;
+    max-height: 100%;
+    user-select: none;
+    position: absolute;
+    object-fit: cover;
+}
+
+.hidden{
+    visibility: hidden;
+}
+
+.footer-menu{
+    height: 55px;
+    user-select: none;
+    border-top: 1px solid rgb(100 121 143 / 12%);
+    color: #c3bebe;
+    background-color: #2a2929;
+}
+
+.footer{
+    height:100%;
+    width:100%;
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: column;
+    position: relative;
+}
+
+.ctrl-area{
+    height: 40px;
+    margin-top: 5px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.btn-area{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    cursor: default;
+    flex: 1 1 auto;
+}
+
+.btn,
+.btn-large{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+/*
+.btn:hover,
+.btn-large:hover{
+    background-color: #6b676775;
+}
+*/
+.btn-large svg{
+    width: 30px;
+    height: 30px;
+    padding: 0 7px;
+    pointer-events: none;
+}
+
+.btn svg{
+    width: 15px;
+    height: 30px;
+    padding: 0 7px;
+    pointer-events: none;
+}
+
+.btn:hover svg,
+.btn-large:hover svg{
+    color: rgb(213, 127, 26);
+}
+
+.play{
+    display: block;
+}
+
+.playing .play{
+    display: none;
+}
+
+.pause{
+    display: none;
+}
+
+.playing .pause{
+    display: block;
+}
+
+.slider-area{
+    height: 14px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.time-area{
+    display: flex;
+    margin: 0px 10px;
+    font-size: 12px;
+    flex: 1 1 auto;
+    align-items: center;
+}
+
+.current-time,
+.duration{
+    width: 45px;
+}
+
+.current-time{
+    margin-right: 5px;
+    pointer-events: none;
+}
+
+.duration{
+    margin-left: 5px;
+    pointer-events: none;
+}
+
+.slider{
+    height:2px;
+    background-color: rgba(255,255,255,0.15);
+}
+
+.slider:hover{
+    height:6px;
+}
+
+.time-area .slider{
+    background-color: rgb(213, 127, 26);
+}
+
+.track{
+    width:0%;
+    height:100%;
+    background-color: rgb(255 255 255 / 0.8);
+}
+
+.time-area .track{
+    background-color: rgb(213, 127, 26);
+}
+
+.thumb{
+    left:0%;
+    height:100%;
+    height: 12px;
+    width: 12px;
+    background-color: #fff;
+    border-radius: 12px;
+}
+
+.thumb.lever{
+    left:0%;
+    height:100%;
+    width: 8px;
+    height: 15px;
+    border-radius: 2px;
+    background-color: #fff;
+}
+
+.slider:hover .thumb::after{
+    top: 3px;
+}
+
+.volume .thumb{
+    visibility: hidden;
+}
+
+.volume:hover .thumb{
+    visibility: visible;
+}
+
+.time,
+.volume,
+.amp{
+    position:relative;
+    display: flex;
+    align-items: center;
+}
+
+.time{
+    flex: 1 1 auto;
+}
+
+.time::before{
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: 0px;
+    height: 16px;
+    background-color: transparent;
+    width: 100%;
+}
+
+.time:hover:before{
+    content: "";
+    position: absolute;
+    top: -4px;
+    left: 0px;
+    height: 16px;
+    background-color: transparent;
+    width: 100%;
+}
+
+.volume,
+.amp{
+    width: 100px;
+}
+
+

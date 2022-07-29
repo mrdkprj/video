@@ -1,0 +1,19 @@
+{
+  "name": "vidplayer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": ".\\node_modules\\.bin\\electron main.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "trash": "^7.2.0"
+  },
+  "devDependencies": {
+    "electron": "^16.0.1",
+    "electron-builder": "^22.14.5"
+  }
+}

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="main.css">
+        <script src="index.js"></script>
+        <title>VidPlayer</title>
+    </head>
+    <body>
+
+        <div id="viewport" class="viewport">
+
+            <div id="titleBar" class="title-bar">
+                <div class="icon-area">
+                    <img class="ico" src="./resources/icon2.png"/>
+                    <span>VidPlayer</span>
+                </div>
+                <div id="title" class="title"></div>
+                <div class="window-area">
+                    <div id="minimize" class="minimize">&minus;</div>
+                    <div id="maximize" class="maximize"><div id="resizeBtn"></div></div>
+                    <div id="close" class="close">&times;</div>
+                </div>
+            </div>
+
+            <div id="container" class="video-container">
+                <video id="video" class="video hidden">
+                    <source id="source" src="">
+                </video>
+            </div>
+
+            <div class="footer-menu">
+                <div class="footer">
+                    <div class="slider-area">
+                        <div id="timeArea" class="time-area">
+                            <div id="videoCurrentTime" class="current-time"></div>
+                            <div id="time" class="time slider">
+                                <div id="timeTrack" class="track"></div>
+                                <div id="timeThumb" class="thumb" data-target="time"></div>
+                            </div>
+                            <div id="videoDuration" class="duration"></div>
+                        </div>
+                        <div class="volume-area">
+                            <div id="volume" class="volume slider">
+                                <div id="volumeTrack" class="track"></div>
+                                <div id="volumeThumb" class="thumb" data-target="volume"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ctrl-area">
+                        <div id="buttons" class="btn-area">
+                            <div id="playBtn" class="btn-large">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="play" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="pause" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>
+                                </svg>
+                            </div>
+                            <div id="stopBtn" class="btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/>
+                                </svg>
+                            </div>
+                            <div id="prevBtn" class="btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M.5 3.5A.5.5 0 0 0 0 4v8a.5.5 0 0 0 1 0V8.753l6.267 3.636c.54.313 1.233-.066 1.233-.697v-2.94l6.267 3.636c.54.314 1.233-.065 1.233-.696V4.308c0-.63-.693-1.01-1.233-.696L8.5 7.248v-2.94c0-.63-.692-1.01-1.233-.696L1 7.248V4a.5.5 0 0 0-.5-.5z"/>
+                                </svg>
+                            </div>
+                            <div id="nextBtn" class="btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M15.5 3.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V8.753l-6.267 3.636c-.54.313-1.233-.066-1.233-.697v-2.94l-6.267 3.636C.693 12.703 0 12.324 0 11.693V4.308c0-.63.693-1.01 1.233-.696L7.5 7.248v-2.94c0-.63.693-1.01 1.233-.696L15 7.248V4a.5.5 0 0 1 .5-.5z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="amp-area">
+                            <div id="amp" class="amp slider">
+                                <div id="ampTrack" class="track"></div>
+                                <div id="ampThumb" class="thumb lever" data-target="amp"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+  </body>
+</html>
