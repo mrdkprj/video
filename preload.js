@@ -24,7 +24,7 @@ contextBridge.exposeInMainWorld(
       },
 
       receive: (channel, func) => {
-          const validChannels = ["config", "play","toggle-play", "error", "clear-current"];
+          const validChannels = ["config", "play","toggle-play", "error", "clear-current","log"];
           if (validChannels.includes(channel)) {
               ipcRenderer.on(channel, (event, ...args) => func(...args));
           }

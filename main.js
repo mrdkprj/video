@@ -69,13 +69,25 @@ const playlistMenu = Menu.buildFromTemplate(playlistMenuTemplate)
 
 let currentIndex = 0;
 let targets;
-
 let fileMap = {}
+
+const additionalFiles = [];
 const orderedFiles = []
+
+const locked = app.requestSingleInstanceLock(process.argv);
+
+if(!locked) {
+    app.quit()
+    return;
+}
+
+app.on("second-instance", (event, argv, workingDirectory, additionalData) => {
+    additionalFiles.push(...extractFiles(additionalData))
+})
 
 app.on("ready", async () => {
 
-    directLaunch = process.argv.length > 1 && process.argv[1] != "main.js";;
+    directLaunch = process.argv.length > 1 && process.argv[1] != "main.js";
 
     currentDirectory = path.join(app.getPath("userData"), "temp");
 
@@ -179,14 +191,23 @@ async function onReady(){
     playlist.show();
 
     if(directLaunch){
-        initFiles(process.argv.slice(1, process.argv.length))
+        initFiles(extractFiles())
     }else{
         reset()
     }
 
     mainWindow.webContents.send("config", {config});
-    playlist.webContents.send("change-list", {clear:true, files:orderedFiles})
+    playlist.webContents.send("change-list", {clear:false, files:orderedFiles})
     loadVide(true);
+}
+
+function extractFiles(target){
+
+    if(target){
+        return target.slice(1, target.length)
+    }
+
+    return process.argv.slice(1, process.argv.length)
 }
 
 function initFiles(files){
@@ -195,7 +216,9 @@ function initFiles(files){
 
     if(files.length <= 0) return;
 
-    files.forEach(filepath => {
+    const targeFiles = files.concat(additionalFiles);
+
+    targeFiles.forEach(filepath => {
         const file = toFile(filepath)
         orderedFiles.push(file)
         fileMap[file.id] = file;
@@ -411,23 +434,23 @@ function sendError(ex){
     mainWindow.webContents.send("error", {message:ex.message})
 }
 
-ipcMain.on("minimize", (event, args) => {
+ipcMain.on("minimize", (e, data) => {
     mainWindow.minimize();
 });
 
-ipcMain.on("toggleMaximize", (event, args) => {
+ipcMain.on("toggleMaximize", (e, data) => {
     toggleMaximize();
 });
 
-ipcMain.on("close", (event, args) => {
-    closeWindow(args);
+ipcMain.on("close", (e, data) => {
+    closeWindow(data);
 });
 
-ipcMain.on("delete", async (event, file) => {
+ipcMain.on("delete", async (e, data) => {
 
     try{
 
-        await trash(file.path);
+        await trash(data.path);
 
         respond(targetfiles[currentIndex]);
 

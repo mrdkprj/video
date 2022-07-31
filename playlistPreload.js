@@ -9,14 +9,14 @@ const {
         send: (channel, data) => {
             // whitelist channels
             const validChannels = [
-                  "close-playlist",
-                  "drop",
-                  "selectFile",
-                  "clear",
-                  "remove",
-                  "reveal",
-                  "playlist-context",
-                  "changeOrder"
+                "close-playlist",
+                "drop",
+                "selectFile",
+                "clear",
+                "remove",
+                "reveal",
+                "playlist-context",
+                "changeOrder"
               ];
             if (validChannels.includes(channel)) {
                 ipcRenderer.send(channel, data);

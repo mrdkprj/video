@@ -279,7 +279,7 @@ function loadVideo(){
     video.load();
 }
 
-function onVideoLoaded(e){
+function onVideoLoaded(){
 
     title.textContent = current.name
     changeVideoSize();
@@ -462,4 +462,8 @@ window.api.receive("error", data => {
 
 window.api.receive("clear-current", data => {
     initPlayer();
+})
+
+window.api.receive("log", data => {
+    console.log(data)
 })
