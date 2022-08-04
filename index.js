@@ -47,7 +47,8 @@ let isPlaying = false;
 
 const FORWARD = 1;
 const BACKWARD = -1;
-const THUMB_RADIUS = 6;
+const THUMB_RADIUS = 4;
+const SLIDE_MARGIN = 8;
 
 const slideState = {
     sliding:false,
@@ -85,7 +86,6 @@ window.addEventListener("load", e => {
     })
 
     video.addEventListener("ended", e => {
-        console.log("end")
         changeIndex(FORWARD);
     })
 
@@ -160,13 +160,18 @@ document.addEventListener("mousedown", e => {
     }
 
     if(e.target.id == "time" || e.target.id == "timeTrack"){
-        const progress = e.offsetX  / timeSlider.rect.width;
+        const progress = (e.offsetX - SLIDE_MARGIN) / timeSlider.rect.width;
         updateTime(progress)
     }
 
     if(e.target.id == "volume" || e.target.id == "volumeTrack"){
-        const progress = e.offsetX  / volumeSlider.rect.width;
+        const progress = e.offsetX / volumeSlider.rect.width;
         updateVolume(progress);
+    }
+
+    if(e.target.id == "amp" || e.target.id == "ampTrack"){
+        const progress = e.offsetX / ampSlider.rect.width;
+        updateAmpLevel(progress);
     }
 })
 
@@ -182,6 +187,14 @@ document.addEventListener("mouseup", e =>{
     }
 })
 
+window.addEventListener("keydown", e => {
+
+    if(e.ctrlKey && e.key === "r"){
+        e.preventDefault();
+    }
+
+})
+
 window.addEventListener("resize", e => {
     containerRect = container.getBoundingClientRect();
     timeSlider.rect = timeSlider.slider.getBoundingClientRect();
@@ -191,7 +204,7 @@ window.addEventListener("resize", e => {
 
 window.addEventListener("contextmenu", e => {
 
-    if(e.target.id === "container"){
+    if(e.target.classList.contains("main")){
         e.preventDefault()
         window.api.send("main-context")
     }
@@ -240,16 +253,12 @@ function updateAmpLevel(progress){
 
 function onDrop(e){
 
-    const dropFiles = Object.keys(e.dataTransfer.items).map(key => {
-
-        const item = e.dataTransfer.items[key];
-        if(item.kind === "file" && item.type.includes("video")){
-            return item.getAsFile().path;
-        }
+    const dropFiles = Array.from(e.dataTransfer.items).filter(item => {
+        return item.kind === "file" && item.type.includes("video");
     })
 
     if(dropFiles.length > 0){
-        window.api.send("drop", {files:dropFiles, playlist:false})
+        window.api.send("drop", {files:dropFiles.map(item => item.getAsFile().path), playlist:false})
     }
 }
 

@@ -1,13 +1,8 @@
-const {app, BrowserWindow, ipcMain, Menu} = require("electron");
+const {app, BrowserWindow, ipcMain, Menu, globalShortcut} = require("electron");
 const path = require("path");
 const trash = require("trash");
 const fs = require("fs").promises;
 const proc = require("child_process");
-
-let mainWindow;
-let playlist;
-let directLaunch;
-let config;
 
 const playThumbButton = {
     tooltip: "Play",
@@ -30,9 +25,14 @@ const nextThumbButton = {
     click: () => changeIndex(1)
 }
 
+const playPauseThumButtons = [
+    playThumbButton,
+    pauseThumbButton
+]
+
 const thumButtonsOptions = [
     prevThumbButton,
-    playThumbButton,
+    playPauseThumButtons[0],
     nextThumbButton
 ]
 
@@ -67,6 +67,12 @@ const playlistMenuTemplate = [
 
 const playlistMenu = Menu.buildFromTemplate(playlistMenuTemplate)
 
+let mainWindow;
+let playlist;
+let tooltip;
+let directLaunch;
+let config;
+
 let currentIndex = 0;
 let targets;
 let fileMap = {}
@@ -86,6 +92,11 @@ app.on("second-instance", (event, argv, workingDirectory, additionalData) => {
 })
 
 app.on("ready", async () => {
+
+    globalShortcut.register("F5", () => {
+        mainWindow.reload();
+        playlist.reload();
+    })
 
     directLaunch = process.argv.length > 1 && process.argv[1] != "main.js";
 
@@ -111,6 +122,7 @@ app.on("ready", async () => {
     });
 
     mainWindow.on("ready-to-show", () => {
+
         if(config.bounds.isMaximized){
             mainWindow.maximize();
         }
@@ -148,6 +160,26 @@ app.on("ready", async () => {
     })
 
     playlist.loadURL("file://" + __dirname + "/playlist.html");
+
+    tooltip = new BrowserWindow({
+        parent: mainWindow,
+        backgroundColor: "#272626",
+        resizable: false,
+        autoHideMenuBar: true,
+        show: false,
+        frame:false,
+        minimizable: false,
+        maximizable: false,
+        thickFrame: false,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            enableRemoteModule: false,
+            preload: path.join(__dirname, "tooltipPreload.js")
+        },
+    })
+
+    tooltip.loadURL("file://" + __dirname + "/tooltip.html");
 
 });
 
@@ -292,6 +324,8 @@ async function save(props){
 
 async function closeWindow(args){
     await save(args);
+    tooltip.close();
+    playlist.close();
     mainWindow.close();
 }
 
@@ -321,8 +355,7 @@ function loadVide(play = false){
 }
 
 function togglePlay(){
-    pauseThumbButton.flags = [];
-    playThumbButton.flags = ["hidden"]
+    //thumButtonsOptions[1] = playPauseThumButtons.shift();
     mainWindow.webContents.send("toggle-play");
 }
 
@@ -495,4 +528,29 @@ ipcMain.on("close-playlist", (e,data) => {
 ipcMain.on("playlist-context", (e, data) => {
     targets = data.targets;
     playlistMenu.popup(playlist)
+})
+
+ipcMain.on("show-tooltip", (e ,data) => {
+    tooltip.webContents.send("change-content", data)
+    //tooltip.show();
+})
+
+ipcMain.on("content-set", (e, data) => {
+    const bounds = mainWindow.getBounds();
+    let x = data.x - 50
+    if(x + (data.width + 20) >= bounds.width){
+        x = bounds.width - (data.width + 20)
+    }
+    let y = data.y + 2;
+
+    tooltip.setBounds({ x, y, width: data.width, height: data.height })
+    if(!tooltip.isVisible()){
+        tooltip.show();
+    }
+    tooltip.moveTop();
+})
+
+ipcMain.on("hide-tooltip", (e, data) => {
+    tooltip.hide();
+    tooltip.webContents.send("change-content", {content:""})
 })

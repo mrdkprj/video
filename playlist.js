@@ -22,11 +22,20 @@ window.addEventListener("load", e => {
         window.api.send("close-playlist")
     })
 
+    fileList.addEventListener("mouseleave", onMouseLeave)
 })
 
 window.addEventListener('contextmenu', e => {
     e.preventDefault()
     window.api.send("playlist-context", {targets:selection})
+})
+
+window.addEventListener("keydown", e => {
+
+    if(e.ctrlKey && e.key === "r"){
+        e.preventDefault();
+    }
+
 })
 
 document.addEventListener("keydown", e =>{
@@ -87,6 +96,16 @@ document.addEventListener("drop", e => {
 
 })
 
+function onMouseEnter(e){
+    window.api.send("show-tooltip", {content: e.target.getAttribute("data-title"), position:{x:e.screenX, y:e.screenY}})
+
+    movePlaylistItem(e);
+}
+
+function onMouseLeave(e){
+    window.api.send("hide-tooltip")
+}
+
 function movePlaylistItem(e){
 
     if(!dragState.dragging) return;
@@ -116,16 +135,12 @@ function clearPlaylist(){
 
 const onFileDrop = (e) => {
 
-    const dropFiles = Object.keys(e.dataTransfer.items).map(key => {
-
-        const item = e.dataTransfer.items[key];
-        if(item.kind === "file" && item.type.includes("video")){
-            return item.getAsFile().path;
-        }
+    const dropFiles = Array.from(e.dataTransfer.items).filter(item => {
+        return item.kind === "file" && item.type.includes("video");
     })
 
     if(dropFiles.length > 0){
-        window.api.send("drop", {files:dropFiles, playlist:true})
+        window.api.send("drop", {files:dropFiles.map(item => item.getAsFile().path), playlist:true})
     }
 }
 
@@ -137,11 +152,11 @@ function addPlaylist(files){
 
         const item = document.createElement("li");
         item.textContent = file.name;
-        item.title = file.name;
+        item.setAttribute("data-title", file.name)
         item.id = file.id;
         item.classList.add("playlist-item")
         item.addEventListener("dblclick", onFileListItemClicked);
-        item.addEventListener("mouseenter", movePlaylistItem)
+        item.addEventListener("mouseenter", onMouseEnter)
         item.addEventListener("mouseleave", movePlaylistItem)
 
         fragment.appendChild(item);
