@@ -23,6 +23,9 @@ window.addEventListener("load", e => {
     })
 
     fileList.addEventListener("mouseleave", onMouseLeave)
+
+    document.getElementById("fileListContainer").addEventListener("mouseleave", onMouseLeave)
+
 })
 
 window.addEventListener('contextmenu', e => {
@@ -53,6 +56,7 @@ document.addEventListener("mousedown", e => {
 
     if(e.target.classList.contains("playlist-item")){
 
+        e.stopPropagation();
         if(e.button === 2 && selection.length > 1){
             const clickedIndex = getChildIndex(e.target)
             if(selection.includes(clickedIndex)){
@@ -89,14 +93,13 @@ document.addEventListener("drop", e => {
 
     dragState.dragging = false;
 
-    if(e.target.id === "fileListContainer"){
-        e.preventDefault();
-        return onFileDrop(e)
-    }
+    e.preventDefault();
+    onFileDrop(e)
 
 })
 
 function onMouseEnter(e){
+
     window.api.send("show-tooltip", {content: e.target.getAttribute("data-title"), position:{x:e.screenX, y:e.screenY}})
 
     movePlaylistItem(e);

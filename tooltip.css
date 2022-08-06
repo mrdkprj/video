@@ -4,6 +4,7 @@
 }
 
 .tooltip{
+    user-select: none;
     color: #fff;
     font-size: 12px;
     height: auto;

@@ -73,6 +73,7 @@ let tooltip;
 let directLaunch;
 let config;
 
+let isReady = false;
 let currentIndex = 0;
 let targets;
 let fileMap = {}
@@ -88,7 +89,23 @@ if(!locked) {
 }
 
 app.on("second-instance", (event, argv, workingDirectory, additionalData) => {
-    additionalFiles.push(...extractFiles(additionalData))
+
+    if(!isReady){
+        additionalFiles.push(...extractFiles(additionalData))
+        return;
+    }
+
+    if(additionalFiles.length <= 0){
+
+        additionalFiles.push(...extractFiles(additionalData))
+        setTimeout(() => {
+            dropFiles({playlist:false, files:[additionalFiles.shift()]})
+        }, 1000);
+
+    }else{
+        additionalFiles.push(...extractFiles(additionalData))
+    }
+
 })
 
 app.on("ready", async () => {
@@ -171,6 +188,8 @@ app.on("ready", async () => {
         minimizable: false,
         maximizable: false,
         thickFrame: false,
+        focusable: false,
+        transparent: true,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -228,6 +247,8 @@ async function onReady(){
         reset()
     }
 
+    isReady = true;
+
     mainWindow.webContents.send("config", {config});
     playlist.webContents.send("change-list", {clear:false, files:orderedFiles})
     loadVide(true);
@@ -258,6 +279,9 @@ function initFiles(files){
 
     currentIndex = 0;
 
+    additionalFiles.length = 0;
+
+    isReady = true;
 }
 
 function getCurrentFile(){
@@ -272,6 +296,7 @@ function reset(){
     orderedFiles.length = 0;
     fileMap = {}
     currentIndex = -1;
+    isReady = false;
 }
 
 function toFile(fullpath){
@@ -526,13 +551,13 @@ ipcMain.on("close-playlist", (e,data) => {
 })
 
 ipcMain.on("playlist-context", (e, data) => {
+    tooltip.hide();
     targets = data.targets;
     playlistMenu.popup(playlist)
 })
 
 ipcMain.on("show-tooltip", (e ,data) => {
     tooltip.webContents.send("change-content", data)
-    //tooltip.show();
 })
 
 ipcMain.on("content-set", (e, data) => {
@@ -541,7 +566,7 @@ ipcMain.on("content-set", (e, data) => {
     if(x + (data.width + 20) >= bounds.width){
         x = bounds.width - (data.width + 20)
     }
-    let y = data.y + 2;
+    let y = data.y + 20;
 
     tooltip.setBounds({ x, y, width: data.width, height: data.height })
     if(!tooltip.isVisible()){
@@ -552,5 +577,5 @@ ipcMain.on("content-set", (e, data) => {
 
 ipcMain.on("hide-tooltip", (e, data) => {
     tooltip.hide();
-    tooltip.webContents.send("change-content", {content:""})
+    //tooltip.webContents.send("change-content", {content:""})
 })
