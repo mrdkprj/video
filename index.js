@@ -43,7 +43,6 @@ let ampLevel = 0.07;
 let gainNode;
 
 let current;
-let isPlaying = false;
 
 const FORWARD = 1;
 const BACKWARD = -1;
@@ -99,6 +98,14 @@ window.addEventListener("load", e => {
         currentTimeArea.textContent = formatTime(video.currentTime);
 
         window.api.send("progress", {progress:video.currentTime / duration})
+    })
+
+    video.addEventListener("play", e =>{
+        onPlayed();
+    })
+
+    video.addEventListener("pause", e => {
+        onPaused();
     })
 
     container.addEventListener("dragover", e => {
@@ -277,14 +284,14 @@ function initPlayer(){
     durationArea.textContent = formatTime(videoDuration);
     currentTimeArea.textContent = formatTime(0);
     current = null;
-    isPlaying = false;
     buttons.classList.remove("playing")
     video.load();
 }
 
-function loadVideo(){
+function loadVideo(autoplay){
     video.classList.add("hidden");
     source.src = current.path
+    video.autoplay = autoplay;
     video.load();
 }
 
@@ -299,9 +306,7 @@ function onVideoLoaded(){
     durationArea.textContent = formatTime(videoDuration);
     currentTimeArea.textContent = formatTime(video.currentTime);
 
-    if(isPlaying){
-        play();
-    }
+    video.autoplay = false;
 }
 
 function changeVideoSize(){
@@ -374,30 +379,26 @@ function togglePlay(){
     if(!current) return;
 
     if(video.paused){
-        play();
+        video.play();
     }else{
-        pause();
+        video.pause();
     }
-
 }
 
-function play(){
-    isPlaying = true;
+function onPlayed(){
+    window.api.send("toggle-thumb")
     buttons.classList.add("playing")
-    video.play();
 }
 
-function pause(){
-    isPlaying = false;
+function onPaused(){
+    window.api.send("toggle-thumb")
     buttons.classList.remove("playing")
-    video.pause();
 }
 
 function stop(){
 
     if(!current) return;
 
-    isPlaying = false;
     buttons.classList.remove("playing")
     video.load();
 }
@@ -443,12 +444,7 @@ function load(data){
     current = data.current;
 
     if(current){
-
-        if(data.play === true){
-            isPlaying = true;
-        }
-
-        loadVideo()
+        loadVideo(data.play)
     }else{
         initPlayer();
     }

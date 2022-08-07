@@ -294,12 +294,20 @@ body{
     z-index: 900;
 }
 
+.time-area .thumb{
+    position: absolute;
+}
+
 .time-area .thumb::before{
     content: "";
-    width: 2px;
-    height: 2px;
-    border-radius: 2px;
+    width: 4px;
+    height: 4px;
+    border-radius: 4px;
     background-color: red;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    box-shadow: inset 0px 0px 1px 1px #7e4040;
 }
 
 .thumb.lever{

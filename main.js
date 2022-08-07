@@ -25,15 +25,21 @@ const nextThumbButton = {
     click: () => changeIndex(1)
 }
 
-const playPauseThumButtons = [
+const thumbButtonsOptionsPaused = [
+    prevThumbButton,
     playThumbButton,
-    pauseThumbButton
+    nextThumbButton
 ]
 
-const thumButtonsOptions = [
+const thumbButtonsOptionsPlayed = [
     prevThumbButton,
-    playPauseThumButtons[0],
+    pauseThumbButton,
     nextThumbButton
+]
+
+const thumButtons = [
+    thumbButtonsOptionsPaused,
+    thumbButtonsOptionsPlayed
 ]
 
 const mainMenuTemplate = [
@@ -144,7 +150,7 @@ app.on("ready", async () => {
             mainWindow.maximize();
         }
 
-        mainWindow.setThumbarButtons(thumButtonsOptions)
+        mainWindow.setThumbarButtons(thumButtons[0])
 
         onReady();
 
@@ -379,8 +385,14 @@ function loadVide(play = false){
     mainWindow.webContents.send("play", {current:getCurrentFile(), play});
 }
 
+function toggleThumbButton(){
+    [[thumButtons[0], thumButtons[1]]] = [[thumButtons[1], thumButtons[0]]]
+
+    mainWindow.setThumbarButtons([])
+    mainWindow.setThumbarButtons(thumButtons[0])
+}
+
 function togglePlay(){
-    //thumButtonsOptions[1] = playPauseThumButtons.shift();
     mainWindow.webContents.send("toggle-play");
 }
 
@@ -500,21 +512,12 @@ ipcMain.on("toggleMaximize", (e, data) => {
     toggleMaximize();
 });
 
+ipcMain.on("toggle-thumb", (e, data) => {
+    toggleThumbButton();
+})
+
 ipcMain.on("close", (e, data) => {
     closeWindow(data);
-});
-
-ipcMain.on("delete", async (e, data) => {
-
-    try{
-
-        await trash(data.path);
-
-        respond(targetfiles[currentIndex]);
-
-    }catch(ex){
-        sendError(ex);
-    }
 });
 
 ipcMain.on("selectFile", (e, data) => {
@@ -561,12 +564,15 @@ ipcMain.on("show-tooltip", (e ,data) => {
 })
 
 ipcMain.on("content-set", (e, data) => {
+
     const bounds = mainWindow.getBounds();
+
     let x = data.x - 50
     if(x + (data.width + 20) >= bounds.width){
         x = bounds.width - (data.width + 20)
     }
-    let y = data.y + 20;
+
+    const y = data.y + 20;
 
     tooltip.setBounds({ x, y, width: data.width, height: data.height })
     if(!tooltip.isVisible()){
@@ -577,5 +583,4 @@ ipcMain.on("content-set", (e, data) => {
 
 ipcMain.on("hide-tooltip", (e, data) => {
     tooltip.hide();
-    //tooltip.webContents.send("change-content", {content:""})
 })

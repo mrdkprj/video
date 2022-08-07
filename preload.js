@@ -16,7 +16,8 @@ contextBridge.exposeInMainWorld(
                 "drop",
                 "changeIndex",
                 "progress",
-                "main-context"
+                "main-context",
+                "toggle-thumb",
             ];
           if (validChannels.includes(channel)) {
               ipcRenderer.send(channel, data);
