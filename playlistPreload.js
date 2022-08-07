@@ -16,7 +16,7 @@ const {
                 "remove",
                 "reveal",
                 "playlist-context",
-                "changeOrder",
+                "change-order",
                 "show-tooltip",
                 "hide-tooltip"
               ];

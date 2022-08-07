@@ -536,7 +536,7 @@ ipcMain.on("progress", (e, data) =>{
     mainWindow.setProgressBar(data.progress);
 })
 
-ipcMain.on("changeOrder", (e, data) => {
+ipcMain.on("change-order", (e, data) => {
     changeOrder(data);
 })
 
