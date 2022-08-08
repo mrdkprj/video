@@ -114,7 +114,7 @@ window.addEventListener("load", e => {
 
     container.addEventListener("drop", e =>{
         e.preventDefault();
-        onDrop(e)
+        onFileDrop(e)
     });
 
 });
@@ -145,7 +145,7 @@ document.addEventListener("click", (e) =>{
 
 document.addEventListener("dblclick", e => {
 
-    if(e.target.id == "video"){
+    if(e.target.classList.contains("main")){
         togglePlay()
     }
 
@@ -196,10 +196,11 @@ document.addEventListener("mouseup", e =>{
 
 window.addEventListener("keydown", e => {
 
-    if(e.ctrlKey && e.key === "r"){
-        e.preventDefault();
-    }
+    if(e.ctrlKey && e.key === "r") e.preventDefault();
 
+    if(e.key === "ArrowRight") playFoward({button: 0});
+
+    if(e.key === "ArrowLeft") playBackward({button: 0});
 })
 
 window.addEventListener("resize", e => {
@@ -258,10 +259,10 @@ function updateAmpLevel(progress){
     gainNode.gain.value = ampLevel * 10;
 }
 
-function onDrop(e){
+function onFileDrop(e){
 
     const dropFiles = Array.from(e.dataTransfer.items).filter(item => {
-        return item.kind === "file" && item.type.includes("video");
+        return item.kind === "file" && (item.type.includes("video") || item.type.includes("audio"));
     })
 
     if(dropFiles.length > 0){
@@ -289,9 +290,9 @@ function initPlayer(){
 }
 
 function loadVideo(autoplay){
-    video.classList.add("hidden");
     source.src = current.path
-    video.autoplay = autoplay;
+    const doAuthplay = autoplay ? autoplay : !video.paused
+    video.autoplay = doAuthplay;
     video.load();
 }
 
@@ -299,7 +300,6 @@ function onVideoLoaded(){
 
     title.textContent = current.name
     changeVideoSize();
-    video.classList.remove("hidden")
 
     videoDuration = video.duration;
 

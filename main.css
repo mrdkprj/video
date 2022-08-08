@@ -141,10 +141,6 @@ body{
     object-fit: cover;
 }
 
-.hidden{
-    visibility: hidden;
-}
-
 .footer-menu{
     height: 55px;
     user-select: none;

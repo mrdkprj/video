@@ -257,7 +257,7 @@ async function onReady(){
 
     mainWindow.webContents.send("config", {config});
     playlist.webContents.send("change-list", {clear:false, files:orderedFiles})
-    loadVide(true);
+    loadResource(true);
 }
 
 function extractFiles(target){
@@ -362,27 +362,35 @@ async function closeWindow(args){
 
 function changeIndex(index){
 
-    const nextIndex = currentIndex + index;
+    let nextIndex = currentIndex + index;
+    let autoplay = false;
 
-    if(nextIndex >= orderedFiles.length || nextIndex < 0){
-        return;
+    if(nextIndex >= orderedFiles.length){
+        nextIndex = 0;
+        autoplay = true;
+    }
+
+    if(nextIndex < 0){
+        nextIndex = orderedFiles.length - 1
+        autoplay = true;
     }
 
     currentIndex = nextIndex;
 
-    loadVide(false);
+    loadResource(autoplay);
 }
 
 function selectFile(index){
 
     currentIndex = index;
-    loadVide(true);
+    loadResource(true);
 
 }
 
-function loadVide(play = false){
-    playlist.webContents.send("play", {current:getCurrentFile()})
-    mainWindow.webContents.send("play", {current:getCurrentFile(), play});
+function loadResource(play = false){
+    const current = getCurrentFile();
+    playlist.webContents.send("play", {current})
+    mainWindow.webContents.send("play", {current, play});
 }
 
 function toggleThumbButton(){
@@ -398,21 +406,25 @@ function togglePlay(){
 
 function dropFiles(data){
 
-    let newFiles;
+    if(data.playlist){
 
-    if(!data.playlist){
-        initFiles(data.files)
-        playlist.webContents.send("change-list", {clear:true, files:orderedFiles})
-        loadVide(data.files.length == 1);
-    }else{
-        newFiles = data.files.map(file => toFile(file)).filter(file => !fileMap[file.id]);
+        const changeCurrent = orderedFiles.length <= 0;
+
+        const newFiles = data.files.map(file => toFile(file)).filter(file => !fileMap[file.id]);
         orderedFiles.push(...newFiles)
         playlist.webContents.send("change-list", {clear:false, files:newFiles})
-        if(orderedFiles.length == 1){
+
+        if(orderedFiles.length == 1 || changeCurrent){
             currentIndex = 0;
-            loadVide(false);
+            loadResource(false);
         }
+
+        return;
     }
+
+    initFiles(data.files)
+    playlist.webContents.send("change-list", {clear:true, files:orderedFiles})
+    loadResource(data.files.length == 1);
 
 }
 
@@ -432,7 +444,7 @@ function removeAll(){
 
     playlist.webContents.send("change-list", {clear:true, files:orderedFiles})
 
-    loadVide();
+    loadResource();
 }
 
 function remove(){
@@ -458,7 +470,7 @@ function remove(){
             currentIndex = targets[0] - 1
         }
 
-        loadVide(true);
+        loadResource(true);
 
     }
 

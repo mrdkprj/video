@@ -139,7 +139,7 @@ function clearPlaylist(){
 const onFileDrop = (e) => {
 
     const dropFiles = Array.from(e.dataTransfer.items).filter(item => {
-        return item.kind === "file" && item.type.includes("video");
+        return item.kind === "file" && (item.type.includes("video") || item.type.includes("audio"));
     })
 
     if(dropFiles.length > 0){
