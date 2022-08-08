@@ -84,7 +84,7 @@ document.addEventListener("dragover", e => {
 
 document.addEventListener("mouseup", e => {
     if(dragState.dragging){
-        window.api.send("change-order", {start:dragState.startIndex, end:getChildIndex(dragState.startElement)})
+        window.api.send("changeOrder", {start:dragState.startIndex, end:getChildIndex(dragState.startElement)})
     }
     dragState.dragging = false;
 })
