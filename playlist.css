@@ -67,6 +67,10 @@
     font-size: 12px;
 }
 
+.no-tooltip .file-list li{
+    pointer-events: none;
+}
+
 .file-list .current{
     color: #ef6161
 }

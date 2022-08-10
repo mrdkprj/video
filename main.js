@@ -84,6 +84,7 @@ let currentIndex = 0;
 let targets;
 let fileMap = {}
 
+const tooltipWidth = 300;
 const additionalFiles = [];
 const orderedFiles = []
 
@@ -184,6 +185,8 @@ app.on("ready", async () => {
 
     playlist.loadURL("file://" + __dirname + "/playlist.html");
 
+    playlist.on("blur", e => tooltip.hide())
+
     tooltip = new BrowserWindow({
         parent: mainWindow,
         backgroundColor: "#272626",
@@ -256,8 +259,12 @@ async function onReady(){
     isReady = true;
 
     mainWindow.webContents.send("config", {config});
-    playlist.webContents.send("change-list", {clear:false, files:orderedFiles})
-    loadResource(true);
+
+    if(directLaunch){
+        playlist.webContents.send("change-list", {clear:false, files:orderedFiles})
+        togglePlay();
+        loadResource(true);
+    }
 }
 
 function extractFiles(target){
@@ -363,21 +370,18 @@ async function closeWindow(args){
 function changeIndex(index){
 
     let nextIndex = currentIndex + index;
-    let autoplay = false;
 
     if(nextIndex >= orderedFiles.length){
         nextIndex = 0;
-        autoplay = true;
     }
 
     if(nextIndex < 0){
         nextIndex = orderedFiles.length - 1
-        autoplay = true;
     }
 
     currentIndex = nextIndex;
 
-    loadResource(autoplay);
+    loadResource(false);
 }
 
 function selectFile(index){
@@ -411,7 +415,11 @@ function dropFiles(data){
         const changeCurrent = orderedFiles.length <= 0;
 
         const newFiles = data.files.map(file => toFile(file)).filter(file => !fileMap[file.id]);
-        orderedFiles.push(...newFiles)
+        newFiles.forEach(file => {
+            orderedFiles.push(file)
+            fileMap[file.id] = file
+        })
+
         playlist.webContents.send("change-list", {clear:false, files:newFiles})
 
         if(orderedFiles.length == 1 || changeCurrent){
@@ -470,7 +478,7 @@ function remove(){
             currentIndex = targets[0] - 1
         }
 
-        loadResource(true);
+        loadResource(false);
 
     }
 

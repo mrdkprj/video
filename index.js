@@ -19,6 +19,7 @@ const volumeSlider = {
     track:null,
     thumb:null,
     rect:null,
+    trackValue:null,
     callback:updateVolume
 }
 const ampSlider = {
@@ -26,6 +27,7 @@ const ampSlider = {
     track:null,
     thumb:null,
     rect:null,
+    trackValue:null,
     callback:updateAmpLevel
 }
 const sliders = {
@@ -70,10 +72,12 @@ window.addEventListener("load", e => {
     timeSlider.thumb = document.getElementById("timeThumb");
     volumeSlider.slider = document.getElementById("volume");
     volumeSlider.track = document.getElementById("volumeTrack");
-    volumeSlider.thumb = document.getElementById("volumeThumb")
+    volumeSlider.thumb = document.getElementById("volumeThumb");
+    volumeSlider.trackValue = document.getElementById("volumeValue");
     ampSlider.slider = document.getElementById("amp");
     ampSlider.track = document.getElementById("ampTrack");
-    ampSlider.thumb = document.getElementById("ampThumb")
+    ampSlider.thumb = document.getElementById("ampThumb");
+    ampSlider.trackValue = document.getElementById("ampValue");
 
     containerRect = container.getBoundingClientRect();
     timeSlider.rect = timeSlider.slider.getBoundingClientRect();
@@ -105,7 +109,9 @@ window.addEventListener("load", e => {
     })
 
     video.addEventListener("pause", e => {
-        onPaused();
+        if(video.currentTime !== video.duration){
+            onPaused();
+        }
     })
 
     container.addEventListener("dragover", e => {
@@ -248,6 +254,7 @@ function updateVolume(progress){
     volumeSlider.track.style.width = value;
     volumeSlider.thumb.style.left = value;
     volumeSlider.thumb.title = value;
+    volumeSlider.trackValue.textContent = value;
 }
 
 function updateAmpLevel(progress){
@@ -256,6 +263,7 @@ function updateAmpLevel(progress){
     ampSlider.track.style.width = value;
     ampSlider.thumb.style.left = value;
     ampSlider.thumb.title = value;
+    ampSlider.trackValue.textContent = value;
     gainNode.gain.value = ampLevel * 10;
 }
 
@@ -291,7 +299,7 @@ function initPlayer(){
 
 function loadVideo(autoplay){
     source.src = current.path
-    const doAuthplay = autoplay ? autoplay : !video.paused
+    const doAuthplay = autoplay ? autoplay : buttons.classList.contains("playing")
     video.autoplay = doAuthplay;
     video.load();
 }

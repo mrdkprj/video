@@ -6,6 +6,7 @@ let fileList;
 let current;
 let selected;
 const selection = [];
+
 const dragState = {
     dragging: false,
     startElement:null,
@@ -50,6 +51,10 @@ document.addEventListener("keydown", e =>{
         }
     }
 
+    if(e.ctrlKey && e.key === "a"){
+        selectAll();
+    }
+
 })
 
 document.addEventListener("mousedown", e => {
@@ -90,12 +95,7 @@ document.addEventListener("mouseup", e => {
 })
 
 document.addEventListener("drop", e => {
-
-    dragState.dragging = false;
-
-    e.preventDefault();
     onFileDrop(e)
-
 })
 
 function onMouseEnter(e){
@@ -138,11 +138,17 @@ function clearPlaylist(){
 
 const onFileDrop = (e) => {
 
+    e.preventDefault();
+    e.stopPropagation();
+
+    dragState.dragging = false;
+
     const dropFiles = Array.from(e.dataTransfer.items).filter(item => {
         return item.kind === "file" && (item.type.includes("video") || item.type.includes("audio"));
     })
 
     if(dropFiles.length > 0){
+        playlist.classList.add("no-tooltip")
         window.api.send("drop", {files:dropFiles.map(item => item.getAsFile().path), playlist:true})
     }
 }
@@ -241,6 +247,17 @@ function selectByCtrl(e){
     e.target.classList.add("selected")
 }
 
+function selectAll(){
+
+    clearSelection();
+
+    fileList.childNodes.forEach((node,index) => {
+        node.classList.add("selected")
+        selection.push(index);
+    })
+
+}
+
 function onFileListItemClicked(e){
     const index = getChildIndex(e.target);
     window.api.send("selectFile", {index});
@@ -269,6 +286,11 @@ const addFiles = (data) => {
     }
 
     addPlaylist(data.files);
+
+    setTimeout(() => {
+        playlist.classList.remove("no-tooltip")
+    }, 1000);
+
 }
 
 const removeFromPlaylist = (data) => {
