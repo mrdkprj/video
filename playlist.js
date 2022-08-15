@@ -1,10 +1,11 @@
-
 let playlist;
 let playlistTitleBar;
 let fileList;
 
 let current;
 let selected;
+let mouseEnterDisabled = false;
+
 const selection = [];
 
 const dragState = {
@@ -36,9 +37,9 @@ window.addEventListener('contextmenu', e => {
 
 window.addEventListener("keydown", e => {
 
-    if(e.ctrlKey && e.key === "r"){
-        e.preventDefault();
-    }
+    if(e.ctrlKey && e.key === "r") e.preventDefault();
+
+    if(e.ctrlKey && e.shiftKey && e.key === "r") window.api.send("reload");
 
 })
 
@@ -61,7 +62,10 @@ document.addEventListener("mousedown", e => {
 
     if(e.target.classList.contains("playlist-item")){
 
+        window.api.send("hide-tooltip")
+
         e.stopPropagation();
+
         if(e.button === 2 && selection.length > 1){
             const clickedIndex = getChildIndex(e.target)
             if(selection.includes(clickedIndex)){
@@ -89,7 +93,7 @@ document.addEventListener("dragover", e => {
 
 document.addEventListener("mouseup", e => {
     if(dragState.dragging){
-        window.api.send("changeOrder", {start:dragState.startIndex, end:getChildIndex(dragState.startElement)})
+        window.api.send("change-order", {start:dragState.startIndex, end:getChildIndex(dragState.startElement), currentIndex:getChildIndex(current)})
     }
     dragState.dragging = false;
 })
@@ -100,7 +104,9 @@ document.addEventListener("drop", e => {
 
 function onMouseEnter(e){
 
-    window.api.send("show-tooltip", {content: e.target.getAttribute("data-title"), position:{x:e.screenX, y:e.screenY}})
+    if(!dragState.dragging && !mouseEnterDisabled){
+        window.api.send("show-tooltip", {content: e.target.getAttribute("data-title"), position:{x:e.screenX, y:e.screenY}})
+    }
 
     movePlaylistItem(e);
 }
@@ -120,6 +126,7 @@ function movePlaylistItem(e){
 
     dragState.working = true;
 
+    const currentIndex = selection.indexOf(getChildIndex(dragState.startElement));
     const dropRect = e.target.getBoundingClientRect();
     const dropPosition = e.clientY - dropRect.top;
     if(dropPosition <= dropRect.height){
@@ -127,6 +134,7 @@ function movePlaylistItem(e){
     }else{
         e.target.parentNode.insertBefore(e.target, dragState.startElement);
     }
+    selection[currentIndex] = getChildIndex(dragState.startElement);
 
     dragState.working = false;
 
@@ -136,7 +144,7 @@ function clearPlaylist(){
     fileList.innerHTML = "";
 }
 
-const onFileDrop = (e) => {
+function onFileDrop(e){
 
     e.preventDefault();
     e.stopPropagation();
@@ -148,7 +156,6 @@ const onFileDrop = (e) => {
     })
 
     if(dropFiles.length > 0){
-        playlist.classList.add("no-tooltip")
         window.api.send("drop", {files:dropFiles.map(item => item.getAsFile().path), playlist:true})
     }
 }
@@ -174,6 +181,27 @@ function addPlaylist(files){
 
     fileList.appendChild(fragment)
 
+    preventMouseEnter();
+
+}
+
+const removeFromPlaylist = (data) => {
+    preventMouseEnter();
+    clearSelection();
+    const targetNodes = data.targets.map(index => fileList.childNodes[index])
+    targetNodes.forEach(node => {
+        if(current && node.id === current.id){
+            current = null;
+        }
+        fileList.removeChild(node)
+    })
+}
+
+function preventMouseEnter(){
+    mouseEnterDisabled = true;
+    setTimeout(() => {
+        mouseEnterDisabled = false;
+    }, 500);
 }
 
 function clearSelection(){
@@ -260,10 +288,12 @@ function selectAll(){
 
 function onFileListItemClicked(e){
     const index = getChildIndex(e.target);
-    window.api.send("selectFile", {index});
+    window.api.send("select-file", {index});
 }
 
 function getChildIndex(node) {
+    if(!node) return -1;
+
     return Array.prototype.indexOf.call(fileList.childNodes, node);
 }
 
@@ -287,15 +317,6 @@ const addFiles = (data) => {
 
     addPlaylist(data.files);
 
-    setTimeout(() => {
-        playlist.classList.remove("no-tooltip")
-    }, 1000);
-
-}
-
-const removeFromPlaylist = (data) => {
-    clearSelection();
-    data.targets.map(index => fileList.childNodes[index]).forEach(node => fileList.removeChild(node))
 }
 
 window.api.receive("change-list", data => {

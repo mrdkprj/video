@@ -39,6 +39,7 @@ const sliders = {
 let containerRect;
 
 let isMaximized = false;
+let fitToWindow = true;
 let videoDuration = 0;
 let videoVolume = 1;
 let ampLevel = 0.07;
@@ -93,15 +94,7 @@ window.addEventListener("load", e => {
     })
 
     video.addEventListener("timeupdate", e => {
-
-        const duration = videoDuration > 0 ? videoDuration : 1
-        const progress = (video.currentTime / duration) * 100;
-
-        timeSlider.track.style.width = progress + "%"
-        timeSlider.thumb.style.left  = progress + "%"
-        currentTimeArea.textContent = formatTime(video.currentTime);
-
-        window.api.send("progress", {progress:video.currentTime / duration})
+        onTimeUpdate()
     })
 
     video.addEventListener("play", e =>{
@@ -204,6 +197,8 @@ window.addEventListener("keydown", e => {
 
     if(e.ctrlKey && e.key === "r") e.preventDefault();
 
+    if(e.ctrlKey && e.shiftKey && e.key === "r") window.api.send("reload");
+
     if(e.key === "ArrowRight") playFoward({button: 0});
 
     if(e.key === "ArrowLeft") playBackward({button: 0});
@@ -231,7 +226,7 @@ function startSlide(e){
     slideState.startX = e.offsetX
 }
 
-const moveSlider = (e) => {
+function moveSlider(e){
 
     if(!slideState.sliding) return;
 
@@ -247,6 +242,17 @@ function updateTime(progress){
     video.currentTime = videoDuration * progress;
 }
 
+function onTimeUpdate(){
+    const duration = videoDuration > 0 ? videoDuration : 1
+    const progress = (video.currentTime / duration) * 100;
+
+    timeSlider.track.style.width = progress + "%"
+    timeSlider.thumb.style.left  = progress + "%"
+    currentTimeArea.textContent = formatTime(video.currentTime);
+
+    window.api.send("progress", {progress:video.currentTime / duration})
+}
+
 function updateVolume(progress){
     video.volume = progress
     videoVolume = video.volume;
@@ -254,7 +260,7 @@ function updateVolume(progress){
     volumeSlider.track.style.width = value;
     volumeSlider.thumb.style.left = value;
     volumeSlider.thumb.title = value;
-    volumeSlider.trackValue.textContent = value;
+    volumeSlider.trackValue.textContent = `${parseInt(value)}%`;
 }
 
 function updateAmpLevel(progress){
@@ -263,7 +269,7 @@ function updateAmpLevel(progress){
     ampSlider.track.style.width = value;
     ampSlider.thumb.style.left = value;
     ampSlider.thumb.title = value;
-    ampSlider.trackValue.textContent = value;
+    ampSlider.trackValue.textContent = `${parseInt(value)}%`;
     gainNode.gain.value = ampLevel * 10;
 }
 
@@ -297,6 +303,11 @@ function initPlayer(){
     video.load();
 }
 
+function releaseFile(){
+    source.src = "";
+    video.load();
+}
+
 function loadVideo(autoplay){
     source.src = current.path
     const doAuthplay = autoplay ? autoplay : buttons.classList.contains("playing")
@@ -318,9 +329,15 @@ function onVideoLoaded(){
 }
 
 function changeVideoSize(){
-    const ratio = Math.min(containerRect.width / video.videoWidth, containerRect.height / video.videoHeight);
-    video.style.width = `${video.videoWidth * ratio}px`
-    video.style.height = `${video.videoHeight * ratio}px`
+
+    if(fitToWindow){
+        const ratio = Math.min(containerRect.width / video.videoWidth, containerRect.height / video.videoHeight);
+        video.style.width = `${video.videoWidth * ratio}px`
+        video.style.height = `${video.videoHeight * ratio}px`
+    }else{
+        video.style.width = ""
+        video.style.height = ""
+    }
 }
 
 function amplify(){
@@ -378,8 +395,8 @@ function changeCurrentTime(time){
 
 }
 
-const changeIndex = index => {
-    return window.api.send("changeIndex", {index})
+function changeIndex(index){
+    return window.api.send("change-index", {index})
 }
 
 function togglePlay(){
@@ -394,12 +411,12 @@ function togglePlay(){
 }
 
 function onPlayed(){
-    window.api.send("toggle-thumb")
+    window.api.send("played")
     buttons.classList.add("playing")
 }
 
 function onPaused(){
-    window.api.send("toggle-thumb")
+    window.api.send("paused")
     buttons.classList.remove("playing")
 }
 
@@ -407,6 +424,7 @@ function stop(){
 
     if(!current) return;
 
+    window.api.send("paused")
     buttons.classList.remove("playing")
     video.load();
 }
@@ -426,7 +444,7 @@ function minimize(){
 }
 
 function toggleMaximize(){
-    window.api.send("toggleMaximize")
+    window.api.send("toggle-maximize")
     isMaximized = !isMaximized;
     changeMaximizeIcon();
 }
@@ -445,6 +463,8 @@ function prepare(config){
 
     ampLevel = config.ampLevel;
     amplify();
+
+    fitToWindow = config.fitToWindow;
 }
 
 function load(data){
@@ -469,12 +489,17 @@ window.api.receive("toggle-play", data => {
     togglePlay();
 })
 
+window.api.receive("change-size-mode", data => {
+    fitToWindow = data.fitToWindow;
+    changeVideoSize();
+})
+
 window.api.receive("error", data => {
     alert(data.message)
 })
 
-window.api.receive("clear-current", data => {
-    initPlayer();
+window.api.receive("release-file", data => {
+    releaseFile();
 })
 
 window.api.receive("log", data => {

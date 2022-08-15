@@ -54,6 +54,7 @@
     padding: 0;
     font-size: 12px;
     user-select: none;
+    position: relative;
 }
 
 .file-list li{

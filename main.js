@@ -1,8 +1,31 @@
-const {app, BrowserWindow, ipcMain, Menu, globalShortcut} = require("electron");
+const {app, BrowserWindow, ipcMain, Menu, clipboard } = require("electron");
 const path = require("path");
 const trash = require("trash");
 const fs = require("fs").promises;
 const proc = require("child_process");
+
+let mainWindow;
+let playlist;
+let tooltip;
+let directLaunch;
+
+let isReady = false;
+let currentIndex = 0;
+let targets;
+let fileMap = {}
+
+const additionalFiles = [];
+const orderedFiles = []
+
+const defaultConfig = {
+    volume: 1,
+    ampLevel: 0,
+    fitToWindow: true,
+    bounds: {width:1200, height:800, isMaximized: false, x:0, y:0},
+    subbounds: {width:400, height:700, x:0, y:0},
+}
+
+let config = defaultConfig;
 
 const playThumbButton = {
     tooltip: "Play",
@@ -42,16 +65,24 @@ const thumButtons = [
     thumbButtonsOptionsPlayed
 ]
 
-const mainMenuTemplate = [
+const mainContextTemplate = [
     {
-        label: "Open playlist",
-        click: () => openPlayList()
-    }
+        label: "Open Playlist",
+        click: () => openPlaylist()
+    },
+    {
+        label: "Fit To Window Size",
+        type: "checkbox",
+        checked: defaultConfig.fitToWindow,
+        click: () => changeSizeMode(),
+    },
 ]
 
-const mainMenu = Menu.buildFromTemplate(mainMenuTemplate)
+const FIT_TO_WINDOW_ITEM_INDEX = 1;
 
-const playlistMenuTemplate = [
+const mainContext = Menu.buildFromTemplate(mainContextTemplate)
+
+const playlistContextTemplate = [
     {
         label: "Remove",
         click: () => remove()
@@ -66,27 +97,16 @@ const playlistMenuTemplate = [
     },
     { type: "separator" },
     {
+        label: "Copy File Name",
+        click: () => copyFileNameToClipboard()
+    },
+    {
         label: "Reveal in File Explorer",
         click: () => reveal()
     },
 ]
 
-const playlistMenu = Menu.buildFromTemplate(playlistMenuTemplate)
-
-let mainWindow;
-let playlist;
-let tooltip;
-let directLaunch;
-let config;
-
-let isReady = false;
-let currentIndex = 0;
-let targets;
-let fileMap = {}
-
-const tooltipWidth = 300;
-const additionalFiles = [];
-const orderedFiles = []
+const playlistContext = Menu.buildFromTemplate(playlistContextTemplate)
 
 const locked = app.requestSingleInstanceLock(process.argv);
 
@@ -117,11 +137,6 @@ app.on("second-instance", (event, argv, workingDirectory, additionalData) => {
 
 app.on("ready", async () => {
 
-    globalShortcut.register("F5", () => {
-        mainWindow.reload();
-        playlist.reload();
-    })
-
     directLaunch = process.argv.length > 1 && process.argv[1] != "main.js";
 
     currentDirectory = path.join(app.getPath("userData"), "temp");
@@ -135,7 +150,7 @@ app.on("ready", async () => {
         y:config.bounds.y,
         autoHideMenuBar: true,
         show: false,
-        icon: "./resources/icon2.png",
+        icon: "./resources/icon.ico",
         frame: false,
         webPreferences: {
             nodeIntegration: false,
@@ -222,8 +237,13 @@ async function init(){
     if(fileExists){
         const rawData = await fs.readFile(configFilePath, {encoding:"utf8"});
         config = JSON.parse(rawData);
+        Object.keys(defaultConfig).forEach(key => {
+            if(!config.hasOwnProperty(key)){
+                config[key] = defaultConfig[key];
+            }
+        })
     }else{
-        config = {volume:1, ampLevel:0, bounds:{width:1200, height:800, isMaximized: false, x:0, y:0}, subbounds:{width:400, height:700, x:0, y:0}}
+        config = defaultConfig;
         await writeConfig()
     }
 }
@@ -258,13 +278,15 @@ async function onReady(){
 
     isReady = true;
 
+    mainContext.items[FIT_TO_WINDOW_ITEM_INDEX].checked = config.fitToWindow
     mainWindow.webContents.send("config", {config});
 
     if(directLaunch){
         playlist.webContents.send("change-list", {clear:false, files:orderedFiles})
         togglePlay();
-        loadResource(true);
     }
+
+    loadResource(true);
 }
 
 function extractFiles(target){
@@ -313,7 +335,16 @@ function reset(){
 }
 
 function toFile(fullpath){
+
+    //const statInfo = fs.statSync(fullpath);
+
     return {id:encodeURIComponent(fullpath), path:fullpath, name:decodeURIComponent(encodeURIComponent(path.basename(fullpath)))}
+}
+
+function changeSizeMode(){
+    config.fitToWindow = !config.fitToWindow
+    mainContext.items[1].checked = config.fitToWindow
+    mainWindow.webContents.send("change-size-mode", {fitToWindow:config.fitToWindow})
 }
 
 async function writeConfig(){
@@ -397,11 +428,16 @@ function loadResource(play = false){
     mainWindow.webContents.send("play", {current, play});
 }
 
-function toggleThumbButton(){
-    [[thumButtons[0], thumButtons[1]]] = [[thumButtons[1], thumButtons[0]]]
+function toggleThumbButton(played){
 
     mainWindow.setThumbarButtons([])
-    mainWindow.setThumbarButtons(thumButtons[0])
+
+    if(played){
+        mainWindow.setThumbarButtons(thumButtons[1])
+    }else{
+        mainWindow.setThumbarButtons(thumButtons[0])
+    }
+
 }
 
 function togglePlay(){
@@ -427,7 +463,7 @@ function dropFiles(data){
             loadResource(false);
         }
 
-        return;
+        return
     }
 
     initFiles(data.files)
@@ -443,7 +479,7 @@ function changeOrder(data){
     const replacing = orderedFiles.splice(data.start, 1)[0];
     orderedFiles.splice(data.end, 0, replacing)
 
-    currentIndex = data.end;
+    currentIndex = data.currentIndex;
 }
 
 function removeAll(){
@@ -491,7 +527,7 @@ async function deleteFile(){
     try{
 
         if(targets.includes(currentIndex)){
-            mainWindow.webContents.send("clear-current");
+            mainWindow.webContents.send("release-file");
         }
 
         const targetFiles = targets.map(index => orderedFiles[index].path);
@@ -516,8 +552,15 @@ function reveal(){
     proc.exec("explorer /e,/select," + orderedFiles[index].path);
 }
 
-function openPlayList(){
+function openPlaylist(){
     playlist.show();
+}
+
+function copyFileNameToClipboard(){
+    const current = getCurrentFile();
+    if(current){
+        clipboard.writeText(current.name);
+    }
 }
 
 function sendError(ex){
@@ -528,23 +571,27 @@ ipcMain.on("minimize", (e, data) => {
     mainWindow.minimize();
 });
 
-ipcMain.on("toggleMaximize", (e, data) => {
+ipcMain.on("toggle-maximize", (e, data) => {
     toggleMaximize();
 });
 
-ipcMain.on("toggle-thumb", (e, data) => {
-    toggleThumbButton();
+ipcMain.on("played", (e, data) => {
+    toggleThumbButton(true);
+})
+
+ipcMain.on("paused", (e, data) => {
+    toggleThumbButton(false);
 })
 
 ipcMain.on("close", (e, data) => {
     closeWindow(data);
 });
 
-ipcMain.on("selectFile", (e, data) => {
+ipcMain.on("select-file", (e, data) => {
     selectFile(data.index)
 })
 
-ipcMain.on("changeIndex", (e, data) => {
+ipcMain.on("change-index", (e, data) => {
     changeIndex(data.index)
 })
 
@@ -556,7 +603,7 @@ ipcMain.on("progress", (e, data) =>{
     mainWindow.setProgressBar(data.progress);
 })
 
-ipcMain.on("changeOrder", (e, data) => {
+ipcMain.on("change-order", (e, data) => {
     changeOrder(data);
 })
 
@@ -566,7 +613,7 @@ ipcMain.on("remove", (e, data) => {
 })
 
 ipcMain.on("main-context", (e, data) => {
-    mainMenu.popup(mainWindow)
+    mainContext.popup(mainWindow)
 })
 
 ipcMain.on("close-playlist", (e,data) => {
@@ -576,7 +623,7 @@ ipcMain.on("close-playlist", (e,data) => {
 ipcMain.on("playlist-context", (e, data) => {
     tooltip.hide();
     targets = data.targets;
-    playlistMenu.popup(playlist)
+    playlistContext.popup(playlist)
 })
 
 ipcMain.on("show-tooltip", (e ,data) => {
@@ -603,4 +650,9 @@ ipcMain.on("content-set", (e, data) => {
 
 ipcMain.on("hide-tooltip", (e, data) => {
     tooltip.hide();
+})
+
+ipcMain.on("reload", (e,data) => {
+    playlist.reload();
+    mainWindow.reload();
 })

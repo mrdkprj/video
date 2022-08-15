@@ -2,10 +2,11 @@ const builder = require("electron-builder");
 
 builder.build({
     config: {
-        "appId": "VidPlayerer",
+        "appId": "VidPlayer",
+        "productName": "VidPlayer",
         "win":{
             "target": {
-                "target": "dir",
+                "target": "nsis",
                 "arch": [
                     "x64",
                     //"ia32",
@@ -14,12 +15,21 @@ builder.build({
             "icon": "resources/icon.ico",
             "fileAssociations": [
                 {
-                  // 拡張子
-                  "ext": ["mp4"],
-                  // ファイルの種類
-                  "description": "Video files",
+                  "ext": "mp4",
+                  "icon": "resources/icon.ico",
+                  "description": "Video File",
                 },
+                {
+                    "ext": "mp3",
+                    "icon": "resources/icon_audio.ico",
+                    "description": "Audio File"
+                }
             ],
+        },
+        "nsis": {
+            "oneClick": true,
+            "allowToChangeInstallationDirectory": false,
+            "runAfterFinish": false,
         }
     }
 });

@@ -10,14 +10,15 @@ contextBridge.exposeInMainWorld(
 
           const validChannels = [
                 "minimize",
-                "toggleMaximize",
+                "toggle-maximize",
                 "close",
-                "openPlaylist",
                 "drop",
-                "changeIndex",
+                "change-index",
                 "progress",
                 "main-context",
-                "toggle-thumb",
+                "played",
+                "paused",
+                "reload",
             ];
           if (validChannels.includes(channel)) {
               ipcRenderer.send(channel, data);
@@ -25,7 +26,7 @@ contextBridge.exposeInMainWorld(
       },
 
       receive: (channel, func) => {
-          const validChannels = ["config", "play","toggle-play", "error", "clear-current","log"];
+          const validChannels = ["config", "play","toggle-play", "change-size-mode", "error", "release-file","log"];
           if (validChannels.includes(channel)) {
               ipcRenderer.on(channel, (event, ...args) => func(...args));
           }

@@ -11,14 +11,15 @@ const {
             const validChannels = [
                 "close-playlist",
                 "drop",
-                "selectFile",
+                "select-file",
                 "clear",
                 "remove",
                 "reveal",
                 "playlist-context",
-                "changeOrder",
+                "change-order",
                 "show-tooltip",
-                "hide-tooltip"
+                "hide-tooltip",
+                "reload",
               ];
             if (validChannels.includes(channel)) {
                 ipcRenderer.send(channel, data);
