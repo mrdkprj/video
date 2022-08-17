@@ -384,11 +384,11 @@ function changeCurrentTime(time){
     const nextTime = video.currentTime + time;
 
     if(nextTime >= video.duration){
-        changeIndex(FORWARD)
+        return changeIndex(FORWARD)
     }
 
-    if(video.duration < nextTime){
-        changeIndex(BACKWARD)
+    if(video.duration > nextTime){
+        return changeIndex(BACKWARD)
     }
 
     video.currentTime = nextTime;
@@ -492,6 +492,10 @@ window.api.receive("toggle-play", data => {
 window.api.receive("change-size-mode", data => {
     fitToWindow = data.fitToWindow;
     changeVideoSize();
+})
+
+window.api.receive("reset", data => {
+    initPlayer();
 })
 
 window.api.receive("error", data => {

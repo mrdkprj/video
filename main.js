@@ -126,6 +126,7 @@ app.on("second-instance", (event, argv, workingDirectory, additionalData) => {
 
         additionalFiles.push(...extractFiles(additionalData))
         setTimeout(() => {
+            reset();
             dropFiles({playlist:false, files:[additionalFiles.shift()]})
         }, 1000);
 
@@ -332,6 +333,9 @@ function reset(){
     fileMap = {}
     currentIndex = -1;
     isReady = false;
+    tooltip.hide();
+    mainWindow.webContents.send("reset")
+    playlist.webContents.send("reset")
 }
 
 function toFile(fullpath){

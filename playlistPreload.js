@@ -27,7 +27,7 @@ const {
         },
 
         receive: (channel, func) => {
-            const validChannels = ["change-list","play","removed"];
+            const validChannels = ["change-list","play","removed", "reset"];
             if (validChannels.includes(channel)) {
                 // Deliberately strip event as it includes `sender`
                 ipcRenderer.on(channel, (event, ...args) => func(...args));

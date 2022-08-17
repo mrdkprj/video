@@ -10,6 +10,7 @@ const {
             // whitelist channels
             const validChannels = [
                 "content-set",
+                "hide-tooltip"
               ];
             if (validChannels.includes(channel)) {
                 ipcRenderer.send(channel, data);

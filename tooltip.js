@@ -1,6 +1,7 @@
 let tooltip;
 window.onload = function(){
     tooltip = document.getElementById("tooltip")
+    tooltip.addEventListener("mouseenter", e => window.api.send("hide-tooltip"))
 }
 
 window.api.receive("change-content", data => {

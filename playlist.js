@@ -26,7 +26,7 @@ window.addEventListener("load", e => {
 
     fileList.addEventListener("mouseleave", onMouseLeave)
 
-    document.getElementById("fileListContainer").addEventListener("mouseleave", onMouseLeave)
+    playlist.addEventListener("mouseleave", onMouseLeave)
 
 })
 
@@ -309,7 +309,7 @@ function changeCurrent(data){
     }
 }
 
-const addFiles = (data) => {
+function addFiles(data){
 
     if(data.clear){
         clearPlaylist();
@@ -317,6 +317,13 @@ const addFiles = (data) => {
 
     addPlaylist(data.files);
 
+}
+
+function reset(){
+    current = null;
+    selected = null;
+    mouseEnterDisabled = false;
+    selection.length = 0;
 }
 
 window.api.receive("change-list", data => {
@@ -329,4 +336,8 @@ window.api.receive("play", data => {
 
 window.api.receive("removed", data => {
     removeFromPlaylist(data)
+})
+
+window.api.receive("reset", data => {
+    reset();
 })
