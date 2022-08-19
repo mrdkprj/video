@@ -455,6 +455,7 @@ function dropFiles(data){
         const changeCurrent = orderedFiles.length <= 0;
 
         const newFiles = data.files.map(file => toFile(file)).filter(file => !fileMap[file.id]);
+
         newFiles.forEach(file => {
             orderedFiles.push(file)
             fileMap[file.id] = file

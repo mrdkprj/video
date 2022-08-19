@@ -240,20 +240,24 @@ body{
 .current-time,
 .duration{
     width: 45px;
-    /*font-size: 11px;*/
+    color: #817b7b;
+    pointer-events: none;
+}
+
+.loaded .current-time,
+.loaded .duration{
+    color: rgb(213, 127, 26);
 }
 
 .current-time{
     margin-right: 5px;
-    pointer-events: none;
-    color: rgb(213, 127, 26);
 }
 
 .duration{
     margin-left: 5px;
-    pointer-events: none;
-    color: #817b7b;
 }
+
+
 
 .slider{
     height:2px;

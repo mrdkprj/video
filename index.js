@@ -1,5 +1,6 @@
 let title;
 let resizeBtn;
+let viewport;
 let video;
 let source;
 let container;
@@ -61,6 +62,7 @@ const slideState = {
 window.addEventListener("load", e => {
     title = document.getElementById("title");
     resizeBtn = document.getElementById("resizeBtn")
+    viewport = document.getElementById("viewport");
     video = document.getElementById("video");
     source = document.getElementById("source")
     container = document.getElementById("container");
@@ -299,6 +301,7 @@ function initPlayer(){
     durationArea.textContent = formatTime(videoDuration);
     currentTimeArea.textContent = formatTime(0);
     current = null;
+    viewport.classList.remove("loaded");
     buttons.classList.remove("playing")
     video.load();
 }
@@ -324,6 +327,8 @@ function onVideoLoaded(){
 
     durationArea.textContent = formatTime(videoDuration);
     currentTimeArea.textContent = formatTime(video.currentTime);
+
+    viewport.classList.add("loaded");
 
     video.autoplay = false;
 }
@@ -387,7 +392,7 @@ function changeCurrentTime(time){
         return changeIndex(FORWARD)
     }
 
-    if(video.duration > nextTime){
+    if(nextTime < 0){
         return changeIndex(BACKWARD)
     }
 
