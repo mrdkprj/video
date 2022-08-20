@@ -199,7 +199,7 @@ window.addEventListener("keydown", e => {
 
     if(e.ctrlKey && e.key === "r") e.preventDefault();
 
-    if(e.ctrlKey && e.shiftKey && e.key === "r") window.api.send("reload");
+    if(e.key === "F5") window.api.send("reload");
 
     if(e.key === "ArrowRight") playFoward({button: 0});
 

@@ -658,6 +658,7 @@ ipcMain.on("hide-tooltip", (e, data) => {
 })
 
 ipcMain.on("reload", (e,data) => {
+    tooltip.hide();
     playlist.reload();
     mainWindow.reload();
 })
