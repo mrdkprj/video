@@ -201,9 +201,26 @@ window.addEventListener("keydown", e => {
 
     if(e.key === "F5") window.api.send("reload");
 
-    if(e.key === "ArrowRight") playFoward({button: 0});
+    if(e.key === "ArrowRight"){
 
-    if(e.key === "ArrowLeft") playBackward({button: 0});
+        if(e.shiftKey){
+            changeCurrentTime(1)
+        }else{
+            playFoward({button: 0});
+        }
+    }
+
+    if(e.key === "ArrowLeft"){
+        if(e.shiftKey){
+            changeCurrentTime(-1)
+        }else{
+            playBackward({button: 0});
+        }
+    }
+
+    if(e.key === "p"){
+        saveImage();
+    }
 })
 
 window.addEventListener("resize", e => {
@@ -432,6 +449,20 @@ function stop(){
     window.api.send("paused")
     buttons.classList.remove("playing")
     video.load();
+}
+
+function saveImage(){
+    const canvas = document.createElement('canvas');
+    const width = parseInt(video.style.width.replace("px"));
+    const height = parseInt(video.style.height.replace("px"));
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, width, height);
+    const image = canvas.toDataURL('image/jpeg').replace(/^data:image\/jpeg;base64,/, "");
+
+    window.api.send("save-image", {data:image, timestamp:video.currentTime})
 }
 
 function changeMaximizeIcon(){

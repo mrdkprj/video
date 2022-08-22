@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld(
                 "played",
                 "paused",
                 "reload",
+                "save-image",
             ];
           if (validChannels.includes(channel)) {
               ipcRenderer.send(channel, data);

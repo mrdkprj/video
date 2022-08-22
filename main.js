@@ -1,4 +1,4 @@
-const {app, BrowserWindow, ipcMain, Menu, clipboard } = require("electron");
+const {app, BrowserWindow, ipcMain, Menu, clipboard, dialog } = require("electron");
 const path = require("path");
 const trash = require("trash");
 const fs = require("fs").promises;
@@ -655,6 +655,20 @@ ipcMain.on("content-set", (e, data) => {
 
 ipcMain.on("hide-tooltip", (e, data) => {
     tooltip.hide();
+})
+
+ipcMain.on("save-image", async (e, data) => {
+
+    const saveSath = dialog.showSaveDialogSync(mainWindow, {
+        defaultPath: `${getCurrentFile().name}-${data.timestamp}.jpeg`,
+        filters: [
+            { name: 'Image', extensions: ['jpeg', 'jpg'] },
+        ],
+    })
+
+    if(!saveSath) return;
+
+    await fs.writeFile(saveSath, data.data, "base64")
 })
 
 ipcMain.on("reload", (e,data) => {

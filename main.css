@@ -395,3 +395,7 @@ body{
     height: 29px;
     transform: rotate(45deg);
 }
+
+.canvas{
+    display: none;
+}
