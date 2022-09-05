@@ -337,6 +337,7 @@ function loadVideo(autoplay){
 
 function onVideoLoaded(){
 
+    document.title = `VidPlayer - ${current.name}`
     title.textContent = current.name
     changeVideoSize();
 

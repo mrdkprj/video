@@ -341,8 +341,9 @@ function reset(){
 function toFile(fullpath){
 
     //const statInfo = fs.statSync(fullpath);
+    const encodedPath = path.join(path.dirname(fullpath), encodeURIComponent(path.basename(fullpath)))
 
-    return {id:encodeURIComponent(fullpath), path:fullpath, name:decodeURIComponent(encodeURIComponent(path.basename(fullpath)))}
+    return {id:encodeURIComponent(fullpath), path:encodedPath, name:decodeURIComponent(encodeURIComponent(path.basename(fullpath)))}
 }
 
 function changeSizeMode(){
