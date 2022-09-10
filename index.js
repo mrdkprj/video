@@ -329,7 +329,7 @@ function releaseFile(){
 }
 
 function loadVideo(autoplay){
-    source.src = current.path
+    source.src = current.src
     const doAuthplay = autoplay ? autoplay : buttons.classList.contains("playing")
     video.autoplay = doAuthplay;
     video.load();
