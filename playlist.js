@@ -1,6 +1,8 @@
 let playlist;
 let playlistTitleBar;
 let fileList;
+let fileListContainer;
+let fileListContainerRect;
 
 let current;
 let selected;
@@ -20,6 +22,8 @@ window.addEventListener("load", e => {
     playlist = document.getElementById("playlist")
     playlistTitleBar = document.getElementById("playlistTitleBar")
     fileList = document.getElementById("fileList")
+    fileListContainer = document.getElementById("fileListContainer")
+    fileListContainerRect = fileListContainer.getBoundingClientRect();
     document.getElementById("closePlaylistBtn").addEventListener("click", e => {
         window.api.send("close-playlist")
     })
@@ -27,6 +31,8 @@ window.addEventListener("load", e => {
     fileList.addEventListener("mouseleave", onMouseLeave)
 
     playlist.addEventListener("mouseleave", onMouseLeave)
+
+    window.addEventListener("resize", e => fileListContainerRect = fileListContainer.getBoundingClientRect())
 
 })
 
@@ -306,6 +312,15 @@ function changeCurrent(data){
     if(data.current){
         current = document.getElementById(data.current.id);
         current.classList.add("current");
+
+        const rect = current.getBoundingClientRect();
+        if(rect.top < 0){
+            current.scrollIntoView(true)
+        }
+
+        if(rect.bottom > fileListContainerRect.height){
+            current.scrollIntoView(false)
+        }
     }
 }
 
