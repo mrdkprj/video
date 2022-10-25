@@ -2,9 +2,9 @@
   "name": "vidplayer",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "./src/main.js",
   "scripts": {
-    "start": ".\\node_modules\\.bin\\electron main.js",
+    "start": ".\\node_modules\\.bin\\electron ./src/main.js",
     "build": "node build"
   },
   "keywords": [],

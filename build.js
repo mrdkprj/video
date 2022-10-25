@@ -12,16 +12,16 @@ builder.build({
                     //"ia32",
                 ]
             },
-            "icon": "resources/icon.ico",
+            "icon": "src/resources/icon.ico",
             "fileAssociations": [
                 {
                   "ext": "mp4",
-                  "icon": "resources/icon.ico",
+                  "icon": "src/resources/icon.ico",
                   "description": "Video File",
                 },
                 {
                     "ext": "mp3",
-                    "icon": "resources/icon_audio.ico",
+                    "icon": "src/resources/icon_audio.ico",
                     "description": "Audio File"
                 }
             ],

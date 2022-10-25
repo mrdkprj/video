@@ -137,7 +137,7 @@ app.on("second-instance", (event, argv, workingDirectory, additionalData) => {
 
 app.on("ready", async () => {
 
-    directLaunch = process.argv.length > 1 && process.argv[1] != "main.js";
+    directLaunch = process.argv.length > 1 && process.argv[1] != "./src/main.js";
 
     currentDirectory = path.join(app.getPath("userData"), "temp");
 
