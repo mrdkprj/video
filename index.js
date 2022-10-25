@@ -314,6 +314,7 @@ function formatTime(secondValue){
 function initPlayer(){
     source.src = "";
     title.textContent = "";
+    document.title = "VidPlayer";
     videoDuration = 0;
     durationArea.textContent = formatTime(videoDuration);
     currentTimeArea.textContent = formatTime(0);

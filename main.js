@@ -1,6 +1,5 @@
-const {app, BrowserWindow, ipcMain, Menu, clipboard, dialog } = require("electron");
+const {app, BrowserWindow, ipcMain, Menu, clipboard, dialog, shell } = require("electron");
 const path = require("path");
-const trash = require("trash");
 const fs = require("fs").promises;
 const proc = require("child_process");
 
@@ -538,7 +537,7 @@ async function deleteFile(){
 
         const targetFiles = targets.map(index => orderedFiles[index].path);
 
-        await trash(targetFiles);
+        await Promise.all(targetFiles.map(async item => await shell.trashItem(item)))
 
         remove();
 
