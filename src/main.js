@@ -1,8 +1,9 @@
-const {app, BrowserWindow, ipcMain, Menu, clipboard, dialog, shell } = require("electron");
+const {app, BrowserWindow, ipcMain, Menu, clipboard, dialog, shell, screen } = require("electron");
 const path = require("path");
 const fs = require("fs").promises;
 const proc = require("child_process");
 
+let primaryDisplay;
 let mainWindow;
 let playlist;
 let tooltip;
@@ -142,6 +143,8 @@ app.on("ready", async () => {
     currentDirectory = path.join(app.getPath("userData"), "temp");
 
     await init();
+
+    primaryDisplay = screen.getPrimaryDisplay();
 
     mainWindow = new BrowserWindow({
         width: config.bounds.width,
@@ -637,11 +640,11 @@ ipcMain.on("show-tooltip", (e ,data) => {
 
 ipcMain.on("content-set", (e, data) => {
 
-    const bounds = mainWindow.getBounds();
+    const { width } = primaryDisplay.workAreaSize
 
     let x = data.x - 50
-    if(x + (data.width + 20) >= bounds.width){
-        x = bounds.width - (data.width + 20)
+    if(x + (data.width + 20) >= width){
+        x = width - (data.width + 20)
     }
 
     const y = data.y + 20;
