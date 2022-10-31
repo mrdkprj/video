@@ -115,6 +115,16 @@ if(!locked) {
     return;
 }
 
+function onSecondInstanceReady(){
+    tooltip.hide();
+    reset();
+    dropFiles({playlist:false, files:[additionalFiles.shift()]})
+    if(mainWindow.isMaximized){
+        mainWindow.maximize();
+    }
+    mainWindow.show();
+}
+
 app.on("second-instance", (event, argv, workingDirectory, additionalData) => {
 
     if(!isReady){
@@ -126,8 +136,7 @@ app.on("second-instance", (event, argv, workingDirectory, additionalData) => {
 
         additionalFiles.push(...extractFiles(additionalData))
         setTimeout(() => {
-            reset();
-            dropFiles({playlist:false, files:[additionalFiles.shift()]})
+            onSecondInstanceReady();
         }, 1000);
 
     }else{

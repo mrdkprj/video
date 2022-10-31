@@ -343,7 +343,8 @@ body{
     flex: 1 1 auto;
 }
 
-.time::before{
+.time::before,
+.volume::before{
     content: "";
     position: absolute;
     top: -6px;
@@ -353,7 +354,8 @@ body{
     width: 100%;
 }
 
-.time:hover:before{
+.time:hover:before,
+.volume:hover:before{
     content: "";
     position: absolute;
     top: -4px;
