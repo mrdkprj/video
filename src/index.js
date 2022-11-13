@@ -41,6 +41,7 @@ let containerRect;
 
 let isMaximized = false;
 let fitToWindow = true;
+let isMute = false;
 let videoDuration = 0;
 let videoVolume = 1;
 let ampLevel = 0.07;
@@ -142,6 +143,10 @@ document.addEventListener("click", (e) =>{
         stop();
     }
 
+    if(e.target.classList.contains("sound")){
+        toggleMute();
+    }
+
 })
 
 document.addEventListener("dblclick", e => {
@@ -204,7 +209,7 @@ window.addEventListener("keydown", e => {
     if(e.key === "ArrowRight"){
 
         if(e.shiftKey){
-            changeCurrentTime(1)
+            changeCurrentTime(0.5)
         }else{
             playFoward({button: 0});
         }
@@ -212,7 +217,7 @@ window.addEventListener("keydown", e => {
 
     if(e.key === "ArrowLeft"){
         if(e.shiftKey){
-            changeCurrentTime(-1)
+            changeCurrentTime(-0.5)
         }else{
             playBackward({button: 0});
         }
@@ -220,6 +225,10 @@ window.addEventListener("keydown", e => {
 
     if(e.key === "p"){
         saveImage();
+    }
+
+    if(e.ctrlKey && e.key === "m"){
+        toggleMute();
     }
 })
 
@@ -333,6 +342,7 @@ function loadVideo(autoplay){
     source.src = current.src
     const doAuthplay = autoplay ? autoplay : buttons.classList.contains("playing")
     video.autoplay = doAuthplay;
+    video.muted = isMute;
     video.load();
 }
 
@@ -465,6 +475,16 @@ function saveImage(){
     const image = canvas.toDataURL('image/jpeg').replace(/^data:image\/jpeg;base64,/, "");
 
     window.api.send("save-image", {data:image, timestamp:video.currentTime})
+}
+
+function toggleMute(){
+    isMute = !isMute;
+    video.muted = isMute;
+    if(isMute){
+        buttons.classList.add("mute")
+    }else{
+        buttons.classList.remove("mute")
+    }
 }
 
 function changeMaximizeIcon(){

@@ -257,8 +257,6 @@ body{
     margin-left: 5px;
 }
 
-
-
 .slider{
     height:2px;
     background-color: rgba(255,255,255,0.15);
@@ -400,4 +398,23 @@ body{
 
 .canvas{
     display: none;
+}
+
+.btn-separator{
+    flex: 1 1 auto;
+    height: 100%;
+}
+
+.mute .sound:hover::after{
+    background: rgb(213, 127, 26);
+}
+
+.mute .sound::after{
+    content: "";
+    position: absolute;
+    transform: rotate(45deg);
+    width: 20px;
+    height: 1px;
+    z-index: 9999;
+    background: #fff;
 }
