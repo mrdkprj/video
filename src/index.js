@@ -230,6 +230,10 @@ window.addEventListener("keydown", e => {
     if(e.ctrlKey && e.key === "m"){
         toggleMute();
     }
+
+    if(e.key === "Enter"){
+        togglePlay();
+    }
 })
 
 window.addEventListener("resize", e => {

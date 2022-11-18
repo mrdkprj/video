@@ -7,7 +7,7 @@ const {
   contextBridge.exposeInMainWorld(
     "api", {
         send: (channel, data) => {
-            // whitelist channels
+
             const validChannels = [
                 "close-playlist",
                 "drop",
@@ -20,6 +20,7 @@ const {
                 "show-tooltip",
                 "hide-tooltip",
                 "reload",
+                "playlist-toggle-play",
               ];
             if (validChannels.includes(channel)) {
                 ipcRenderer.send(channel, data);
@@ -29,7 +30,6 @@ const {
         receive: (channel, func) => {
             const validChannels = ["change-list","play","removed", "reset"];
             if (validChannels.includes(channel)) {
-                // Deliberately strip event as it includes `sender`
                 ipcRenderer.on(channel, (event, ...args) => func(...args));
             }
         }

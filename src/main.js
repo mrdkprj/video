@@ -683,6 +683,10 @@ ipcMain.on("save-image", async (e, data) => {
     await fs.writeFile(saveSath, data.data, "base64")
 })
 
+ipcMain.on("playlist-toggle-play", () => {
+    togglePlay();
+})
+
 ipcMain.on("reload", (e,data) => {
     tooltip.hide();
     playlist.reload();
