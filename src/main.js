@@ -10,6 +10,7 @@ let tooltip;
 let directLaunch;
 
 let isReady = false;
+let doShuffle = false;
 let currentIndex = 0;
 let targets;
 let fileMap = {}
@@ -414,9 +415,19 @@ async function closeWindow(args){
     mainWindow.close();
 }
 
+function getRandomIndex(){
+    const index = Math.floor(Math.random() * orderedFiles.length)
+
+    if(index === currentIndex){
+        return getRandomIndex();
+    }else{
+        return index;
+    }
+}
+
 function changeIndex(index){
 
-    let nextIndex = currentIndex + index;
+    let nextIndex = doShuffle ? getRandomIndex() : currentIndex + index;
 
     if(nextIndex >= orderedFiles.length){
         nextIndex = 0;
@@ -685,6 +696,10 @@ ipcMain.on("save-image", async (e, data) => {
 
 ipcMain.on("playlist-toggle-play", () => {
     togglePlay();
+})
+
+ipcMain.on("toggle-shuffle", () => {
+    doShuffle = !doShuffle
 })
 
 ipcMain.on("reload", (e,data) => {

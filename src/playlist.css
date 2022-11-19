@@ -100,6 +100,43 @@
     outline: 1px dotted rgb(255 255 255 / 0.5);
 }
 
+.playlist-footer{
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 30px;
+    width: 100%;
+    z-index: 900;
+    border-top: 1px solid #3c3939;
+    background-color: #272626;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.btn{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.btn svg{
+    width: 17px;
+    height: 17px;
+    padding: 0 7px;
+    pointer-events: none;
+    color: #e1dede;
+}
+
+.btn:hover svg{
+    color: rgb(213, 127, 26);
+}
+
+.shuffle .shuffle-btn svg{
+    color: rgb(213, 127, 26);
+}
+
 .scrollable {
     overflow: scroll;
     height: 1000px; /* define your custom height */

@@ -21,6 +21,9 @@ const {
                 "hide-tooltip",
                 "reload",
                 "playlist-toggle-play",
+                "sort-up",
+                "sort-down",
+                "toggle-shuffle",
               ];
             if (validChannels.includes(channel)) {
                 ipcRenderer.send(channel, data);

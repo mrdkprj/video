@@ -1,5 +1,6 @@
 let playlist;
 let playlistTitleBar;
+let playlistFooter;
 let fileList;
 let fileListContainer;
 let fileListContainerRect;
@@ -21,6 +22,7 @@ window.addEventListener("load", e => {
 
     playlist = document.getElementById("playlist")
     playlistTitleBar = document.getElementById("playlistTitleBar")
+    playlistFooter = document.getElementById("playlistFooter")
     fileList = document.getElementById("fileList")
     fileListContainer = document.getElementById("fileListContainer")
     fileListContainerRect = fileListContainer.getBoundingClientRect();
@@ -62,6 +64,14 @@ document.addEventListener("keydown", e =>{
 
     if(e.ctrlKey && e.key === "a"){
         selectAll();
+    }
+
+})
+
+document.addEventListener("click", e => {
+
+    if(e.target.id === "shuffleBtn"){
+        toggleShuffle();
     }
 
 })
@@ -341,6 +351,17 @@ function reset(){
     selected = null;
     mouseEnterDisabled = false;
     selection.length = 0;
+}
+
+function toggleShuffle(){
+
+    if(playlistFooter.classList.contains("shuffle")){
+        playlistFooter.classList.remove("shuffle")
+    }else{
+        playlistFooter.classList.add("shuffle")
+    }
+
+    window.api.send("toggle-shuffle")
 }
 
 window.api.receive("change-list", data => {
