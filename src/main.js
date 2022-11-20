@@ -1,6 +1,6 @@
 const {app, BrowserWindow, ipcMain, Menu, clipboard, dialog, shell, screen } = require("electron");
 const path = require("path");
-const fs = require("fs").promises;
+const fs = require("fs");
 const proc = require("child_process");
 
 let primaryDisplay;
@@ -83,6 +83,42 @@ const FIT_TO_WINDOW_ITEM_INDEX = 1;
 
 const mainContext = Menu.buildFromTemplate(mainContextTemplate)
 
+const SORT_ORDER = {
+    NAME_ASC:"NAME_ASC",
+    NAME_DESC:"NAME_DESC",
+    DATE_ASC:"DATE_ASC",
+    DATE_DESC:"DATE_DESC",
+}
+
+const playlistSortMenuTemplate = [
+    {
+        id: SORT_ORDER.NAME_ASC,
+        label: "Name asc",
+        type: "checkbox",
+        click: (menuItem) => sortPlayList(menuItem, SORT_ORDER.NAME_ASC)
+    },
+    {
+        id: SORT_ORDER.NAME_DESC,
+        label: "Name desc",
+        type: "checkbox",
+        click: (menuItem) => sortPlayList(menuItem, SORT_ORDER.NAME_DESC)
+    },
+    {
+        id: SORT_ORDER.DATE_ASC,
+        label: "Date asc",
+        type: "checkbox",
+        click: (menuItem) => sortPlayList(menuItem, SORT_ORDER.DATE_ASC)
+    },
+    {
+        id: SORT_ORDER.DATE_DESC,
+        label: "Date desc",
+        type: "checkbox",
+        click: (menuItem) => sortPlayList(menuItem, SORT_ORDER.DATE_DESC)
+    },
+]
+
+const playlistSortMenu = Menu.buildFromTemplate(playlistSortMenuTemplate)
+
 const playlistContextTemplate = [
     {
         label: "Remove",
@@ -105,6 +141,11 @@ const playlistContextTemplate = [
         label: "Reveal in File Explorer",
         click: () => reveal()
     },
+    { type: "separator" },
+    {
+        label: "Sort by",
+        submenu: playlistSortMenu
+    }
 ]
 
 const playlistContext = Menu.buildFromTemplate(playlistContextTemplate)
@@ -241,14 +282,14 @@ app.on("ready", async () => {
 
 async function init(){
 
-    await exists(currentDirectory, true);
+    exists(currentDirectory, true);
 
     const configFilePath = path.join(currentDirectory,"vidplayer.config.json");
 
-    const fileExists = await exists(configFilePath, false);
+    const fileExists = exists(configFilePath, false);
 
     if(fileExists){
-        const rawData = await fs.readFile(configFilePath, {encoding:"utf8"});
+        const rawData = fs.readFileSync(configFilePath, {encoding:"utf8"});
         config = JSON.parse(rawData);
         Object.keys(defaultConfig).forEach(key => {
             if(!config.hasOwnProperty(key)){
@@ -261,17 +302,17 @@ async function init(){
     }
 }
 
-async function exists(target, createIfNotFound = false){
+function exists(target, createIfNotFound = false){
 
     try{
-        await fs.stat(target);
+        fs.statSync(target);
 
         return true;
 
     }catch(ex){
 
         if(createIfNotFound){
-            await fs.mkdir(target);
+            fs.mkdirSync(target);
         }
 
         return false;
@@ -352,10 +393,17 @@ function reset(){
 
 function toFile(fullpath){
 
-    //const statInfo = fs.statSync(fullpath);
+    const statInfo = fs.statSync(fullpath);
+
     const encodedPath = path.join(path.dirname(fullpath), encodeURIComponent(path.basename(fullpath)))
 
-    return {id:encodeURIComponent(fullpath), path:fullpath, src:encodedPath, name:decodeURIComponent(encodeURIComponent(path.basename(fullpath)))}
+    return {
+        id:encodeURIComponent(fullpath),
+        path:fullpath,
+        src:encodedPath,
+        name:decodeURIComponent(encodeURIComponent(path.basename(fullpath))),
+        date:statInfo.mtimeMs
+    }
 }
 
 function changeSizeMode(){
@@ -364,9 +412,9 @@ function changeSizeMode(){
     mainWindow.webContents.send("change-size-mode", {fitToWindow:config.fitToWindow})
 }
 
-async function writeConfig(){
+function writeConfig(){
     try{
-        await fs.writeFile(path.join(currentDirectory,"vidplayer.config.json"), JSON.stringify(config));
+        fs.writeFileSync(path.join(currentDirectory,"vidplayer.config.json"), JSON.stringify(config));
     }catch(ex){
         sendError(ex);
     }
@@ -402,7 +450,7 @@ async function save(props){
     config.ampLevel = props.ampLevel;
 
     try{
-        await writeConfig();
+        writeConfig();
     }catch(ex){
         return sendError(ex);
     }
@@ -591,62 +639,71 @@ function copyFileNameToClipboard(){
     }
 }
 
+function sortPlayList(menuItem, sortOrder){
+
+    playlistSortMenu.items.forEach(item => {
+        if(item.id === menuItem.id){
+            item.checked = true;
+        }else{
+            item.checked = false;
+        }
+    })
+
+    const currentId = orderedFiles[currentIndex].id;
+
+    switch(sortOrder){
+        case SORT_ORDER.NAME_ASC:
+            orderedFiles.sort((a,b) => a.name.localeCompare(b.name))
+            break;
+        case SORT_ORDER.NAME_DESC:
+            orderedFiles.reverse((a,b) => b.name.localeCompare(a.name))
+            break;
+        case SORT_ORDER.DATE_ASC:
+            orderedFiles.sort((a,b) => a.date - b.date)
+            break;
+        case SORT_ORDER.DATE_DESC:
+            orderedFiles.sort((a,b) => b.date - a.date)
+            break;
+    }
+
+    const sortedIds = orderedFiles.map(file => file.id);
+    currentIndex = sortedIds.findIndex(id => id === currentId);
+
+    playlist.webContents.send("sort-playlist", {ids:sortedIds})
+}
+
 function sendError(ex){
     mainWindow.webContents.send("error", {message:ex.message})
 }
 
-ipcMain.on("minimize", (e, data) => {
-    mainWindow.minimize();
-});
+ipcMain.on("minimize", () => mainWindow.minimize())
 
-ipcMain.on("toggle-maximize", (e, data) => {
-    toggleMaximize();
-});
+ipcMain.on("toggle-maximize", () => toggleMaximize())
 
-ipcMain.on("played", (e, data) => {
-    toggleThumbButton(true);
-})
+ipcMain.on("played", () => toggleThumbButton(true))
 
-ipcMain.on("paused", (e, data) => {
-    toggleThumbButton(false);
-})
+ipcMain.on("paused", () => toggleThumbButton(false))
 
-ipcMain.on("close", (e, data) => {
-    closeWindow(data);
-});
+ipcMain.on("close", (e, data) => closeWindow(data))
 
-ipcMain.on("select-file", (e, data) => {
-    selectFile(data.index)
-})
+ipcMain.on("select-file", (e, data) => selectFile(data.index))
 
-ipcMain.on("change-index", (e, data) => {
-    changeIndex(data.index)
-})
+ipcMain.on("change-index", (e, data) => changeIndex(data.index))
 
-ipcMain.on("drop", (e, data) => {
-    dropFiles(data);
-})
+ipcMain.on("drop", (e, data) => dropFiles(data))
 
-ipcMain.on("progress", (e, data) =>{
-    mainWindow.setProgressBar(data.progress);
-})
+ipcMain.on("progress", (e, data) => mainWindow.setProgressBar(data.progress))
 
-ipcMain.on("change-order", (e, data) => {
-    changeOrder(data);
-})
+ipcMain.on("change-order", (e, data) => changeOrder(data))
 
 ipcMain.on("remove", (e, data) => {
     targets = data.targets;
     remove();
 })
 
-ipcMain.on("main-context", (e, data) => {
-    mainContext.popup(mainWindow)
-})
+ipcMain.on("main-context", () => mainContext.popup(mainWindow))
 
-ipcMain.on("close-playlist", (e,data) => {
-    playlist.hide();
-})
+ipcMain.on("close-playlist", () => playlist.hide())
 
 ipcMain.on("playlist-context", (e, data) => {
     tooltip.hide();
@@ -654,9 +711,7 @@ ipcMain.on("playlist-context", (e, data) => {
     playlistContext.popup(playlist)
 })
 
-ipcMain.on("show-tooltip", (e ,data) => {
-    tooltip.webContents.send("change-content", data)
-})
+ipcMain.on("show-tooltip", (e ,data) => tooltip.webContents.send("change-content", data))
 
 ipcMain.on("content-set", (e, data) => {
 
@@ -676,33 +731,27 @@ ipcMain.on("content-set", (e, data) => {
     tooltip.moveTop();
 })
 
-ipcMain.on("hide-tooltip", (e, data) => {
-    tooltip.hide();
-})
+ipcMain.on("hide-tooltip", () => tooltip.hide())
 
-ipcMain.on("save-image", async (e, data) => {
+ipcMain.on("save-image", (e, data) => {
 
     const saveSath = dialog.showSaveDialogSync(mainWindow, {
         defaultPath: `${getCurrentFile().name}-${data.timestamp}.jpeg`,
         filters: [
-            { name: 'Image', extensions: ['jpeg', 'jpg'] },
+            { name: "Image", extensions: ["jpeg", "jpg"] },
         ],
     })
 
     if(!saveSath) return;
 
-    await fs.writeFile(saveSath, data.data, "base64")
+    fs.writeFileSync(saveSath, data.data, "base64")
 })
 
-ipcMain.on("playlist-toggle-play", () => {
-    togglePlay();
-})
+ipcMain.on("playlist-toggle-play", () => togglePlay())
 
-ipcMain.on("toggle-shuffle", () => {
-    doShuffle = !doShuffle
-})
+ipcMain.on("toggle-shuffle", () => doShuffle = !doShuffle)
 
-ipcMain.on("reload", (e,data) => {
+ipcMain.on("reload", () => {
     tooltip.hide();
     playlist.reload();
     mainWindow.reload();

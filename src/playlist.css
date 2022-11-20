@@ -110,7 +110,7 @@
     border-top: 1px solid #3c3939;
     background-color: #272626;
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     align-items: center;
 }
 

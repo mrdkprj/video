@@ -38,7 +38,7 @@ window.addEventListener("load", e => {
 
 })
 
-window.addEventListener('contextmenu', e => {
+window.addEventListener("contextmenu", e => {
     e.preventDefault()
     window.api.send("playlist-context", {targets:selection})
 })
@@ -364,18 +364,23 @@ function toggleShuffle(){
     window.api.send("toggle-shuffle")
 }
 
-window.api.receive("change-list", data => {
-    addFiles(data);
-})
+function sortList(ids){
 
-window.api.receive("play", data => {
-    changeCurrent(data)
-})
+    const lists = Array.from(fileList.childNodes)
 
-window.api.receive("removed", data => {
-    removeFromPlaylist(data)
-})
+    lists.sort((a,b) => ids.indexOf(a.id) - ids.indexOf(b.id))
 
-window.api.receive("reset", data => {
-    reset();
-})
+    fileList.innerHTML = "";
+    lists.forEach(li => fileList.appendChild(li))
+
+}
+
+window.api.receive("change-list", data => addFiles(data))
+
+window.api.receive("play", data => changeCurrent(data))
+
+window.api.receive("removed", data => removeFromPlaylist(data))
+
+window.api.receive("sort-playlist", data => sortList(data.ids))
+
+window.api.receive("reset", data => reset())

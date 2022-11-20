@@ -468,15 +468,15 @@ function stop(){
 }
 
 function saveImage(){
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     const width = parseInt(video.style.width.replace("px"));
     const height = parseInt(video.style.height.replace("px"));
     canvas.width = width;
     canvas.height = height;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, width, height);
-    const image = canvas.toDataURL('image/jpeg').replace(/^data:image\/jpeg;base64,/, "");
+    const image = canvas.toDataURL("image/jpeg").replace(/^data:image\/jpeg;base64,/, "");
 
     window.api.send("save-image", {data:image, timestamp:video.currentTime})
 }
@@ -540,34 +540,21 @@ function load(data){
     }
 }
 
-window.api.receive("config", data => {
-    prepare(data.config);
-})
-window.api.receive("play", data => {
-    load(data);
-})
+window.api.receive("config", data => prepare(data.config))
 
-window.api.receive("toggle-play", data => {
-    togglePlay();
-})
+window.api.receive("play", data => load(data))
+
+window.api.receive("toggle-play", data => togglePlay())
 
 window.api.receive("change-size-mode", data => {
     fitToWindow = data.fitToWindow;
     changeVideoSize();
 })
 
-window.api.receive("reset", data => {
-    initPlayer();
-})
+window.api.receive("reset", data => initPlayer())
 
-window.api.receive("error", data => {
-    alert(data.message)
-})
+window.api.receive("error", data => alert(data.message))
 
-window.api.receive("release-file", data => {
-    releaseFile();
-})
+window.api.receive("release-file", data => releaseFile())
 
-window.api.receive("log", data => {
-    console.log(data)
-})
+window.api.receive("log", data => console.log(data))

@@ -21,8 +21,6 @@ const {
                 "hide-tooltip",
                 "reload",
                 "playlist-toggle-play",
-                "sort-up",
-                "sort-down",
                 "toggle-shuffle",
               ];
             if (validChannels.includes(channel)) {
@@ -31,7 +29,7 @@ const {
         },
 
         receive: (channel, func) => {
-            const validChannels = ["change-list","play","removed", "reset"];
+            const validChannels = ["change-list","play","removed", "reset", "sort-playlist"];
             if (validChannels.includes(channel)) {
                 ipcRenderer.on(channel, (event, ...args) => func(...args));
             }
