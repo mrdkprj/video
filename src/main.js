@@ -11,6 +11,7 @@ let directLaunch;
 
 let isReady = false;
 let doShuffle = false;
+let preventWindowSizeChanged = true;
 let currentIndex = 0;
 let targets;
 let fileMap = {}
@@ -226,9 +227,10 @@ app.on("ready", async () => {
 
     })
 
-    mainWindow.on("closed", function() {
-        mainWindow = null;
-    });
+    mainWindow.on("closed", () => mainWindow = null);
+
+    mainWindow.on("maximize", onWindowSizeChanged);
+    mainWindow.on("unmaximize", onWindowSizeChanged);
 
     mainWindow.loadURL("file://" + __dirname + "/index.html");
 
@@ -320,6 +322,8 @@ function exists(target, createIfNotFound = false){
 }
 
 async function onReady(){
+
+    preventWindowSizeChanged = false;
 
     mainWindow.show();
     playlist.show();
@@ -420,7 +424,18 @@ function writeConfig(){
     }
 }
 
+function onWindowSizeChanged(){
+
+    if(preventWindowSizeChanged) return;
+
+    config.bounds.isMaximized = mainWindow.isMaximized()
+    mainWindow.webContents.send("maximize-changed", {isMaximized: config.bounds.isMaximized});
+
+}
+
 function toggleMaximize(){
+
+    preventWindowSizeChanged = true;
 
     if(mainWindow.isMaximized()){
         mainWindow.unmaximize();
@@ -430,7 +445,7 @@ function toggleMaximize(){
         config.bounds.isMaximized = true;
     }
 
-    mainWindow.webContents.send("afterToggleMaximize", {isMaximized: config.bounds.isMaximized});
+    preventWindowSizeChanged = false;
 }
 
 async function save(props){
@@ -633,10 +648,15 @@ function openPlaylist(){
 }
 
 function copyFileNameToClipboard(){
-    const current = getCurrentFile();
-    if(current){
-        clipboard.writeText(current.name);
-    }
+
+    if(targets.length <= 0 || targets.length > 1) return;
+
+    const index = targets[0];
+
+    if(!orderedFiles[index]) return;
+
+    clipboard.writeText(orderedFiles[index].name);
+
 }
 
 function sortPlayList(menuItem, sortOrder){

@@ -511,6 +511,11 @@ function toggleMaximize(){
     changeMaximizeIcon();
 }
 
+function onWindowSizeChanged(_isMaximized){
+    isMaximized = _isMaximized;
+    changeMaximizeIcon();
+}
+
 function close(){
     const config = {volume:videoVolume, ampLevel}
     window.api.send("close", config);
@@ -556,5 +561,7 @@ window.api.receive("reset", data => initPlayer())
 window.api.receive("error", data => alert(data.message))
 
 window.api.receive("release-file", data => releaseFile())
+
+window.api.receive("maximize-changed", data => onWindowSizeChanged(data.isMaximized))
 
 window.api.receive("log", data => console.log(data))
