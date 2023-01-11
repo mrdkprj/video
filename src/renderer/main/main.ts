@@ -66,6 +66,7 @@ const SLIDE_MARGIN = 8;
 
 let containerRect:DOMRect;
 let isMaximized:boolean;
+let isFullScreen = false;
 let currentFile:Mp.MediaFile;
 
 window.addEventListener("load", () => {
@@ -227,6 +228,10 @@ window.addEventListener("keydown", e => {
         }
     }
 
+    if(e.key === "F1" || e.key === "Escape"){
+        toggleFullScreen();
+    }
+
     if(e.key === "p"){
         saveImage();
     }
@@ -332,7 +337,7 @@ function formatTime(secondValue:number){
 function initPlayer(){
     Dom.source.src = "";
     Dom.title.textContent = "";
-    document.title = "VidPlayer";
+    document.title = "MediaPlayer";
     mediaState.videoDuration = 0;
     Dom.durationArea.textContent = formatTime(mediaState.videoDuration);
     Dom.currentTimeArea.textContent = formatTime(0);
@@ -342,9 +347,12 @@ function initPlayer(){
     Dom.video.load();
 }
 
-function releaseFile(){
-    Dom.source.src = "";
-    Dom.video.load();
+function releaseFile(data:Mp.BeforeDeleteArg){
+    if(data.releaseFile){
+        Dom.source.src = "";
+        Dom.video.load();
+    }
+    window.api.send("delete-file")
 }
 
 function loadVideo(autoplay:boolean){
@@ -357,7 +365,7 @@ function loadVideo(autoplay:boolean){
 
 function onVideoLoaded(){
 
-    document.title = `VidPlayer - ${currentFile.name}`
+    document.title = `MediaPlayer - ${currentFile.name}`
     Dom.title.textContent = currentFile.name
     changeVideoSize();
 
@@ -521,6 +529,19 @@ function onWindowSizeChanged(_isMaximized:boolean){
     changeMaximizeIcon();
 }
 
+function toggleFullScreen(){
+
+    if(isFullScreen){
+        Dom.viewport.classList.remove("full-screen")
+    }else{
+        Dom.viewport.classList.add("full-screen")
+    }
+
+    isFullScreen = !isFullScreen;
+
+    window.api.send("toggle-fullscreen")
+}
+
 function close(){
     const config = {volume:mediaState.videoVolume, ampLevel:mediaState.ampLevel}
     window.api.send<Mp.SaveRequest>("close", config);
@@ -565,7 +586,7 @@ window.api.receive("reset", () => initPlayer())
 
 window.api.receive<Mp.ErrorArgs>("error", (data:Mp.ErrorArgs) => alert(data.message))
 
-window.api.receive("release-file", () => releaseFile())
+window.api.receive<Mp.BeforeDeleteArg>("before-delete", (data:Mp.BeforeDeleteArg) => releaseFile(data))
 
 window.api.receive<Mp.Config>("after-toggle-maximize", (data:Mp.Config) => onWindowSizeChanged(data.isMaximized))
 

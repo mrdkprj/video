@@ -10,6 +10,7 @@ const DEFAULT_CONFIG :Mp.Config = {
     bounds: {width:1200, height:800, x:0, y:0},
     playlistBounds: {width:400, height:700, x:0, y:0},
     isMaximized: false,
+    playlistVisible:true,
 }
 
 export default class Config{

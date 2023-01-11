@@ -7,10 +7,10 @@ declare global {
     }
 
     type MainChannel = "minimize" | "toggle-maximize" | "close" | "drop" | "load-file" | "progress" | "open-main-context" |
-                        "played" | "paused" | "reload" | "save-image" | "close-playlist" |
+                        "played" | "paused" | "reload" | "save-image" | "close-playlist" | "delete-file" |
                         "remove" | "open-playlist-context" | "change-playlist-order" | "prepare-tooltip" | "show-tooltip" | "hide-tooltip" |
-                        "toggle-play" | "toggle-shuffle";
-    type MainRendererChannel = "config" | "play" | "toggle-play" | "change-display-mode" | "reset" | "error" | "release-file" | "log" | "after-toggle-maximize";
+                        "toggle-play" | "toggle-shuffle" | "toggle-fullscreen";
+    type MainRendererChannel = "config" | "play" | "toggle-play" | "change-display-mode" | "reset" | "error" | "before-delete" | "log" | "after-toggle-maximize";
     type PlaylistRendererChannel = "after-drop"| "play" | "after-remove-playlist" | "reset" | "after-sort";
     type TooltipRendererChannel = "prepare-tooltip"
 
@@ -49,6 +49,7 @@ declare global {
             bounds: Bounds;
             playlistBounds:Bounds;
             isMaximized:boolean;
+            playlistVisible:boolean;
         }
 
         type MediaFile = {
@@ -60,10 +61,10 @@ declare global {
         }
 
         type Slider = {
-            slider:HTMLElement | null;
-            track:HTMLElement | null;
-            thumb:HTMLElement | null;
-            rect:DOMRect | null;
+            slider:HTMLElement;
+            track:HTMLElement;
+            thumb:HTMLElement;
+            rect:DOMRect;
             trackValue:any;
             handler: (progress:number) => void;
         }
@@ -120,7 +121,7 @@ declare global {
         }
 
         type OpenPlaylistContextRequest = {
-            selectedFileRange:number[]
+            selectedFileRange:string[]
         }
 
         type ChangePlaylistOrderRequet = {
@@ -135,11 +136,15 @@ declare global {
         }
 
         type RemovePlaylistRequest = {
-            selectedFileRange:number[]
+            selectedFileRange:string[]
         }
 
         type RemovePlaylistResult = {
-            removedFileIndices:number[]
+            removedFileIds:string[]
+        }
+
+        type BeforeDeleteArg = {
+            releaseFile:boolean;
         }
 
         type SortResult = {

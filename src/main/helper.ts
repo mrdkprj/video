@@ -115,24 +115,26 @@ export default class Helper{
 
     createThumButtons(onclick: (button:ThumbButtonTypes) => void){
 
+        const staticDir = path.join(__dirname, "..", "static");
+
         const playThumbButton:Electron.ThumbarButton = {
             tooltip: "Play",
-            icon: nativeImage.createFromPath(path.join(__dirname, "img", "play.png")),
+            icon: nativeImage.createFromPath(path.join(staticDir, "img", "play.png")),
             click: () => onclick(ThumbButtonTypes.Play),
         }
         const pauseThumbButton:Electron.ThumbarButton = {
             tooltip: "Pause",
-            icon: nativeImage.createFromPath(path.join(__dirname, "img", "pause.png")),
+            icon: nativeImage.createFromPath(path.join(staticDir, "img", "pause.png")),
             click: () => onclick(ThumbButtonTypes.Pause),
         }
         const prevThumbButton:Electron.ThumbarButton = {
             tooltip: "Previous",
-            icon: nativeImage.createFromPath(path.join(__dirname, "img", "backward.png")),
+            icon: nativeImage.createFromPath(path.join(staticDir, "img", "backward.png")),
             click: () => onclick(ThumbButtonTypes.Previous)
         }
         const nextThumbButton:Electron.ThumbarButton = {
             tooltip: "Next",
-            icon: nativeImage.createFromPath(path.join(__dirname, "img", "forward.png")),
+            icon: nativeImage.createFromPath(path.join(staticDir, "img", "forward.png")),
             click: () => onclick(ThumbButtonTypes.Next)
         }
 

@@ -13,6 +13,7 @@ body{
     flex-direction: column;
     width: 100%;
     height: 100%;
+    background-color: #000;
 }
 
 .title-bar{
@@ -26,6 +27,10 @@ body{
     cursor: default;
     user-select: none;
     -webkit-app-region: drag;
+}
+
+.full-screen .title-bar{
+    display: none;
 }
 
 .title{
@@ -149,6 +154,23 @@ body{
     background-color: #202020;
 }
 
+.full-screen .footer-menu{
+    position: fixed;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    width: 100%;
+    border-top-color: transparent;
+    background-color: rgb(20 19 19 / 22%);
+    opacity: 0;
+    transition: opacity 0.5s;
+    padding: 20px 0px 10px 0px;
+}
+
+.full-screen .footer-menu:hover{
+    opacity: 1;
+}
+
 .footer{
     height:100%;
     width:100%;
@@ -157,6 +179,10 @@ body{
     flex-direction: column;
     position: relative;
     border-top: 1px solid #4848489e;
+}
+
+.full-screen .footer{
+    border-top-color: transparent;
 }
 
 .ctrl-area{
@@ -247,6 +273,11 @@ body{
 .loaded .current-time,
 .loaded .duration{
     color: rgb(213, 127, 26);
+}
+
+.loaded.full-screen .current-time,
+.loaded.full-screen .duration{
+    color: #fff
 }
 
 .current-time{
@@ -382,6 +413,10 @@ body{
     text-align: left;
     width: 45px;
     color: #817b7b;
+}
+
+.full-screen .track-value{
+    color: #e3e0e0;
 }
 
 .nex{

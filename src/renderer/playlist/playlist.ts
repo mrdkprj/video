@@ -6,7 +6,7 @@ const Dom = {
     fileListContainer:null as HTMLElement,
 }
 
-const selection:number[] = [];
+const selection:string[] = [];
 
 const dragState:Mp.PlaylistDragState = {
     dragging: false,
@@ -78,7 +78,19 @@ document.addEventListener("click", e => {
 
 })
 
-document.addEventListener("mousedown", e => {
+document.addEventListener("mousedown", onMouseDown);
+
+document.addEventListener("dragover", e => {
+    e.preventDefault();
+})
+
+document.addEventListener("mouseup", onMouseUp);
+
+document.addEventListener("drop", e => {
+    onFileDrop(e)
+})
+
+function onMouseDown(e:MouseEvent){
 
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
@@ -89,8 +101,7 @@ document.addEventListener("mousedown", e => {
         e.stopPropagation();
 
         if(e.button === 2 && selection.length > 1){
-            const clickedIndex = getChildIndex(e.target)
-            if(selection.includes(clickedIndex)){
+            if(selection.includes(e.target.id)){
                 return;
             }
         }
@@ -106,24 +117,15 @@ document.addEventListener("mousedown", e => {
     }else{
         clearSelection();
     }
+}
 
-})
-
-document.addEventListener("dragover", e => {
-    e.preventDefault();
-})
-
-document.addEventListener("mouseup", () => {
+function onMouseUp(_e:MouseEvent){
     if(dragState.dragging){
         const args = {start:dragState.startIndex, end:getChildIndex(dragState.startElement), currentIndex:getChildIndex(currentElement)}
         window.api.send<Mp.ChangePlaylistOrderRequet>("change-playlist-order", args);
     }
     dragState.dragging = false;
-})
-
-document.addEventListener("drop", e => {
-    onFileDrop(e)
-})
+}
 
 function onMouseEnter(e:MouseEvent){
 
@@ -153,7 +155,7 @@ function movePlaylistItem(e:MouseEvent){
 
     dragState.working = true;
 
-    const currentIndex = selection.indexOf(getChildIndex(dragState.startElement));
+    const currentIndex = selection.indexOf(dragState.startElement.id);
     const dropRect = e.target.getBoundingClientRect();
     const dropPosition = e.clientY - dropRect.top;
     if(dropPosition <= dropRect.height){
@@ -161,7 +163,7 @@ function movePlaylistItem(e:MouseEvent){
     }else{
         e.target.parentNode.insertBefore(e.target, dragState.startElement);
     }
-    selection[currentIndex] = getChildIndex(dragState.startElement);
+    selection[currentIndex] = dragState.startElement.id;
 
     dragState.working = false;
 
@@ -215,7 +217,7 @@ function addPlaylist(files:Mp.MediaFile[]){
 const removeFromPlaylist = (data:Mp.RemovePlaylistResult) => {
     preventMouseEnter();
     clearSelection();
-    const targetNodes = data.removedFileIndices.map(index => Dom.fileList.children[index])
+    const targetNodes = data.removedFileIds.map(id => document.getElementById(id))
     targetNodes.forEach(node => {
         if(currentElement && node.id === currentElement.id){
             currentElement = null;
@@ -232,7 +234,7 @@ function preventMouseEnter(){
 }
 
 function clearSelection(){
-    selection.forEach(i => Dom.fileList.children[i].classList.remove("selected"))
+    selection.forEach(id => document.getElementById(id).classList.remove("selected"))
     selection.length = 0;
 }
 
@@ -258,7 +260,7 @@ function select(e:MouseEvent){
 
     selectedElement = e.target as HTMLElement;
 
-    selection.push(getChildIndex(selectedElement))
+    selection.push(selectedElement.id)
 
     selectedElement.classList.add("selected")
 }
@@ -280,7 +282,7 @@ function selectByShift(e:MouseEvent){
     range.sort((a,b) => a - b);
 
     for(let i = range[0]; i <= range[1]; i++){
-        selection.push(i);
+        selection.push(Dom.fileList.children[i].id);
         Dom.fileList.children[i].classList.add("selected")
     }
 
@@ -293,22 +295,19 @@ function selectByCtrl(e:MouseEvent){
         return;
     }
 
-    const index = getChildIndex(e.target as HTMLElement)
+    const target = (e.target as HTMLElement);
+    selection.push(target.id)
 
-    selection.push(index)
-
-    selection.sort((a,b) => a - b);
-
-    (e.target as HTMLElement).classList.add("selected")
+    target.classList.add("selected")
 }
 
 function selectAll(){
 
     clearSelection();
 
-    Array.from(Dom.fileList.children).forEach((node,index) => {
+    Array.from(Dom.fileList.children).forEach((node,_index) => {
         node.classList.add("selected")
-        selection.push(index);
+        selection.push(node.id);
     })
 
 }

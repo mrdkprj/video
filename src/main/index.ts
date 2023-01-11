@@ -10,25 +10,23 @@ import { MainContextMenuTypes, PlaylistContextMenuTypes, ThumbButtonTypes } from
 
 protocol.registerSchemesAsPrivileged([
     { scheme: "app", privileges: { bypassCSP: true } },
-    { scheme: "static", privileges: { bypassCSP: true } }
 ])
 
 let primaryDisplay:Electron.Display;
 let mainWindow:Electron.CrossProcessExports.BrowserWindow | null;
 let playlist:Electron.CrossProcessExports.BrowserWindow | null;
 let tooltip:Electron.CrossProcessExports.BrowserWindow | null;
-let directLaunch = false;
 
+let invokedWithFiles = false;
 let isReady = false;
 let doShuffle = false;
 let currentIndex = 0;
-let targets:number[] = [];
+let selectedFileIds:string[] = [];
 let fileMap:{[key:string]:Mp.MediaFile} = {}
 
 const additionalFiles:string[] = [];
 const orderedFiles:Mp.MediaFile[] = []
 const FIT_TO_WINDOW_ITEM_INDEX = 1;
-const STATIC = path.join(__dirname, "..", "static")
 const helper = new Helper();
 const util = new Util();
 const config = new Config(app.getPath("userData"));
@@ -80,7 +78,7 @@ function playlistContextMenuCallback(menu:PlaylistContextMenuTypes){
             removeAll();
             break;
         case PlaylistContextMenuTypes.Trash:
-            deleteFile();
+            beforeDelete();
             break;
         case PlaylistContextMenuTypes.CopyFileName:
             copyFileNameToClipboard();
@@ -143,7 +141,7 @@ app.on("second-instance", (_event:Event, _argv:string[], _workingDirectory:strin
 
 app.on("ready", async () => {
 
-    directLaunch = process.argv.length > 1 && process.argv[1] != ".";
+    invokedWithFiles = process.argv.length > 1 && process.argv[1] != ".";
 
     await init();
 
@@ -165,7 +163,7 @@ app.on("ready", async () => {
         y:config.data.bounds.y,
         autoHideMenuBar: true,
         show: false,
-        icon: path.join(STATIC, "img", "icon.ico"),
+        icon: path.join(__dirname, "..", "static", "img", "icon.ico"),
         frame: false,
         webPreferences: {
             nodeIntegration: false,
@@ -174,7 +172,7 @@ app.on("ready", async () => {
         },
     });
 
-    mainWindow.on("ready-to-show", () => {
+    mainWindow.on("ready-to-show", async () => {
 
         if(config.data.isMaximized){
             mainWindow.maximize();
@@ -182,7 +180,7 @@ app.on("ready", async () => {
 
         mainWindow.setThumbarButtons(thumButtons[0])
 
-        onReady();
+        await onReady();
 
     })
 
@@ -264,6 +262,7 @@ const registerIpcChannels = () => {
         {channel:"save-image", handle:onSaveImage},
         {channel:"close-playlist", handle:onClosePlaylist},
         {channel:"remove", handle:onRemove},
+        {channel:"delete-file", handle:onDelete},
         {channel:"open-playlist-context", handle:onOpenPlaylistContext},
         {channel:"change-playlist-order", handle:onChangePlaylistOrder},
         {channel:"prepare-tooltip", handle:onPrepareTooltip},
@@ -271,6 +270,7 @@ const registerIpcChannels = () => {
         {channel:"hide-tooltip", handle:onHideTooltip},
         {channel:"toggle-play", handle:onTogglePlay},
         {channel:"toggle-shuffle", handle:onToggleShuffle},
+        {channel:"toggle-fullscreen", handle:onToggleFullscreen},
     ]
 
     handlers.forEach(handler => ipcMain.on(handler.channel, (event, request) => handler.handle(event, request)));
@@ -295,10 +295,12 @@ const respond = <T extends Mp.Args>(renderer:Renderer, channel:MainRendererChann
 const onReady = async () => {
 
     mainWindow.show();
-    playlist.show();
+    if(config.data.playlistVisible){
+        playlist.show();
+    }
 
-    if(directLaunch){
-        initFiles(extractFilesFromArgv())
+    if(invokedWithFiles){
+        await initFiles(extractFilesFromArgv())
     }else{
         reset()
     }
@@ -309,7 +311,7 @@ const onReady = async () => {
 
     respond<Mp.Config>(Renderer.Main, "config", config.data);
 
-    if(directLaunch){
+    if(invokedWithFiles){
         respond<Mp.DropResult>(Renderer.Playlist, "after-drop", {clearPlaylist:false, files:orderedFiles})
         togglePlay();
     }
@@ -324,6 +326,7 @@ const extractFilesFromArgv = (target?:string[]) => {
     }
 
     return process.argv.slice(1, process.argv.length)
+
 }
 
 const initFiles = async (files:string[]) => {
@@ -345,6 +348,7 @@ const initFiles = async (files:string[]) => {
     additionalFiles.length = 0;
 
     isReady = true;
+
 }
 
 const getCurrentFile = () => {
@@ -496,7 +500,7 @@ const dropFiles = async (data:Mp.DropRequest) => {
         return
     }
 
-    initFiles(data.files)
+    await initFiles(data.files)
 
     respond<Mp.DropResult>(Renderer.Playlist, "after-drop", {clearPlaylist:true, files:orderedFiles})
 
@@ -522,25 +526,28 @@ const removeAll = () => {
 
 const remove = () => {
 
-    if(targets.length <= 0) return;
+    if(selectedFileIds.length <= 0) return;
 
-    targets.forEach(index => {
-        const file = orderedFiles[index];
-        delete fileMap[file.id];
+    selectedFileIds.forEach(id => {
+        delete fileMap[id];
     })
 
-    const newFiles = orderedFiles.filter((_, index) => !targets.includes(index));
+    const range = selectedFileIds.map(id => orderedFiles.map(e => e.id).indexOf(id))
+
+    const newFiles = orderedFiles.filter(file => !selectedFileIds.includes(file.id));
     orderedFiles.length = 0;
     orderedFiles.push(...newFiles)
 
-    respond<Mp.RemovePlaylistResult>(Renderer.Playlist, "after-remove-playlist", {removedFileIndices:targets})
+    respond<Mp.RemovePlaylistResult>(Renderer.Playlist, "after-remove-playlist", {removedFileIds:selectedFileIds})
 
-    if(targets.includes(currentIndex)){
+    if(range.includes(currentIndex)){
 
-        if(targets[0] < orderedFiles.length){
-            currentIndex = targets[0]
+        const nextIndex = range[0]
+
+        if(nextIndex >= orderedFiles.length){
+            currentIndex = orderedFiles.length - 1
         }else{
-            currentIndex = targets[0] - 1
+            currentIndex = nextIndex;
         }
 
         loadResource(false);
@@ -549,17 +556,19 @@ const remove = () => {
 
 }
 
-const deleteFile = async () => {
+const beforeDelete = () => {
 
-    if(targets.length <= 0) return;
+    if(selectedFileIds.length <= 0) return;
+
+    respond<Mp.BeforeDeleteArg>(Renderer.Main, "before-delete", {releaseFile:selectedFileIds.includes(orderedFiles[currentIndex].id)})
+
+}
+
+const deleteFile = async () => {
 
     try{
 
-        if(targets.includes(currentIndex)){
-            respond(Renderer.Main, "release-file", {});
-        }
-
-        const targetFiles = targets.map(index => orderedFiles[index].fullPath);
+        const targetFiles = selectedFileIds.map(id => fileMap[id].fullPath);
 
         await Promise.all(targetFiles.map(async item => await shell.trashItem(item)))
 
@@ -572,32 +581,35 @@ const deleteFile = async () => {
 
 const reveal = () => {
 
-    if(targets.length <= 0 || targets.length > 1) return;
+    if(selectedFileIds.length <= 0 || selectedFileIds.length > 1) return;
 
-    const index = targets[0];
+    const targetId = selectedFileIds[0];
 
-    if(!orderedFiles[index]) return;
+    if(!fileMap[targetId]) return;
 
-    proc.exec("explorer /e,/select," + orderedFiles[index].fullPath);
+    proc.exec("explorer /e,/select," + fileMap[targetId].fullPath);
 }
 
 const openPlaylist = () => {
+    config.data.playlistVisible = true;
     playlist.show();
 }
 
 const copyFileNameToClipboard = () => {
 
-    if(targets.length <= 0 || targets.length > 1) return;
+    if(selectedFileIds.length <= 0 || selectedFileIds.length > 1) return;
 
-    const index = targets[0];
+    const targetId = selectedFileIds[0];
 
-    if(!orderedFiles[index]) return;
+    if(!fileMap[targetId]) return;
 
-    clipboard.writeText(orderedFiles[index].name);
+    clipboard.writeText(fileMap[targetId].name);
 
 }
 
 const sortPlayList = (sortOrder:PlaylistContextMenuTypes) => {
+
+    if(orderedFiles.length <= 0) return;
 
     const currentId = orderedFiles[currentIndex].id;
 
@@ -629,9 +641,9 @@ const sendError = (ex:any) => {
 
 const onMinimize:handler<Mp.SaveRequest> = (_event:Electron.IpcMainEvent, _data:Mp.SaveRequest) => mainWindow.minimize();
 
-const onClose:handler<Mp.SaveRequest> = (_event:Electron.IpcMainEvent, data:Mp.SaveRequest) => closeWindow(data);
+const onClose:handler<Mp.SaveRequest> = async (_event:Electron.IpcMainEvent, data:Mp.SaveRequest) => await closeWindow(data);
 
-const onDrop:handler<Mp.DropRequest> = (_event:Electron.IpcMainEvent, data:Mp.DropRequest) => dropFiles(data);
+const onDrop:handler<Mp.DropRequest> = async (_event:Electron.IpcMainEvent, data:Mp.DropRequest) => await dropFiles(data);
 
 const onLoadRequest:handler<Mp.LoadFileRequest> = (_event:Electron.IpcMainEvent, data:Mp.LoadFileRequest) => {
     if(data.isAbsolute){
@@ -668,16 +680,21 @@ const onSaveImage:handler<Mp.SaveImageRequet> = (_event:Electron.IpcMainEvent, d
 
 }
 
-const onClosePlaylist:handler<Mp.Args> = () => playlist.hide()
+const onClosePlaylist:handler<Mp.Args> = () => {
+    config.data.playlistVisible = false;
+    playlist.hide()
+}
 
 const onRemove:handler<Mp.RemovePlaylistRequest> = (_event:Electron.IpcMainEvent, data:Mp.RemovePlaylistRequest) => {
-    targets = data.selectedFileRange;
+    selectedFileIds = data.selectedFileRange;
     remove();
 }
 
+const onDelete:handler<Mp.Args> = async () => await deleteFile();
+
 const onOpenPlaylistContext:handler<Mp.OpenPlaylistContextRequest> = (_event:Electron.IpcMainEvent, data:Mp.OpenPlaylistContextRequest) => {
     tooltip.hide();
-    targets = data.selectedFileRange;
+    selectedFileIds = data.selectedFileRange;
     playlistContext.popup({window:playlist})
 }
 
@@ -711,3 +728,16 @@ const onToggleShuffle:handler<Mp.Args> = () => {
     doShuffle = !doShuffle;
 }
 
+const onToggleFullscreen:handler<Mp.Args> = () => {
+
+    tooltip.hide();
+
+    if(mainWindow.isFullScreen()){
+        mainWindow.setFullScreen(false)
+        if(config.data.playlistVisible) playlist.show();
+        mainWindow.focus();
+    }else{
+        mainWindow.setFullScreen(true)
+        playlist.hide();
+    }
+}
