@@ -22,6 +22,7 @@ let isReady = false;
 let doShuffle = false;
 let currentIndex = 0;
 let selectedFileIds:string[] = [];
+let randomIndices:number[] = [];
 let fileMap:{[key:string]:Mp.MediaFile} = {}
 
 const additionalFiles:string[] = [];
@@ -122,19 +123,19 @@ function onSecondInstanceReady(){
 app.on("second-instance", (_event:Event, _argv:string[], _workingDirectory:string, additionalData:string[]) => {
 
     if(!isReady){
-        additionalFiles.push(...extractFilesFromArgv(additionalData))
+        additionalFiles.push(...util.extractFilesFromArgv(additionalData))
         return;
     }
 
     if(additionalFiles.length <= 0){
 
-        additionalFiles.push(...extractFilesFromArgv(additionalData))
+        additionalFiles.push(...util.extractFilesFromArgv(additionalData))
         setTimeout(() => {
             onSecondInstanceReady();
         }, 1000);
 
     }else{
-        additionalFiles.push(...extractFilesFromArgv(additionalData))
+        additionalFiles.push(...util.extractFilesFromArgv(additionalData))
     }
 
 })
@@ -300,7 +301,7 @@ const onReady = async () => {
     }
 
     if(invokedWithFiles){
-        await initFiles(extractFilesFromArgv())
+        await initFiles(util.extractFilesFromArgv())
     }else{
         reset()
     }
@@ -317,16 +318,6 @@ const onReady = async () => {
     }
 
     loadResource(true);
-}
-
-const extractFilesFromArgv = (target?:string[]) => {
-
-    if(target){
-        return target.slice(1, target.length)
-    }
-
-    return process.argv.slice(1, process.argv.length)
-
 }
 
 const initFiles = async (files:string[]) => {
@@ -361,6 +352,7 @@ const getCurrentFile = () => {
 
 const reset = () => {
     orderedFiles.length = 0;
+    randomIndices.length = 0;
     fileMap = {}
     currentIndex = -1;
     isReady = false;
@@ -423,19 +415,30 @@ const closeWindow = async (args:Mp.SaveRequest) => {
     mainWindow.close();
 }
 
-const getRandomIndex = ():number => {
-    const index = Math.floor(Math.random() * orderedFiles.length)
+const shuffleList = () => {
 
-    if(index === currentIndex){
-        return getRandomIndex();
+    if(!doShuffle) return;
+
+    const target = new Array(orderedFiles.length).fill(undefined).map((_v, i) => i).filter(i => i !== currentIndex);
+    randomIndices = util.shuffle(target)
+
+}
+
+const getRandomIndex = (value:number) => {
+
+    if(value > 0){
+        randomIndices.unshift(currentIndex);
+        return randomIndices.pop();
     }else{
-        return index;
+        randomIndices.push(currentIndex);
+        return randomIndices.shift();
     }
+
 }
 
 const changeIndex = (index:number) => {
 
-    let nextIndex = doShuffle ? getRandomIndex() : currentIndex + index;
+    let nextIndex = doShuffle ? getRandomIndex(index) : currentIndex + index;
 
     if(nextIndex >= orderedFiles.length){
         nextIndex = 0;
@@ -481,31 +484,41 @@ const dropFiles = async (data:Mp.DropRequest) => {
 
     if(data.onPlaylist){
 
-        const changeCurrent = orderedFiles.length <= 0;
+        await addFiles(data.files)
 
-        const newFiles = (await Promise.all(data.files.map(async (file) => await util.toFile(file)))).filter(file => !fileMap[file.id]);
+        shuffleList();
 
-        newFiles.forEach(file => {
-            orderedFiles.push(file)
-            fileMap[file.id] = file
-        })
+    }else{
 
-        respond<Mp.DropResult>(Renderer.Playlist, "after-drop", {clearPlaylist:false, files:newFiles})
+        await initFiles(data.files)
 
-        if(orderedFiles.length == 1 || changeCurrent){
-            currentIndex = 0;
-            loadResource(false);
-        }
+        shuffleList();
 
-        return
+        respond<Mp.DropResult>(Renderer.Playlist, "after-drop", {clearPlaylist:true, files:orderedFiles})
+
+        loadResource(data.files.length == 1);
+
     }
 
-    await initFiles(data.files)
+}
 
-    respond<Mp.DropResult>(Renderer.Playlist, "after-drop", {clearPlaylist:true, files:orderedFiles})
+const addFiles = async (filePaths:string[]) => {
 
-    loadResource(data.files.length == 1);
+    const changeCurrent = orderedFiles.length <= 0;
 
+    const newFiles = (await Promise.all(filePaths.map(async (fullpath) => await util.toFile(fullpath)))).filter(file => !fileMap[file.id]);
+
+    newFiles.forEach(file => {
+        orderedFiles.push(file)
+        fileMap[file.id] = file
+    })
+
+    respond<Mp.DropResult>(Renderer.Playlist, "after-drop", {clearPlaylist:false, files:newFiles})
+
+    if(orderedFiles.length == 1 || changeCurrent){
+        currentIndex = 0;
+        loadResource(false);
+    }
 }
 
 const changeOrder = (data:Mp.ChangePlaylistOrderRequet) => {
@@ -726,6 +739,7 @@ const onTogglePlay:handler<Mp.Args> = () => togglePlay();
 
 const onToggleShuffle:handler<Mp.Args> = () => {
     doShuffle = !doShuffle;
+    shuffleList();
 }
 
 const onToggleFullscreen:handler<Mp.Args> = () => {
