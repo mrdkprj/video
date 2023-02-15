@@ -25,6 +25,9 @@ build({
                   }
             ]
         },
+        linux:{
+            target: "deb"
+        },
         nsis: {
             oneClick: true,
             allowToChangeInstallationDirectory: false,
