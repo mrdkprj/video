@@ -26,7 +26,21 @@ build({
             ]
         },
         linux:{
-            target: "deb"
+            target: "deb",
+            category: "AudioVideo",
+            icon: "./src/static/img/icon.icns",
+            fileAssociations: [
+                {
+                    "ext": "mp4",
+                    //"icon": "src/static/img/icon.ico",
+                    "description": "Video File",
+                  },
+                  {
+                      "ext": "mp3",
+                      //"icon": "src/static/img/icon_audio.ico",
+                      "description": "Audio File"
+                  }
+            ]
         },
         nsis: {
             oneClick: true,
