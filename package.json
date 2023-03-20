@@ -14,7 +14,8 @@
   },
   "keywords": [],
   "author": {
-    "name": "mrdkprj"
+    "name": "mrdkprj",
+    "email": "mrdkprj@gmail.com"
   },
   "license": "MIT",
   "devDependencies": {
