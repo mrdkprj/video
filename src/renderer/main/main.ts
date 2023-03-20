@@ -228,6 +228,14 @@ window.addEventListener("keydown", e => {
         }
     }
 
+    if(e.ctrlKey && e.key === "ArrowUp"){
+        updateVolume(mediaState.videoVolume + 0.01)
+    }
+
+    if(e.ctrlKey && e.key === "ArrowDown"){
+        updateVolume(mediaState.videoVolume - 0.01)
+    }
+
     if(e.key === "F1" || e.key === "Escape"){
         toggleFullScreen();
     }
@@ -445,6 +453,7 @@ function changeCurrentTime(time:number){
     Dom.video.currentTime = nextTime;
 
 }
+
 
 function changeIndex(index:number){
     return window.api.send<Mp.LoadFileRequest>("load-file", {index, isAbsolute:false})
