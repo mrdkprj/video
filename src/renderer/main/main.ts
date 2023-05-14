@@ -44,13 +44,13 @@ const sliders:{[key:string]:Mp.Slider} = {
     amp: ampSlider,
 }
 
-const mediaState = {
-    isMute:false,
+const mediaState:Mp.MediaState = {
+    mute:false,
     fitToWindow:false,
     videoDuration:0,
     videoVolume:0,
     ampLevel:0,
-    gainNode:null as GainNode,
+    gainNode:null,
 }
 
 const slideState:Mp.SliderState = {
@@ -367,7 +367,7 @@ function loadVideo(autoplay:boolean){
     Dom.source.src = currentFile.src
     const doAuthplay = autoplay ? autoplay : Dom.buttons.classList.contains("playing")
     Dom.video.autoplay = doAuthplay;
-    Dom.video.muted = mediaState.isMute;
+    Dom.video.muted = mediaState.mute;
     Dom.video.load();
 }
 
@@ -504,9 +504,9 @@ function saveImage(){
 }
 
 function toggleMute(){
-    mediaState.isMute = !mediaState.isMute;
-    Dom.video.muted = mediaState.isMute;
-    if(mediaState.isMute){
+    mediaState.mute = !mediaState.mute;
+    Dom.video.muted = mediaState.mute;
+    if(mediaState.mute){
         Dom.buttons.classList.add("mute")
     }else{
         Dom.buttons.classList.remove("mute")
@@ -552,8 +552,7 @@ function toggleFullScreen(){
 }
 
 function close(){
-    const config = {volume:mediaState.videoVolume, ampLevel:mediaState.ampLevel}
-    window.api.send<Mp.SaveRequest>("close", config);
+    window.api.send<Mp.SaveRequest>("close", {mediaState});
 }
 
 function prepare(config:Mp.Config){
@@ -565,6 +564,9 @@ function prepare(config:Mp.Config){
 
     mediaState.ampLevel = config.ampLevel;
     amplify();
+
+    mediaState.mute = !config.mute
+    toggleMute();
 
     mediaState.fitToWindow = config.fitToWindow;
 }

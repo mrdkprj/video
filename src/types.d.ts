@@ -45,6 +45,7 @@ declare global {
         type Config = {
             volume:number;
             ampLevel:number;
+            mute:boolean;
             fitToWindow:boolean;
             bounds: Bounds;
             playlistBounds:Bounds;
@@ -58,6 +59,15 @@ declare global {
             src:string;
             name:string;
             date:number;
+        }
+
+        type MediaState = {
+            mute: boolean;
+            fitToWindow: boolean;
+            videoDuration: number;
+            videoVolume: number;
+            ampLevel: number;
+            gainNode: GainNode;
         }
 
         type Slider = {
@@ -116,8 +126,7 @@ declare global {
         }
 
         type SaveRequest = {
-            volume:number;
-            ampLevel:number;
+            mediaState:MediaState
         }
 
         type OpenPlaylistContextRequest = {

@@ -398,8 +398,10 @@ const save = async (data:Mp.SaveRequest) => {
     config.data.playlistBounds.height = childBounds.height;
     config.data.playlistBounds.x = childBounds.x;
     config.data.playlistBounds.y = childBounds.y;
-    config.data.volume = data.volume;
-    config.data.ampLevel = data.ampLevel;
+    config.data.volume = data.mediaState.videoVolume;
+    config.data.ampLevel = data.mediaState.ampLevel;
+    config.data.fitToWindow = data.mediaState.fitToWindow;
+    config.data.mute = data.mediaState.mute;
 
     try{
         await config.save();
@@ -539,13 +541,14 @@ const removeAll = () => {
 
 const remove = () => {
 
-    if(selectedFileIds.length <= 0) return;
+    if(!selectedFileIds.length) return;
 
     selectedFileIds.forEach(id => {
         delete fileMap[id];
     })
 
-    const range = selectedFileIds.map(id => orderedFiles.map(e => e.id).indexOf(id))
+    const removeIndices = selectedFileIds.map(id => orderedFiles.map(e => e.id).indexOf(id))
+    const shouldLoadNext = removeIndices.includes(currentIndex);
 
     const newFiles = orderedFiles.filter(file => !selectedFileIds.includes(file.id));
     orderedFiles.length = 0;
@@ -553,18 +556,31 @@ const remove = () => {
 
     respond<Mp.RemovePlaylistResult>(Renderer.Playlist, "after-remove-playlist", {removedFileIds:selectedFileIds})
 
-    if(range.includes(currentIndex)){
+    currentIndex = getIndexAfterRemove(removeIndices)
 
-        const nextIndex = range[0]
-
-        if(nextIndex >= orderedFiles.length){
-            currentIndex = orderedFiles.length - 1
-        }else{
-            currentIndex = nextIndex;
-        }
+    if(shouldLoadNext){
 
         loadResource(false);
 
+    }
+
+}
+
+const getIndexAfterRemove = (removeIndices:number[]) => {
+
+    if(removeIndices.includes(currentIndex)){
+
+        const nextIndex = removeIndices[0]
+
+        if(nextIndex >= orderedFiles.length){
+            return orderedFiles.length - 1
+        }
+
+        return nextIndex;
+    }
+
+    if(removeIndices[0] < currentIndex){
+        return currentIndex - removeIndices.length
     }
 
 }

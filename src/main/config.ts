@@ -6,6 +6,7 @@ const CONFIG_FILE_NAME = "mediaplayer.config.json"
 const DEFAULT_CONFIG :Mp.Config = {
     volume: 1,
     ampLevel: 0.07,
+    mute:false,
     fitToWindow: true,
     bounds: {width:1200, height:800, x:0, y:0},
     playlistBounds: {width:400, height:700, x:0, y:0},
