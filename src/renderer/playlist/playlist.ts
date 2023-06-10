@@ -393,3 +393,5 @@ window.api.receive<Mp.RemovePlaylistResult>("after-remove-playlist", (data: Mp.R
 window.api.receive<Mp.SortResult>("after-sort", (data:Mp.SortResult) => sortList(data.fileIds))
 
 window.api.receive("reset", () => reset())
+
+export {}

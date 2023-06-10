@@ -453,3 +453,48 @@ body{
     z-index: 9999;
     background: #fff;
 }
+
+#convertState{
+    visibility:hidden;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.converting #convertState{
+    visibility: visible;
+}
+
+.ring{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.lds-dual-ring {
+    display: inline-block;
+    width: 20px;
+    height: 30px;
+}
+
+.lds-dual-ring:after {
+    content: " ";
+    display: block;
+    width: 10px;
+    height: 10px;
+    margin: 8px 0 3px 0;
+    border-radius: 50%;
+    border: 3px solid #c3bebe;
+    border-color: #c3bebe transparent #c3bebe transparent;
+    animation: lds-dual-ring 1.8s linear infinite;
+}
+@keyframes lds-dual-ring {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+}
+

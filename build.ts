@@ -4,6 +4,10 @@ build({
     config: {
         appId: "MediaPlayer",
         productName: "MediaPlayer",
+        extraResources:[
+            "./resources/ffmpeg.exe",
+            "./resources/ffprobe.exe"
+        ],
         win:{
             target: {
                 target: "nsis",
@@ -17,12 +21,38 @@ build({
                     "ext": "mp4",
                     "icon": "src/static/img/icon.ico",
                     "description": "Video File",
-                  },
-                  {
-                      "ext": "mp3",
-                      "icon": "src/static/img/icon_audio.ico",
-                      "description": "Audio File"
-                  }
+                },
+                {
+                    "ext": "mov",
+                    "icon": "src/static/img/icon.ico",
+                    "description": "Video File",
+                },
+                {
+                    "ext": "avi",
+                    "icon": "src/static/img/icon.ico",
+                    "description": "Video File",
+                },
+                {
+                    "ext": "wmv",
+                    "icon": "src/static/img/icon.ico",
+                    "description": "Video File",
+                },
+                {
+                    "ext": "webm",
+                    "icon": "src/static/img/icon.ico",
+                    "description": "Video File",
+                },
+                {
+                    "ext": "flv",
+                    "icon": "src/static/img/icon.ico",
+                    "description": "Video File",
+                },
+                {
+                    "ext": "mp3",
+                    "icon": "src/static/img/icon_audio.ico",
+                    "description": "Audio File"
+                },
+
             ]
         },
         linux:{

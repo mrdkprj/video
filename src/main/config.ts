@@ -12,6 +12,8 @@ const DEFAULT_CONFIG :Mp.Config = {
     playlistBounds: {width:400, height:700, x:0, y:0},
     isMaximized: false,
     playlistVisible:true,
+    playbackRate:1,
+    seekSpeed:10,
 }
 
 export default class Config{
@@ -41,7 +43,7 @@ export default class Config{
 
         }else{
 
-            await this.save()
+            await fs.writeFile(this._file, JSON.stringify(this.data));
 
         }
     }
@@ -63,7 +65,15 @@ export default class Config{
         return rawConfig;
     }
 
-    async save(){
+    async save(data:Mp.SaveRequest, isMaximized:boolean, mainBounds:Electron.Rectangle, playlistBounds:Electron.Rectangle){
+        this.data.isMaximized = isMaximized;
+        this.data.bounds = mainBounds
+        this.data.playlistBounds = playlistBounds;
+        this.data.volume = data.mediaState.videoVolume;
+        this.data.ampLevel = data.mediaState.ampLevel;
+        this.data.fitToWindow = data.mediaState.fitToWindow;
+        this.data.mute = data.mediaState.mute;
+
         await fs.writeFile(this._file, JSON.stringify(this.data));
     }
 

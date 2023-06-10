@@ -9,10 +9,18 @@ declare global {
     type MainChannel = "minimize" | "toggle-maximize" | "close" | "drop" | "load-file" | "progress" | "open-main-context" |
                         "played" | "paused" | "reload" | "save-image" | "close-playlist" | "delete-file" |
                         "remove" | "open-playlist-context" | "change-playlist-order" | "prepare-tooltip" | "show-tooltip" | "hide-tooltip" |
-                        "toggle-play" | "toggle-shuffle" | "toggle-fullscreen";
-    type MainRendererChannel = "config" | "play" | "toggle-play" | "change-display-mode" | "reset" | "error" | "before-delete" | "log" | "after-toggle-maximize";
+                        "toggle-play" | "toggle-shuffle" | "toggle-fullscreen" |"close-convert" | "request-convert" |
+                        "open-convert-sourcefile-dialog" | "request-cancel-convert";
+
+    type MainRendererChannel = "config" | "play" | "toggle-play" | "change-display-mode" | "reset" | "error" | "before-delete" | "log" |
+                                "after-toggle-maximize" | "toggle-convert" | "change-playback-rate" | "change-seek-speed" | "before-convert";
     type PlaylistRendererChannel = "after-drop"| "play" | "after-remove-playlist" | "reset" | "after-sort";
-    type TooltipRendererChannel = "prepare-tooltip"
+    type TooltipRendererChannel = "prepare-tooltip";
+    type ConvertRendererChannel = "before-open" |"after-sourcefile-select" | "after-convert" | "after-sourcefile-select"
+
+    type RendererChannel = MainRendererChannel | PlaylistRendererChannel | TooltipRendererChannel | ConvertRendererChannel
+    type RendererName = "Main" | "Playlist" | "Tooltip" | "Convert"
+    type Renderer = {[key in RendererName] : Electron.BrowserWindow}
 
     interface IpcMainHandler {
         channel: MainChannel;
@@ -23,7 +31,7 @@ declare global {
 
     interface Api {
         send: <T extends Mp.Args>(channel: MainChannel, data?:T) => void;
-        receive: <T extends Mp.Args>(channel:MainRendererChannel | PlaylistRendererChannel | TooltipRendererChannel, listener: (data?: T) => void) => () => void;
+        receive: <T extends Mp.Args>(channel:MainRendererChannel | PlaylistRendererChannel | TooltipRendererChannel | ConvertRendererChannel, listener: (data?: T) => void) => () => void;
     }
 
     const MAIN_WINDOW_WEBPACK_ENTRY: string;
@@ -32,6 +40,8 @@ declare global {
     const PLAYLIST_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
     const TOOLTIP_WINDOW_WEBPACK_ENTRY: string;
     const TOOLTIP_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
+    const CONVERT_WINDOW_WEBPACK_ENTRY: string;
+    const CONVERT_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
     namespace Mp {
 
@@ -51,6 +61,8 @@ declare global {
             playlistBounds:Bounds;
             isMaximized:boolean;
             playlistVisible:boolean;
+            playbackRate:number;
+            seekSpeed:number;
         }
 
         type MediaFile = {
@@ -68,6 +80,13 @@ declare global {
             videoVolume: number;
             ampLevel: number;
             gainNode: GainNode;
+            playbackRate:number;
+            seekSpeed:number;
+        }
+
+        type ChangePlaySpeed = {
+            playbackRate?:number;
+            seekSpeed?:number;
         }
 
         type Slider = {
@@ -153,7 +172,7 @@ declare global {
         }
 
         type BeforeDeleteArg = {
-            releaseFile:boolean;
+            shouldReleaseFile:boolean;
         }
 
         type SortResult = {
@@ -171,6 +190,26 @@ declare global {
             position:Position;
         }
 
+        type VideoFrameSize = "Same" | "360p" | "480p" | "720p" | "1080p";
+        type VideoRotation = "90Clockwise" | "90CounterClockwise" | "None"
+
+        type ConvertRequest = {
+            sourcePath:string;
+            video:boolean;
+            frameSize?:VideoFrameSize;
+            bitrate?:string;
+            rotation?:VideoRotation;
+        }
+
+        type ConvertResult = {
+            success:boolean;
+            message?:string;
+        }
+
+        type FileSelectResult = {
+            fullPath:string;
+        }
+
         type ErrorArgs = {
             message:string;
         }
@@ -180,7 +219,8 @@ declare global {
         }
 
         type Args = LoadFileResult | DropRequest | ProgressArg | LoadFileRequest | TogglePlayRequest | SaveImageRequet | SaveRequest | ChangePlaylistOrderRequet |
-                    DropResult | RemovePlaylistResult | SortResult | PrepareTooltipRequest | ShowTooltipRequest | OpenPlaylistContextRequest |
+                    DropResult | RemovePlaylistResult | SortResult | PrepareTooltipRequest | ShowTooltipRequest | OpenPlaylistContextRequest | ChangePlaySpeed |
+                    ConvertRequest | PrepareConvert | FileSelectResult |
                     ErrorArgs | Config | Logging
 
     }

@@ -9,6 +9,9 @@ const Dom = {
     currentTimeArea:null as HTMLElement,
     durationArea:null as HTMLElement,
     buttons:null as HTMLElement,
+    ampArea:null as HTMLElement,
+    setting:null as HTMLElement,
+    convertState:null as HTMLElement,
 }
 
 const timeSlider:Mp.Slider = {
@@ -51,6 +54,8 @@ const mediaState:Mp.MediaState = {
     videoVolume:0,
     ampLevel:0,
     gainNode:null,
+    playbackRate:0,
+    seekSpeed:0
 }
 
 const slideState:Mp.SliderState = {
@@ -79,6 +84,9 @@ window.addEventListener("load", () => {
     Dom.buttons = document.getElementById("buttons")
     Dom.currentTimeArea = document.getElementById("videoCurrentTime")
     Dom.durationArea = document.getElementById("videoDuration")
+    Dom.ampArea = document.getElementById("ampArea")
+    Dom.setting = document.getElementById("setting")
+    Dom.convertState = document.getElementById("convertState")
 
     timeSlider.slider = document.getElementById("time")
     timeSlider.track = document.getElementById("timeTrack");
@@ -355,19 +363,24 @@ function initPlayer(){
     Dom.video.load();
 }
 
-function releaseFile(data:Mp.BeforeDeleteArg){
-    if(data.releaseFile){
-        Dom.source.src = "";
-        Dom.video.load();
+function releaseFile(){
+    Dom.source.src = "";
+    Dom.video.load();
+}
+
+function beforeDelete(data:Mp.BeforeDeleteArg){
+    if(data.shouldReleaseFile){
+        releaseFile();
     }
     window.api.send("delete-file")
 }
 
 function loadVideo(autoplay:boolean){
-    Dom.source.src = currentFile.src
+    Dom.source.src = currentFile.src ? `${currentFile.src}?${new Date().getTime()}` : ""
     const doAuthplay = autoplay ? autoplay : Dom.buttons.classList.contains("playing")
     Dom.video.autoplay = doAuthplay;
     Dom.video.muted = mediaState.mute;
+    Dom.video.playbackRate = mediaState.playbackRate
     Dom.video.load();
 }
 
@@ -417,7 +430,7 @@ function playFoward(button:number){
     if(!currentFile) return;
 
     if(button === 0){
-        changeCurrentTime(10);
+        changeCurrentTime(mediaState.seekSpeed);
     }
 
     if(button === 2){
@@ -430,7 +443,7 @@ function playBackward(button:number){
     if(!currentFile) return;
 
     if(button === 0){
-        changeCurrentTime(-10)
+        changeCurrentTime(-mediaState.seekSpeed)
     }
 
     if(button === 2){
@@ -489,6 +502,15 @@ function stop(){
     Dom.video.load();
 }
 
+function changePlaybackRate(playbackRate:number){
+    mediaState.playbackRate = playbackRate
+    Dom.video.playbackRate = mediaState.playbackRate
+}
+
+function changeSeekSpeed(seekSpeed:number){
+    mediaState.seekSpeed = seekSpeed;
+}
+
 function saveImage(){
     const canvas = document.createElement("canvas");
     const width = parseInt(Dom.video.style.width.replace("px", ""));
@@ -507,9 +529,9 @@ function toggleMute(){
     mediaState.mute = !mediaState.mute;
     Dom.video.muted = mediaState.mute;
     if(mediaState.mute){
-        Dom.buttons.classList.add("mute")
+        Dom.ampArea.classList.add("mute")
     }else{
-        Dom.buttons.classList.remove("mute")
+        Dom.ampArea.classList.remove("mute")
     }
 }
 
@@ -551,6 +573,14 @@ function toggleFullScreen(){
     window.api.send("toggle-fullscreen")
 }
 
+function toggleConvert(){
+    if(Dom.viewport.classList.contains("converting")){
+        Dom.viewport.classList.remove("converting")
+    }else{
+        Dom.viewport.classList.add("converting")
+    }
+}
+
 function close(){
     window.api.send<Mp.SaveRequest>("close", {mediaState});
 }
@@ -569,6 +599,8 @@ function prepare(config:Mp.Config){
     toggleMute();
 
     mediaState.fitToWindow = config.fitToWindow;
+    mediaState.playbackRate = config.playbackRate;
+    mediaState.seekSpeed = config.seekSpeed;
 }
 
 function load(data:Mp.LoadFileResult){
@@ -597,9 +629,15 @@ window.api.receive("reset", () => initPlayer())
 
 window.api.receive<Mp.ErrorArgs>("error", (data:Mp.ErrorArgs) => alert(data.message))
 
-window.api.receive<Mp.BeforeDeleteArg>("before-delete", (data:Mp.BeforeDeleteArg) => releaseFile(data))
+window.api.receive<Mp.BeforeDeleteArg>("before-delete", (data:Mp.BeforeDeleteArg) => beforeDelete(data))
 
 window.api.receive<Mp.Config>("after-toggle-maximize", (data:Mp.Config) => onWindowSizeChanged(data.isMaximized))
+
+window.api.receive("toggle-convert", () => toggleConvert())
+
+window.api.receive<Mp.ChangePlaySpeed>("change-playback-rate", (data:Mp.ChangePlaySpeed) => changePlaybackRate(data.playbackRate))
+
+window.api.receive<Mp.ChangePlaySpeed>("change-seek-speed", (data:Mp.ChangePlaySpeed) => changeSeekSpeed(data.seekSpeed));
 
 window.api.receive<Mp.Logging>("log", data => console.log(data.log))
 

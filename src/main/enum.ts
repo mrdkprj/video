@@ -6,8 +6,11 @@ export enum ThumbButtonTypes {
 }
 
 export enum MainContextMenuTypes {
+    PlaybackRate,
+    SeekSpeed,
     OpenPlaylist,
     FitToWindow,
+    Convert,
 }
 
 export enum PlaylistContextMenuTypes {

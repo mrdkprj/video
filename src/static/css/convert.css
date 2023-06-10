@@ -1,0 +1,202 @@
+body{
+    margin:0;
+    font-family: Segoe UI,sans-serif;
+}
+
+.convert{
+    background-color: #272626;
+    color:#c3bebe;
+    height:auto;
+    width: 100%;
+    cursor: default;
+}
+
+.convert-title-bar{
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    height: 30px;
+    width: 100%;
+    color: #c3bebe;
+    border-bottom: 1px solid #3c3939;
+    background-color: #272626;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    z-index: 900;
+    -webkit-app-region: drag;
+}
+
+.status{
+    flex: 1 1 auto;
+    margin-left: 10px;
+    font-family: Segoe UI,sans-serif;
+}
+
+.convert-close-btn{
+    position: absolute;
+    top:0;
+    width: 45px;
+    height: auto;
+    text-align: center;
+    line-height: 30px;
+    user-select: none;
+    -webkit-app-region:no-drag;
+}
+
+.convert-viewport{
+    position:fixed;
+    top: 30px;
+    left: 0px;
+    overflow: auto;
+    height: calc(100% - 60px);
+    width: 100%;
+    border-bottom-left-radius:15px;
+    border-bottom-right-radius:15px;
+    z-index: 800;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.container{
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 320px;
+    max-width: 540px;
+}
+
+.video .audio-options{
+    display: none;
+}
+
+.video-options{
+    display: none;
+}
+
+.video .video-options{
+    display: block;
+}
+
+.option-area {
+    display: flex;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid #423f3f;
+    box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.16), 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+}
+
+.option-label{
+    margin-top: 20px;
+}
+
+.option-area .radio {
+    position: relative;
+    height: 60px;
+    flex: 1;
+}
+
+.option-area .text{
+    position: relative;
+    height: 25px;
+    flex: 1;
+    display: flex;
+}
+
+.option-area input[type=text]{
+    opacity: 1;
+    border: 0;
+    height: 25px;
+    line-height: 25px;
+    text-indent: 5px;
+    width: 100%;
+    background-color: #423f3f;
+    color: #fff;
+    font-family: Segoe UI,sans-serif;
+    flex: 1 1 auto;
+}
+
+.option-area input[type=text]:focus{
+    outline: none;
+}
+
+.btn{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.btn svg{
+    width: 17px;
+    height: 25px;
+    padding: 0 7px;
+    pointer-events: none;
+    color: #e1dede;
+}
+
+.option-area input[type=radio] {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+}
+
+.option-area label {
+    position: absolute;
+    top: 0; left: 0;
+    color: #fff;
+    width: 100%;
+    height: 100%;
+    background: #272626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid #423f3f;
+    pointer-events: none;
+    cursor: pointer;
+}
+
+.option-area div:first-child label {
+    border-left: 0;
+}
+
+.option-area input:checked + label {
+    background: #d81b60;
+    font-weight: 500;
+    color: #fff;
+}
+
+.button{
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+button{
+    line-height: 4rem;
+    font-size: 2em;
+    border: 1px solid #c19292;
+    border-radius: 5px;
+    background: #272626;
+    color: #fff;
+    cursor: pointer;
+    padding: 5px 30px;
+}
+
+button:hover{
+    background: #d81b60;
+}
+
+input[type=radio]:disabled + label{
+    color: #5c5656;
+    cursor: auto;
+}
+
+button:disabled{
+    background-color: #272626;
+    opacity: 0.5;
+    cursor: auto;
+}
