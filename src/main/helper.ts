@@ -20,7 +20,7 @@ export default class Helper{
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
-                preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY
+                preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
             },
         });
 
@@ -47,7 +47,7 @@ export default class Helper{
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
-                preload: PLAYLIST_WINDOW_PRELOAD_WEBPACK_ENTRY
+                preload: PLAYLIST_WINDOW_PRELOAD_WEBPACK_ENTRY,
             },
         })
 

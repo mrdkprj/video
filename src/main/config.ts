@@ -4,16 +4,24 @@ import Util from "./util";
 
 const CONFIG_FILE_NAME = "mediaplayer.config.json"
 const DEFAULT_CONFIG :Mp.Config = {
-    volume: 1,
-    ampLevel: 0.07,
-    mute:false,
-    fitToWindow: true,
     bounds: {width:1200, height:800, x:0, y:0},
     playlistBounds: {width:400, height:700, x:0, y:0},
     isMaximized: false,
     playlistVisible:true,
-    playbackRate:1,
-    seekSpeed:10,
+    video:{
+        playbackRate:1,
+        seekSpeed:10,
+        fitToWindow: true,
+    },
+    audio:{
+        volume: 1,
+        ampLevel: 0.07,
+        mute:false,
+    },
+    path:{
+        captureDestDir:"",
+        convertDestDir:""
+    }
 }
 
 export default class Config{
@@ -69,10 +77,10 @@ export default class Config{
         this.data.isMaximized = isMaximized;
         this.data.bounds = mainBounds
         this.data.playlistBounds = playlistBounds;
-        this.data.volume = data.mediaState.videoVolume;
-        this.data.ampLevel = data.mediaState.ampLevel;
-        this.data.fitToWindow = data.mediaState.fitToWindow;
-        this.data.mute = data.mediaState.mute;
+        this.data.audio.volume = data.mediaState.videoVolume;
+        this.data.audio.ampLevel = data.mediaState.ampLevel;
+        this.data.video.fitToWindow = data.mediaState.fitToWindow;
+        this.data.audio.mute = data.mediaState.mute;
 
         await fs.writeFile(this._file, JSON.stringify(this.data));
     }

@@ -115,12 +115,16 @@ const requestConvert = () => {
 
     lock();
 
+    Dom.message.textContent = ""
+
     const args:Mp.ConvertRequest = {
         sourcePath:Dom.srcFileInput.value,
         video:convertType === "video",
-        frameSize,
-        bitrate,
-        rotation
+        options: {
+            frameSize,
+            bitrate,
+            rotation
+        }
     }
 
     window.api.send<Mp.ConvertRequest>("request-convert", args)

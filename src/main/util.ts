@@ -152,13 +152,14 @@ export default class Util{
 
         if(this.command) throw new Error("Process busy")
 
+        this.command = ffmpeg({source:sourcePath})
+
         const size = await this.getSize(sourcePath, frameSize)
 
         return new Promise((resolve,reject)=>{
 
-            this.command = ffmpeg({source:sourcePath})
-
             this.command.format("mp4")
+                .videoCodec("libx264")
                 .size(size)
                 .on("error", async (err:any) => {
                     await this.cleanUp();

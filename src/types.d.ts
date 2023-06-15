@@ -53,16 +53,24 @@ declare global {
         }
 
         type Config = {
-            volume:number;
-            ampLevel:number;
-            mute:boolean;
-            fitToWindow:boolean;
             bounds: Bounds;
             playlistBounds:Bounds;
             isMaximized:boolean;
             playlistVisible:boolean;
-            playbackRate:number;
-            seekSpeed:number;
+            video:{
+                fitToWindow:boolean;
+                playbackRate:number;
+                seekSpeed:number;
+            };
+            audio:{
+                volume:number;
+                ampLevel:number;
+                mute:boolean;
+            };
+            path:{
+                captureDestDir:string;
+                convertDestDir:string;
+            }
         }
 
         type MediaFile = {
@@ -196,6 +204,10 @@ declare global {
         type ConvertRequest = {
             sourcePath:string;
             video:boolean;
+            options:ConvertOptions;
+        }
+
+        type ConvertOptions = {
             frameSize?:VideoFrameSize;
             bitrate?:string;
             rotation?:VideoRotation;

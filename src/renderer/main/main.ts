@@ -2,7 +2,6 @@ const Dom = {
     title: null as HTMLElement,
     resizeBtn:null as HTMLElement,
     video:null as HTMLVideoElement,
-    source:null as HTMLSourceElement,
     loader:null as HTMLElement,
     viewport:null as HTMLElement,
     container:null as HTMLElement,
@@ -79,7 +78,7 @@ window.addEventListener("load", () => {
     Dom.resizeBtn = document.getElementById("resizeBtn")
     Dom.viewport = document.getElementById("viewport");
     Dom.video = document.getElementById("video") as HTMLVideoElement
-    Dom.source = document.getElementById("source") as HTMLSourceElement
+    //Dom.source = document.getElementById("source") as HTMLSourceElement
     Dom.container = document.getElementById("container");
     Dom.buttons = document.getElementById("buttons")
     Dom.currentTimeArea = document.getElementById("videoCurrentTime")
@@ -162,7 +161,7 @@ document.addEventListener("dblclick", e => {
 
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
-    if(e.target.classList.contains("main")){
+    if(e.target.classList.contains("media")){
         togglePlay()
     }
 
@@ -270,7 +269,7 @@ window.addEventListener("resize", () => {
 
 window.addEventListener("contextmenu", e => {
 
-    if((e.target as HTMLElement).classList.contains("main")){
+    if((e.target as HTMLElement).classList.contains("media")){
         e.preventDefault()
         window.api.send("open-main-context")
     }
@@ -351,7 +350,7 @@ function formatTime(secondValue:number){
 }
 
 function initPlayer(){
-    Dom.source.src = "";
+    Dom.video.src = "";
     Dom.title.textContent = "";
     document.title = "MediaPlayer";
     mediaState.videoDuration = 0;
@@ -364,7 +363,7 @@ function initPlayer(){
 }
 
 function releaseFile(){
-    Dom.source.src = "";
+    Dom.video.src = "";
     Dom.video.load();
 }
 
@@ -376,7 +375,7 @@ function beforeDelete(data:Mp.BeforeDeleteArg){
 }
 
 function loadVideo(autoplay:boolean){
-    Dom.source.src = currentFile.src ? `${currentFile.src}?${new Date().getTime()}` : ""
+    Dom.video.src = currentFile.src ? `${currentFile.src}?${new Date().getTime()}` : ""
     const doAuthplay = autoplay ? autoplay : Dom.buttons.classList.contains("playing")
     Dom.video.autoplay = doAuthplay;
     Dom.video.muted = mediaState.mute;
@@ -589,18 +588,18 @@ function prepare(config:Mp.Config){
     isMaximized = config.isMaximized;
     changeMaximizeIcon();
 
-    mediaState.videoVolume = config.volume;
+    mediaState.videoVolume = config.audio.volume;
     updateVolume(mediaState.videoVolume);
 
-    mediaState.ampLevel = config.ampLevel;
+    mediaState.ampLevel = config.audio.ampLevel;
     amplify();
 
-    mediaState.mute = !config.mute
+    mediaState.mute = !config.audio.mute
     toggleMute();
 
-    mediaState.fitToWindow = config.fitToWindow;
-    mediaState.playbackRate = config.playbackRate;
-    mediaState.seekSpeed = config.seekSpeed;
+    mediaState.fitToWindow = config.video.fitToWindow;
+    mediaState.playbackRate = config.video.playbackRate;
+    mediaState.seekSpeed = config.video.seekSpeed;
 }
 
 function load(data:Mp.LoadFileResult){
@@ -621,7 +620,7 @@ window.api.receive<Mp.LoadFileResult>("play", (data:Mp.LoadFileResult) => load(d
 window.api.receive("toggle-play", () => togglePlay())
 
 window.api.receive<Mp.Config>("change-display-mode", (data:Mp.Config) => {
-    mediaState.fitToWindow = data.fitToWindow;
+    mediaState.fitToWindow = data.video.fitToWindow;
     changeVideoSize();
 })
 

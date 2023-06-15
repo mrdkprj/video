@@ -8,6 +8,13 @@ import Util, {EmptyFile} from "./util";
 import Config from "./config";
 import { MainContextMenuTypes, PlaylistContextMenuTypes, ThumbButtonTypes } from "./enum";
 
+// prevent monitor flickering
+app.commandLine.appendSwitch("--disable-gpu");
+
+protocol.registerSchemesAsPrivileged([
+    { scheme: "app", privileges: { bypassCSP: true } },
+])
+
 const renderer:Renderer = {
     Main:null,
     Playlist:null,
@@ -29,10 +36,6 @@ const audioFormats = [
     "mp3",
     "webm",
 ]
-
-protocol.registerSchemesAsPrivileged([
-    { scheme: "app", privileges: { bypassCSP: true } },
-])
 
 const additionalFiles:string[] = [];
 const orderedFiles:Mp.MediaFile[] = []
@@ -272,7 +275,7 @@ const onReady = async () => {
 
     isReady = true;
 
-    mainContext.items[FIT_TO_WINDOW_ITEM_INDEX].checked = config.data.fitToWindow
+    mainContext.items[FIT_TO_WINDOW_ITEM_INDEX].checked = config.data.video.fitToWindow
 
     respond<Mp.Config>("Main", "config", config.data);
 
@@ -326,8 +329,8 @@ const reset = () => {
 }
 
 const changeSizeMode = () => {
-    config.data.fitToWindow = !config.data.fitToWindow
-    mainContext.items[1].checked = config.data.fitToWindow
+    config.data.video.fitToWindow = !config.data.video.fitToWindow
+    mainContext.items[1].checked = config.data.video.fitToWindow
     respond<Mp.Config>("Main", "change-display-mode", config.data)
 }
 
@@ -643,13 +646,15 @@ const changeSeekSpeed = (seekSpeed:number) => {
 const saveImage = (data:Mp.SaveImageRequet) => {
 
     const savePath = dialog.showSaveDialogSync(renderer.Main, {
-        defaultPath: `${getCurrentFile().name}-${data.timestamp}.jpeg`,
+        defaultPath: path.join(config.data.path.captureDestDir, `${getCurrentFile().name}-${data.timestamp}.jpeg`),
         filters: [
             { name: "Image", extensions: ["jpeg", "jpg"] },
         ],
     })
 
     if(!savePath) return;
+
+    config.data.path.captureDestDir = path.dirname(savePath);
 
     fs.writeFileSync(savePath, data.data, "base64")
 }
@@ -667,13 +672,15 @@ const startConvert = async (data:Mp.ConvertRequest) => {
     const fileName =  file.name.replace(path.extname(file.name), "")
 
     const selectedPath = dialog.showSaveDialogSync(renderer.Convert, {
-        defaultPath: `${fileName}.${extension}`,
+        defaultPath: path.join(config.data.path.convertDestDir, `${fileName}.${extension}`),
         filters: [
             { name: name, extensions: [extension] },
         ],
     })
 
     if(!selectedPath) return onConvertEnd()
+
+    config.data.path.convertDestDir = path.dirname(selectedPath)
 
     const shouldReplace = getCurrentFile().fullPath === selectedPath
 
@@ -687,13 +694,13 @@ const startConvert = async (data:Mp.ConvertRequest) => {
     try{
 
         if(data.video){
-            if(data.rotation !== "None"){
-                await util.rotateVideo(data.sourcePath, savePath, data.rotation)
+            if(data.options.rotation !== "None"){
+                await util.rotateVideo(data.sourcePath, savePath, data.options.rotation)
             }else{
-                await util.convertVideo(data.sourcePath, savePath, data.frameSize)
+                await util.convertVideo(data.sourcePath, savePath, data.options.frameSize)
             }
         }else{
-            await util.extractAudio(data.sourcePath, savePath, data.bitrate)
+            await util.extractAudio(data.sourcePath, savePath, data.options.bitrate)
         }
 
         if(shouldReplace){

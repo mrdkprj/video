@@ -18,32 +18,7 @@ build({
             icon: "/src/static/img/icon.ico",
             fileAssociations: [
                 {
-                    "ext": "mp4",
-                    "icon": "src/static/img/icon.ico",
-                    "description": "Video File",
-                },
-                {
-                    "ext": "mov",
-                    "icon": "src/static/img/icon.ico",
-                    "description": "Video File",
-                },
-                {
-                    "ext": "avi",
-                    "icon": "src/static/img/icon.ico",
-                    "description": "Video File",
-                },
-                {
-                    "ext": "wmv",
-                    "icon": "src/static/img/icon.ico",
-                    "description": "Video File",
-                },
-                {
-                    "ext": "webm",
-                    "icon": "src/static/img/icon.ico",
-                    "description": "Video File",
-                },
-                {
-                    "ext": "flv",
+                    "ext": ["mp4","mov","avi","wmv","webm","flv"],
                     "icon": "src/static/img/icon.ico",
                     "description": "Video File",
                 },
