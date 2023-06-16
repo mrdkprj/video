@@ -8,9 +8,6 @@ import Util, {EmptyFile} from "./util";
 import Config from "./config";
 import { MainContextMenuTypes, PlaylistContextMenuTypes, ThumbButtonTypes } from "./enum";
 
-// prevent monitor flickering
-app.commandLine.appendSwitch("--disable-gpu");
-
 protocol.registerSchemesAsPrivileged([
     { scheme: "app", privileges: { bypassCSP: true } },
 ])
