@@ -7,14 +7,16 @@ declare global {
     }
 
     type MainChannel = "minimize" | "toggle-maximize" | "close" | "drop" | "load-file" | "progress" | "open-main-context" |
-                        "played" | "paused" | "reload" | "save-image" | "close-playlist" | "delete-file" |
-                        "remove" | "open-playlist-context" | "change-playlist-order" | "prepare-tooltip" | "show-tooltip" | "hide-tooltip" |
+                        "played" | "paused" | "reload" | "save-image" | "close-playlist" | "file-released" |
+                        "remove-playlist-item" | "open-playlist-context" | "change-playlist-order" | "prepare-tooltip" | "show-tooltip" | "hide-tooltip" |
                         "toggle-play" | "toggle-shuffle" | "toggle-fullscreen" |"close-convert" | "request-convert" |
-                        "open-convert-sourcefile-dialog" | "request-cancel-convert";
+                        "open-convert-sourcefile-dialog" | "request-cancel-convert" |
+                        "rename-file" | "before-rename"
 
-    type MainRendererChannel = "config" | "play" | "toggle-play" | "change-display-mode" | "reset" | "error" | "before-delete" | "log" |
-                                "after-toggle-maximize" | "toggle-convert" | "change-playback-rate" | "change-seek-speed" | "before-convert";
-    type PlaylistRendererChannel = "after-drop"| "play" | "after-remove-playlist" | "reset" | "after-sort";
+    type MainRendererChannel = "ready" | "on-file-load" | "toggle-play" | "change-display-mode" | "reset" | "error" | "release-file" | "log" |
+                                "after-toggle-maximize" | "toggle-convert" | "change-playback-rate" | "change-seek-speed" | "before-convert"
+                                "before-rename"
+    type PlaylistRendererChannel = "after-drop"| "on-file-load" | "after-remove-playlist" | "reset" | "after-sort" | "after-rename" | "clear-playlist";
     type TooltipRendererChannel = "prepare-tooltip";
     type ConvertRendererChannel = "before-open" |"after-sourcefile-select" | "after-convert" | "after-sourcefile-select"
 
@@ -34,6 +36,11 @@ declare global {
         receive: <T extends Mp.Args>(channel:MainRendererChannel | PlaylistRendererChannel | TooltipRendererChannel | ConvertRendererChannel, listener: (data?: T) => void) => () => void;
     }
 
+    type ThumbButtonType = "Play" | "Pause" | "Previous" | "Next"
+    type MainContextMenuType = "PlaybackRate" | "SeekSpeed" | "OpenPlaylist" | "FitToWindow" | "Convert"
+    type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "Reveal" | SortType
+    type SortType = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
+
     const MAIN_WINDOW_WEBPACK_ENTRY: string;
     const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
     const PLAYLIST_WINDOW_WEBPACK_ENTRY: string;
@@ -45,9 +52,17 @@ declare global {
 
     namespace Mp {
 
+        type VideoFrameSize = "Same" | "360p" | "480p" | "720p" | "1080p";
+        type VideoRotation = "90Clockwise" | "90CounterClockwise" | "None"
+
         type Bounds = {
             width:number;
             height:number;
+            x:number;
+            y:number;
+        }
+
+        type Position ={
             x:number;
             y:number;
         }
@@ -73,6 +88,10 @@ declare global {
             }
         }
 
+        type OnReady = {
+            config:Config;
+        }
+
         type MediaFile = {
             id:string;
             fullPath:string;
@@ -92,7 +111,7 @@ declare global {
             seekSpeed:number;
         }
 
-        type ChangePlaySpeed = {
+        type ChangePlaySpeedRequest = {
             playbackRate?:number;
             seekSpeed?:number;
         }
@@ -102,14 +121,20 @@ declare global {
             track:HTMLElement;
             thumb:HTMLElement;
             rect:DOMRect;
-            trackValue:any;
+            trackValue?:any;
             handler: (progress:number) => void;
+        }
+
+        type Sliders = {
+            Time:Mp.Slider,
+            Volume:Mp.Slider,
+            Amp:Mp.Slider
         }
 
         type SliderState = {
             sliding:boolean;
             startX:number;
-            slider:Slider | undefined;
+            slider:Slider;
         }
 
         type PlaylistDragState = {
@@ -119,17 +144,16 @@ declare global {
             working:boolean,
         }
 
-        type Position ={
-            x:number;
-            y:number;
-        }
-
         type DropRequest = {
             files:string[];
-            onPlaylist:boolean;
+            renderer:RendererName;
         }
 
-        type ProgressArg = {
+        type DropResult = {
+            files:MediaFile[];
+        }
+
+        type OnProgress = {
             progress:number;
         }
 
@@ -142,9 +166,10 @@ declare global {
             played:boolean;
         }
 
-        type LoadFileResult = {
+        type OnFileLoad = {
             currentFile:MediaFile;
             autoPlay:boolean;
+            startAt?:number;
         }
 
         type SaveImageRequet = {
@@ -152,12 +177,12 @@ declare global {
             timestamp:number;
         }
 
-        type SaveRequest = {
+        type CloseRequest = {
             mediaState:MediaState
         }
 
         type OpenPlaylistContextRequest = {
-            selectedFileRange:string[]
+            fileIds:string[]
         }
 
         type ChangePlaylistOrderRequet = {
@@ -166,21 +191,29 @@ declare global {
             currentIndex:number;
         }
 
-        type DropResult = {
-            files:MediaFile[];
-            clearPlaylist?:boolean;
-        }
-
-        type RemovePlaylistRequest = {
-            selectedFileRange:string[]
+        type RemovePlaylistItemRequest = {
+            fileIds:string[]
         }
 
         type RemovePlaylistResult = {
             removedFileIds:string[]
         }
 
-        type BeforeDeleteArg = {
-            shouldReleaseFile:boolean;
+        type ReleaseFileRequest = {
+            fileIds:string[];
+        }
+
+        type RenameRequest = {
+            fileId:string;
+        }
+
+        type BeforeRename = {
+            fileId:string;
+            currentTime:number;
+        }
+
+        type RenameResult = {
+            file:MediaFile;
         }
 
         type SortResult = {
@@ -197,9 +230,6 @@ declare global {
             height:number;
             position:Position;
         }
-
-        type VideoFrameSize = "Same" | "360p" | "480p" | "720p" | "1080p";
-        type VideoRotation = "90Clockwise" | "90CounterClockwise" | "None"
 
         type ConvertRequest = {
             sourcePath:string;
@@ -222,6 +252,10 @@ declare global {
             fullPath:string;
         }
 
+        type ConfigChanged = {
+            config:Config;
+        }
+
         type ErrorArgs = {
             message:string;
         }
@@ -230,10 +264,10 @@ declare global {
             log:any;
         }
 
-        type Args = LoadFileResult | DropRequest | ProgressArg | LoadFileRequest | TogglePlayRequest | SaveImageRequet | SaveRequest | ChangePlaylistOrderRequet |
-                    DropResult | RemovePlaylistResult | SortResult | PrepareTooltipRequest | ShowTooltipRequest | OpenPlaylistContextRequest | ChangePlaySpeed |
-                    ConvertRequest | PrepareConvert | FileSelectResult |
-                    ErrorArgs | Config | Logging
+        type Args = OnReady | OnFileLoad | DropRequest | OnProgress | LoadFileRequest | SaveImageRequet | CloseRequest | ChangePlaylistOrderRequet |
+                    DropResult | RemovePlaylistResult | SortResult | PrepareTooltipRequest | ShowTooltipRequest | OpenPlaylistContextRequest | ChangePlaySpeedRequest |
+                    ConvertRequest | FileSelectResult | RenameRequest | BeforeRename |RenameResult | ReleaseFileRequest | ConvertResult | ChangePlayStatusRequest |
+                    ConfigChanged | ErrorArgs | Logging
 
     }
 

@@ -4,9 +4,9 @@ import path from "path";
 import proc from "child_process";
 import url from "url"
 import Helper from "./helper";
-import Util, {EmptyFile} from "./util";
+import Util from "./util";
 import Config from "./config";
-import { MainContextMenuTypes, PlaylistContextMenuTypes, ThumbButtonTypes } from "./enum";
+import { FORWARD, BACKWARD, FIT_TO_WINDOW_ITEM_INDEX, videoFormats, audioFormats, EmptyFile } from "../constants";
 
 protocol.registerSchemesAsPrivileged([
     { scheme: "app", privileges: { bypassCSP: true } },
@@ -19,31 +19,14 @@ const renderer:Renderer = {
     Convert:null,
 }
 
-const videoFormats = [
-    "mp4",
-    "mov",
-    "avi",
-    "wmv",
-    "webm",
-    "flv"
-]
-
-const audioFormats = [
-    "wav",
-    "mp3",
-    "webm",
-]
-
 const additionalFiles:string[] = [];
-const orderedFiles:Mp.MediaFile[] = []
-const FIT_TO_WINDOW_ITEM_INDEX = 1;
+const playlistFiles:Mp.MediaFile[] = []
 const helper = new Helper();
 const util = new Util();
 const config = new Config(app.getPath("userData"));
 
 let primaryDisplay:Electron.Display;
 
-let invokedWithFiles = false;
 let isReady = false;
 let doShuffle = false;
 let currentIndex = 0;
@@ -51,74 +34,74 @@ let selectedFileIds:string[] = [];
 let randomIndices:number[] = [];
 let fileMap:{[key:string]:Mp.MediaFile} = {}
 
+const thumbButtonCallback = (button:ThumbButtonType) => {
+    switch(button){
+        case "Next":
+            changeIndex(FORWARD);
+            break;
+        case "Pause":
+            togglePlay();
+            break;
+        case "Play":
+            togglePlay();
+            break;
+        case "Previous":
+            changeIndex(BACKWARD)
+            break;
+    }
+}
+
 const thumButtons = helper.createThumButtons(thumbButtonCallback)
 
-function thumbButtonCallback(button:ThumbButtonTypes){
-    switch(button){
-        case ThumbButtonTypes.Next:
-            changeIndex(1);
+const mainContextMenuCallback = (menu:MainContextMenuType, args?:any) => {
+    switch(menu){
+        case "PlaybackRate":
+            changePlaybackRate(args);
             break;
-        case ThumbButtonTypes.Pause:
-            togglePlay();
+        case "SeekSpeed":
+            changeSeekSpeed(args);
             break;
-        case ThumbButtonTypes.Play:
-            togglePlay();
+        case "Convert":
+            openConvertDialog();
             break;
-        case ThumbButtonTypes.Previous:
-            changeIndex(-1)
+        case "OpenPlaylist":
+            openPlaylist();
+            break;
+        case "FitToWindow":
+            changeSizeMode();
             break;
     }
 }
 
 const mainContext = helper.createMainContextMenu(mainContextMenuCallback)
 
-function mainContextMenuCallback(menu:MainContextMenuTypes, args?:any){
+const playlistContextMenuCallback = (menu:PlaylistContextMenuType) => {
     switch(menu){
-        case MainContextMenuTypes.PlaybackRate:
-            changePlaybackRate(args);
+        case "Remove":
+            removeFromPlaylist();
             break;
-        case MainContextMenuTypes.SeekSpeed:
-            changeSeekSpeed(args);
+        case "RemoveAll":
+            clearPlaylist();
             break;
-        case MainContextMenuTypes.Convert:
-            openConvertDialog();
+        case "Trash":
+            requestReleaseFile();
             break;
-        case MainContextMenuTypes.OpenPlaylist:
-            openPlaylist();
-            break;
-        case MainContextMenuTypes.FitToWindow:
-            changeSizeMode();
-            break;
-    }
-}
-
-function playlistContextMenuCallback(menu:PlaylistContextMenuTypes){
-    switch(menu){
-        case PlaylistContextMenuTypes.Remove:
-            remove();
-            break;
-        case PlaylistContextMenuTypes.RemoveAll:
-            removeAll();
-            break;
-        case PlaylistContextMenuTypes.Trash:
-            beforeDelete();
-            break;
-        case PlaylistContextMenuTypes.CopyFileName:
+        case "CopyFileName":
             copyFileNameToClipboard();
             break;
-        case PlaylistContextMenuTypes.Reveal:
+        case "Reveal":
             reveal();
             break;
-        case PlaylistContextMenuTypes.NameAsc:
+        case "NameAsc":
             sortPlayList(menu);
             break;
-        case PlaylistContextMenuTypes.NameDesc:
+        case "NameDesc":
             sortPlayList(menu);
             break;
-        case PlaylistContextMenuTypes.DateAsc:
+        case "DateAsc":
             sortPlayList(menu);
             break;
-        case PlaylistContextMenuTypes.DateDesc:
+        case "DateDesc":
             sortPlayList(menu);
             break;
     }
@@ -132,10 +115,10 @@ if(!locked) {
     app.quit()
 }
 
-function onSecondInstanceReady(){
+const onSecondInstanceReady = () => {
     renderer.Tooltip.hide();
     reset();
-    dropFiles({onPlaylist:false, files:[additionalFiles.shift()]})
+    dropFiles({renderer:"Main", files:[additionalFiles.shift()]})
     if(renderer.Main.isMaximized){
         renderer.Main.maximize();
     }
@@ -149,7 +132,7 @@ app.on("second-instance", (_event:Event, _argv:string[], _workingDirectory:strin
         return;
     }
 
-    if(additionalFiles.length <= 0){
+    if(!additionalFiles.length){
 
         additionalFiles.push(...util.extractFilesFromArgv(additionalData))
         setTimeout(() => {
@@ -162,11 +145,11 @@ app.on("second-instance", (_event:Event, _argv:string[], _workingDirectory:strin
 
 })
 
-app.on("ready", async () => {
+app.on("ready", () => {
 
-    invokedWithFiles = process.argv.length > 1 && process.argv[1] != ".";
+    config.init();
 
-    await init();
+    registerIpcChannels();
 
     protocol.registerFileProtocol("app", (request, callback) => {
 
@@ -181,15 +164,16 @@ app.on("ready", async () => {
 
     renderer.Main = helper.createMainWindow(config.data)
 
-    renderer.Main.on("ready-to-show", async () => {
+    renderer.Main.on("ready-to-show", () => {
 
         if(config.data.isMaximized){
             renderer.Main.maximize();
         }
 
+        renderer.Main.setBounds(config.data.bounds)
         renderer.Main.setThumbarButtons(thumButtons[0])
 
-        await onReady();
+        onReady();
 
     })
 
@@ -210,13 +194,6 @@ app.on("ready", async () => {
 
 });
 
-const init = async () => {
-
-    await config.init();
-
-    registerIpcChannels();
-}
-
 const registerIpcChannels = () => {
 
     const handlers:IpcMainHandler[] = [
@@ -232,8 +209,8 @@ const registerIpcChannels = () => {
         {channel:"reload", handle:onReload},
         {channel:"save-image", handle:onSaveImage},
         {channel:"close-playlist", handle:onClosePlaylist},
-        {channel:"remove", handle:onRemove},
-        {channel:"delete-file", handle:onDelete},
+        {channel:"remove-playlist-item", handle:onRemovePlaylistItem},
+        {channel:"file-released", handle:onFileReleased},
         {channel:"open-playlist-context", handle:onOpenPlaylistContext},
         {channel:"change-playlist-order", handle:onChangePlaylistOrder},
         {channel:"prepare-tooltip", handle:onPrepareTooltip},
@@ -257,52 +234,74 @@ const respond = <T extends Mp.Args>(rendererName:RendererName, channel:RendererC
 
 }
 
-const onReady = async () => {
+const onReady = () => {
+
+    isReady = true;
 
     renderer.Main.show();
+
     if(config.data.playlistVisible){
         renderer.Playlist.show();
     }
 
-    if(invokedWithFiles){
-        await initFiles(util.extractFilesFromArgv())
-    }else{
-        reset()
-    }
-
-    isReady = true;
-
     mainContext.items[FIT_TO_WINDOW_ITEM_INDEX].checked = config.data.video.fitToWindow
 
-    respond<Mp.Config>("Main", "config", config.data);
+    respond<Mp.OnReady>("Main", "ready", {config:config.data});
 
-    if(invokedWithFiles){
-        respond<Mp.DropResult>("Playlist", "after-drop", {clearPlaylist:false, files:orderedFiles})
-        togglePlay();
-    }
+    togglePlay();
 
-    loadResource(true);
+    initPlaylist(util.extractFilesFromArgv())
+
 }
 
-const initFiles = async (files:string[]) => {
+const sendCurrentFile = (autoPlay:boolean) => {
+    const currentFile = getCurrentFile();
+    respond<Mp.OnFileLoad>("Playlist", "on-file-load", {currentFile, autoPlay})
+    respond<Mp.OnFileLoad>("Main", "on-file-load", {currentFile, autoPlay})
+}
+
+const initPlaylist = (fullPaths:string[]) => {
 
     reset();
 
-    if(files.length <= 0) return;
-
-    const targeFiles = files.concat(additionalFiles);
-
-    for (const filepath of targeFiles) {
-        const file = await util.toFile(filepath)
-        orderedFiles.push(file)
+    fullPaths.concat(additionalFiles).forEach(fullPath => {
+        const file = util.toFile(fullPath)
+        playlistFiles.push(file)
         fileMap[file.id] = file;
-    }
+    })
+
+    sortPlayList("NameAsc");
 
     currentIndex = 0;
 
     additionalFiles.length = 0;
 
-    isReady = true;
+    shuffleList();
+
+    respond<Mp.Args>("Playlist", "clear-playlist", null)
+
+    respond<Mp.DropResult>("Playlist", "after-drop", {files:playlistFiles})
+
+    sendCurrentFile(true);
+
+}
+
+const addToPlaylist = (fullPaths:string[]) => {
+
+    const newFiles = fullPaths.map(fullpath => util.toFile(fullpath)).filter(file => !fileMap[file.id]);
+
+    newFiles.forEach(file => {
+        playlistFiles.push(file)
+        fileMap[file.id] = file
+    })
+
+    shuffleList();
+
+    respond<Mp.DropResult>("Playlist", "after-drop", {files:newFiles})
+
+    if(currentIndex < 0){
+        sendCurrentFile(false);
+    }
 
 }
 
@@ -310,12 +309,12 @@ const getCurrentFile = () => {
 
     if(currentIndex < 0) return EmptyFile;
 
-    return orderedFiles[currentIndex];
+    return playlistFiles[currentIndex];
 
 }
 
 const reset = () => {
-    orderedFiles.length = 0;
+    playlistFiles.length = 0;
     randomIndices.length = 0;
     fileMap = {}
     currentIndex = -1;
@@ -328,38 +327,41 @@ const reset = () => {
 const changeSizeMode = () => {
     config.data.video.fitToWindow = !config.data.video.fitToWindow
     mainContext.items[1].checked = config.data.video.fitToWindow
-    respond<Mp.Config>("Main", "change-display-mode", config.data)
+    respond<Mp.ConfigChanged>("Main", "change-display-mode", {config:config.data})
 }
 
 const onUnmaximize = () => {
     config.data.isMaximized = false;
-    respond<Mp.Config>("Main", "after-toggle-maximize", config.data)
+    respond<Mp.ConfigChanged>("Main", "after-toggle-maximize", {config:config.data})
 }
 
 const onMaximize = () => {
     config.data.isMaximized = true;
-    respond<Mp.Config>("Main","after-toggle-maximize", config.data)
+    respond<Mp.ConfigChanged>("Main","after-toggle-maximize", {config:config.data})
 }
 
 const toggleMaximize = () => {
+
     if(renderer.Main.isMaximized()){
         renderer.Main.unmaximize();
+        renderer.Main.setBounds(config.data.bounds)
     }else{
+        config.data.bounds = renderer.Main.getBounds();
         renderer.Main.maximize();
     }
 }
 
-const save = async (data:Mp.SaveRequest) => {
+const saveConfig = (data:Mp.MediaState) => {
 
     try{
-        await config.save(data, renderer.Main.isMaximized(), renderer.Main.getBounds(), renderer.Playlist.getBounds());
+        config.save(data, renderer.Main.isMaximized(), renderer.Main.getBounds(), renderer.Playlist.getBounds());
     }catch(ex){
         return sendError(ex);
     }
 }
 
-const closeWindow = async (args:Mp.SaveRequest) => {
-    await save(args);
+const closeWindow = (data:Mp.CloseRequest) => {
+    saveConfig(data.mediaState);
     renderer.Tooltip.close();
     renderer.Playlist.close();
     renderer.Main.close();
@@ -369,7 +371,7 @@ const shuffleList = () => {
 
     if(!doShuffle) return;
 
-    const target = new Array(orderedFiles.length).fill(undefined).map((_v, i) => i).filter(i => i !== currentIndex);
+    const target = new Array(playlistFiles.length).fill(undefined).map((_v, i) => i).filter(i => i !== currentIndex);
     randomIndices = util.shuffle(target)
 
 }
@@ -390,28 +392,22 @@ const changeIndex = (index:number) => {
 
     let nextIndex = doShuffle ? getRandomIndex(index) : currentIndex + index;
 
-    if(nextIndex >= orderedFiles.length){
+    if(nextIndex >= playlistFiles.length){
         nextIndex = 0;
     }
 
     if(nextIndex < 0){
-        nextIndex = orderedFiles.length - 1
+        nextIndex = playlistFiles.length - 1
     }
 
     currentIndex = nextIndex;
 
-    loadResource(false);
+    sendCurrentFile(false);
 }
 
 const selectFile = (index:number) => {
     currentIndex = index;
-    loadResource(true);
-}
-
-const loadResource = (autoPlay = false) => {
-    const currentFile = getCurrentFile();
-    respond<Mp.LoadFileResult>("Playlist", "play", {currentFile, autoPlay})
-    respond<Mp.LoadFileResult>("Main", "play", {currentFile, autoPlay})
+    sendCurrentFile(true);
 }
 
 const toggleThumbButton = (played:boolean) => {
@@ -430,64 +426,36 @@ const togglePlay = () => {
     respond("Main", "toggle-play", {})
 }
 
-const dropFiles = async (data:Mp.DropRequest) => {
+const dropFiles = (data:Mp.DropRequest) => {
 
-    if(data.onPlaylist){
+    if(data.renderer === "Playlist"){
+        addToPlaylist(data.files)
+    }
 
-        await addFiles(data.files)
-
-        shuffleList();
-
-    }else{
-
-        await initFiles(data.files)
-
-        shuffleList();
-
-        respond<Mp.DropResult>("Playlist", "after-drop", {clearPlaylist:true, files:orderedFiles})
-
-        loadResource(data.files.length == 1);
-
+    if(data.renderer === "Main"){
+        initPlaylist(data.files)
     }
 
 }
 
-const addFiles = async (filePaths:string[]) => {
-
-    const changeCurrent = orderedFiles.length <= 0;
-
-    const newFiles = (await Promise.all(filePaths.map(async (fullpath) => await util.toFile(fullpath)))).filter(file => !fileMap[file.id]);
-
-    newFiles.forEach(file => {
-        orderedFiles.push(file)
-        fileMap[file.id] = file
-    })
-
-    respond<Mp.DropResult>("Playlist", "after-drop", {clearPlaylist:false, files:newFiles})
-
-    if(orderedFiles.length == 1 || changeCurrent){
-        currentIndex = 0;
-        loadResource(false);
-    }
-}
-
-const changeOrder = (data:Mp.ChangePlaylistOrderRequet) => {
+const movePlaylistFiles = (data:Mp.ChangePlaylistOrderRequet) => {
 
     if(data.start === data.end) return;
 
-    const replacing = orderedFiles.splice(data.start, 1)[0];
-    orderedFiles.splice(data.end, 0, replacing)
+    const replacing = playlistFiles.splice(data.start, 1)[0];
+    playlistFiles.splice(data.end, 0, replacing)
 
     currentIndex = data.currentIndex;
 }
 
-const removeAll = () => {
+const clearPlaylist = () => {
 
     reset();
-    loadResource();
+    sendCurrentFile(false);
+
 }
 
-const remove = () => {
+const removeFromPlaylist = () => {
 
     if(!selectedFileIds.length) return;
 
@@ -495,21 +463,19 @@ const remove = () => {
         delete fileMap[id];
     })
 
-    const removeIndices = selectedFileIds.map(id => orderedFiles.map(e => e.id).indexOf(id))
-    const shouldLoadNext = removeIndices.includes(currentIndex);
+    const removeIndices = selectedFileIds.map(id => playlistFiles.map(e => e.id).indexOf(id))
+    const isCurrentFileRemoved = removeIndices.includes(currentIndex);
 
-    const newFiles = orderedFiles.filter(file => !selectedFileIds.includes(file.id));
-    orderedFiles.length = 0;
-    orderedFiles.push(...newFiles)
+    const newFiles = playlistFiles.filter(file => !selectedFileIds.includes(file.id));
+    playlistFiles.length = 0;
+    playlistFiles.push(...newFiles)
 
     respond<Mp.RemovePlaylistResult>("Playlist", "after-remove-playlist", {removedFileIds:selectedFileIds})
 
     currentIndex = getIndexAfterRemove(removeIndices)
 
-    if(shouldLoadNext){
-
-        loadResource(false);
-
+    if(isCurrentFileRemoved){
+        sendCurrentFile(false);
     }
 
 }
@@ -518,10 +484,12 @@ const getIndexAfterRemove = (removeIndices:number[]) => {
 
     if(removeIndices.includes(currentIndex)){
 
+        if(!playlistFiles.length) return -1;
+
         const nextIndex = removeIndices[0]
 
-        if(nextIndex >= orderedFiles.length){
-            return orderedFiles.length - 1
+        if(nextIndex >= playlistFiles.length){
+            return playlistFiles.length - 1
         }
 
         return nextIndex;
@@ -533,11 +501,11 @@ const getIndexAfterRemove = (removeIndices:number[]) => {
 
 }
 
-const beforeDelete = () => {
+const requestReleaseFile = () => {
 
-    if(selectedFileIds.length <= 0) return;
+    if(!selectedFileIds.length) return;
 
-    respond<Mp.BeforeDeleteArg>("Main", "before-delete", {shouldReleaseFile:selectedFileIds.includes(orderedFiles[currentIndex].id)})
+    respond<Mp.ReleaseFileRequest>("Main", "release-file", {fileIds:selectedFileIds})
 
 }
 
@@ -549,7 +517,7 @@ const deleteFile = async () => {
 
         await Promise.all(targetFiles.map(async item => await shell.trashItem(item)))
 
-        remove();
+        removeFromPlaylist();
 
     }catch(ex){
         sendError(ex);
@@ -558,7 +526,7 @@ const deleteFile = async () => {
 
 const reveal = () => {
 
-    if(selectedFileIds.length <= 0 || selectedFileIds.length > 1) return;
+    if(!selectedFileIds.length || selectedFileIds.length > 1) return;
 
     const targetId = selectedFileIds[0];
 
@@ -594,7 +562,7 @@ const openConvertSourceFileDialog = () => {
 
 const copyFileNameToClipboard = () => {
 
-    if(selectedFileIds.length <= 0 || selectedFileIds.length > 1) return;
+    if(!selectedFileIds.length || selectedFileIds.length > 1) return;
 
     const targetId = selectedFileIds[0];
 
@@ -604,40 +572,28 @@ const copyFileNameToClipboard = () => {
 
 }
 
-const sortPlayList = (sortOrder:PlaylistContextMenuTypes) => {
+const sortPlayList = (sortType:SortType, currentFile?:Mp.MediaFile) => {
 
-    if(!orderedFiles.length) return;
+    if(!playlistFiles.length) return;
 
-    const currentId = orderedFiles[currentIndex].id;
+    util.sort(playlistFiles, sortType)
 
-    switch(sortOrder){
-        case PlaylistContextMenuTypes.NameAsc:
-            orderedFiles.sort((a,b) => a.name.localeCompare(b.name))
-            break;
-        case PlaylistContextMenuTypes.NameDesc:
-            orderedFiles.sort((a,b) => b.name.localeCompare(a.name))
-            break;
-        case PlaylistContextMenuTypes.DateAsc:
-            orderedFiles.sort((a,b) => a.date - b.date)
-            break;
-        case PlaylistContextMenuTypes.DateDesc:
-            orderedFiles.sort((a,b) => b.date - a.date)
-            break;
+    const sortedIds = playlistFiles.map(file => file.id);
+
+    if(currentFile){
+        currentIndex = sortedIds.findIndex(id => id === currentFile.id);
     }
-
-    const sortedIds = orderedFiles.map(file => file.id);
-    currentIndex = sortedIds.findIndex(id => id === currentId);
 
     respond<Mp.SortResult>("Playlist", "after-sort", {fileIds:sortedIds})
 
 }
 
 const changePlaybackRate = (playbackRate:number) => {
-    respond<Mp.ChangePlaySpeed>("Main", "change-playback-rate", {playbackRate})
+    respond<Mp.ChangePlaySpeedRequest>("Main", "change-playback-rate", {playbackRate})
 }
 
 const changeSeekSpeed = (seekSpeed:number) => {
-    respond<Mp.ChangePlaySpeed>("Main", "change-seek-speed", {seekSpeed});
+    respond<Mp.ChangePlaySpeedRequest>("Main", "change-seek-speed", {seekSpeed});
 }
 
 const saveImage = (data:Mp.SaveImageRequet) => {
@@ -658,14 +614,14 @@ const saveImage = (data:Mp.SaveImageRequet) => {
 
 const startConvert = async (data:Mp.ConvertRequest) => {
 
-    const fileExists = await util.exists(data.sourcePath)
+    const fileExists = util.exists(data.sourcePath)
 
     if(!fileExists) return onConvertEnd();
 
     const extension = data.video ? "mp4" : "mp3"
     const name = data.video ? "Video" : "Audio"
 
-    const file = await util.toFile(data.sourcePath);
+    const file = util.toFile(data.sourcePath);
     const fileName =  file.name.replace(path.extname(file.name), "")
 
     const selectedPath = dialog.showSaveDialogSync(renderer.Convert, {
@@ -733,11 +689,11 @@ const sendError = (ex:any) => {
     respond<Mp.ErrorArgs>("Main", "error", {message:ex.message})
 }
 
-const onMinimize:handler<Mp.SaveRequest> = (_event:Electron.IpcMainEvent, _data:Mp.SaveRequest) => renderer.Main.minimize();
+const onMinimize:handler<Mp.Args> = () => renderer.Main.minimize();
 
-const onClose:handler<Mp.SaveRequest> = async (_event:Electron.IpcMainEvent, data:Mp.SaveRequest) => await closeWindow(data);
+const onClose:handler<Mp.CloseRequest> = (_event:Electron.IpcMainEvent, data:Mp.CloseRequest) => closeWindow(data);
 
-const onDrop:handler<Mp.DropRequest> = async (_event:Electron.IpcMainEvent, data:Mp.DropRequest) => await dropFiles(data);
+const onDrop:handler<Mp.DropRequest> = (_event:Electron.IpcMainEvent, data:Mp.DropRequest) => dropFiles(data);
 
 const onLoadRequest:handler<Mp.LoadFileRequest> = (_event:Electron.IpcMainEvent, data:Mp.LoadFileRequest) => {
     if(data.isAbsolute){
@@ -747,7 +703,7 @@ const onLoadRequest:handler<Mp.LoadFileRequest> = (_event:Electron.IpcMainEvent,
     }
 }
 
-const onProgress:handler<Mp.ProgressArg> = (_event:Electron.IpcMainEvent, data:Mp.ProgressArg) => renderer.Main.setProgressBar(data.progress);
+const onProgress:handler<Mp.OnProgress> = (_event:Electron.IpcMainEvent, data:Mp.OnProgress) => renderer.Main.setProgressBar(data.progress);
 
 const onOpenMainContext:handler<Mp.Args> = () => mainContext.popup({window:renderer.Main});
 
@@ -766,20 +722,22 @@ const onClosePlaylist:handler<Mp.Args> = () => {
     renderer.Playlist.hide()
 }
 
-const onRemove:handler<Mp.RemovePlaylistRequest> = (_event:Electron.IpcMainEvent, data:Mp.RemovePlaylistRequest) => {
-    selectedFileIds = data.selectedFileRange;
-    remove();
+const onRemovePlaylistItem:handler<Mp.RemovePlaylistItemRequest> = (_event:Electron.IpcMainEvent, data:Mp.RemovePlaylistItemRequest) => {
+    selectedFileIds = data.fileIds;
+    removeFromPlaylist();
 }
 
-const onDelete:handler<Mp.Args> = async () => await deleteFile();
+const onFileReleased = async () => {
+    await deleteFile()
+}
 
 const onOpenPlaylistContext:handler<Mp.OpenPlaylistContextRequest> = (_event:Electron.IpcMainEvent, data:Mp.OpenPlaylistContextRequest) => {
     renderer.Tooltip.hide();
-    selectedFileIds = data.selectedFileRange;
+    selectedFileIds = data.fileIds;
     playlistContext.popup({window:renderer.Playlist})
 }
 
-const onChangePlaylistOrder:handler<Mp.ChangePlaylistOrderRequet> = (_event:Electron.IpcMainEvent, data:Mp.ChangePlaylistOrderRequet) => changeOrder(data);
+const onChangePlaylistOrder:handler<Mp.ChangePlaylistOrderRequet> = (_event:Electron.IpcMainEvent, data:Mp.ChangePlaylistOrderRequet) => movePlaylistFiles(data);
 
 const onPrepareTooltip:handler<Mp.PrepareTooltipRequest> = (_event:Electron.IpcMainEvent, data:Mp.PrepareTooltipRequest) => renderer.Tooltip.webContents.send("prepare-renderer.Tooltip", data);
 
@@ -826,9 +784,7 @@ const onToggleFullscreen:handler<Mp.Args> = () => {
 
 const onCloseConvertDiglog:handler<Mp.Args> = () => renderer.Convert.hide();
 
-const onConnvertRequest:handler<Mp.ConvertRequest> = (_event:Electron.IpcMainEvent, data:Mp.ConvertRequest) => {
-    startConvert(data)
-}
+const onConnvertRequest:handler<Mp.ConvertRequest> = (_event:Electron.IpcMainEvent, data:Mp.ConvertRequest) => startConvert(data)
 
 const onCancelConvertRequest:handler<Mp.Args> = () => util.cancelConvert();
 

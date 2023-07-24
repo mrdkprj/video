@@ -1,6 +1,5 @@
 import { BrowserWindow, Menu, nativeImage } from "electron"
 import path from "path"
-import { MainContextMenuTypes, PlaylistContextMenuTypes, ThumbButtonTypes } from "./enum";
 
 export default class Helper{
 
@@ -107,7 +106,7 @@ export default class Helper{
         return convertDialog;
     }
 
-    createMainContextMenu(onclick: (menu:MainContextMenuTypes, args?:any) => void){
+    createMainContextMenu(onclick: (menu:MainContextMenuType, args?:any) => void){
         const mainContextTemplate:Electron.MenuItemConstructorOptions[] = [
             {
                 label: "Playback Rate",
@@ -120,27 +119,27 @@ export default class Helper{
             { type: 'separator' },
             {
                 label: "Convert",
-                click: () => onclick(MainContextMenuTypes.Convert)
+                click: () => onclick("Convert")
             },
             { type: 'separator' },
             {
                 label: "Open Playlist",
-                click: () => onclick(MainContextMenuTypes.OpenPlaylist)
+                click: () => onclick("OpenPlaylist")
             },
             {
                 label: "Fit To Window Size",
                 type: "checkbox",
                 checked: false,
-                click: () => onclick(MainContextMenuTypes.FitToWindow),
+                click: () => onclick("FitToWindow"),
             },
         ]
 
         return Menu.buildFromTemplate(mainContextTemplate)
     }
 
-    private playbackRateMenu(onclick: (menu:MainContextMenuTypes, args?:any) => void){
+    private playbackRateMenu(onclick: (menu:MainContextMenuType, args?:any) => void){
 
-        const type = MainContextMenuTypes.PlaybackRate
+        const type = "PlaybackRate"
         const contextTemplate:Electron.MenuItemConstructorOptions[] = [
             {
                 id: "playbackrate0",
@@ -196,9 +195,9 @@ export default class Helper{
         return Menu.buildFromTemplate(contextTemplate);
     }
 
-    private seekSpeedMenu(onclick: (menu:MainContextMenuTypes, args?:any) => void){
+    private seekSpeedMenu(onclick: (menu:MainContextMenuType, args?:any) => void){
 
-        const type = MainContextMenuTypes.SeekSpeed
+        const type = "SeekSpeed"
         const contextTemplate:Electron.MenuItemConstructorOptions[] = [
             {
                 id: "seekspeed0",
@@ -254,97 +253,99 @@ export default class Helper{
         return Menu.buildFromTemplate(contextTemplate);
     }
 
-    createPlaylistContextMenu(onclick: (menu:PlaylistContextMenuTypes) => void){
+    createPlaylistContextMenu(onclick: (menu:PlaylistContextMenuType) => void){
 
         this.playlistSortMenu = this.createPlaylistSortContextMenu(onclick);
 
         const playlistContextTemplate:Electron.MenuItemConstructorOptions[] = [
             {
                 label: "Remove",
-                click: () => onclick(PlaylistContextMenuTypes.Remove)
-            },
-            {
-                label: "Remove all",
-                click: () => onclick(PlaylistContextMenuTypes.RemoveAll)
+                click: () => onclick("Remove")
             },
             {
                 label: "Trash",
-                click: () => onclick(PlaylistContextMenuTypes.Trash)
+                click: () => onclick("Trash")
             },
             { type: "separator" },
             {
                 label: "Copy File Name",
-                click: () => onclick(PlaylistContextMenuTypes.CopyFileName)
+                click: () => onclick("CopyFileName")
             },
             {
                 label: "Reveal in File Explorer",
-                click: () => onclick(PlaylistContextMenuTypes.Reveal)
+                click: () => onclick("Reveal")
             },
             { type: "separator" },
             {
                 label: "Sort by",
                 submenu: this.playlistSortMenu
-            }
+            },
+            { type: "separator" },
+            {
+                label: "Remove all",
+                click: () => onclick("RemoveAll")
+            },
         ]
 
         return Menu.buildFromTemplate(playlistContextTemplate);
     }
 
-    private createPlaylistSortContextMenu(onclick: (menu:PlaylistContextMenuTypes) => void){
+    private createPlaylistSortContextMenu(onclick: (menu:PlaylistContextMenuType) => void){
 
         const playlistSortMenuTemplate:Electron.MenuItemConstructorOptions[] = [
             {
-                id: PlaylistContextMenuTypes.NameAsc,
-                label: "Name asc",
+                id: "NameAsc",
+                label: "Name(Asc)",
                 type: "checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(PlaylistContextMenuTypes.NameAsc))
+                checked: true,
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("NameAsc"))
             },
             {
-                id: PlaylistContextMenuTypes.NameDesc,
-                label: "Name desc",
+                id: "NameDesc",
+                label: "Name(Desc)",
                 type: "checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(PlaylistContextMenuTypes.NameDesc))
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("NameDesc"))
             },
             {
-                id: PlaylistContextMenuTypes.DateAsc,
-                label: "Date asc",
+                id: "DateAsc",
+                label: "Date(Asc)",
                 type: "checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(PlaylistContextMenuTypes.DateAsc))
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("DateAsc"))
             },
             {
-                id: PlaylistContextMenuTypes.DateDesc,
-                label: "Date desc",
+                id: "DateDesc",
+                label: "Date(Desk)",
                 type: "checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(PlaylistContextMenuTypes.DateDesc))
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("DateDesc"))
             },
         ]
 
         return Menu.buildFromTemplate(playlistSortMenuTemplate);
     }
 
-    createThumButtons(onclick: (button:ThumbButtonTypes) => void){
+    createThumButtons(onclick: (button:ThumbButtonType) => void){
 
         const staticDir = path.join(__dirname, "..", "static");
 
         const playThumbButton:Electron.ThumbarButton = {
             tooltip: "Play",
             icon: nativeImage.createFromPath(path.join(staticDir, "img", "play.png")),
-            click: () => onclick(ThumbButtonTypes.Play),
+            click: () => onclick("Play"),
         }
         const pauseThumbButton:Electron.ThumbarButton = {
             tooltip: "Pause",
             icon: nativeImage.createFromPath(path.join(staticDir, "img", "pause.png")),
-            click: () => onclick(ThumbButtonTypes.Pause),
+            click: () => onclick("Pause"),
         }
         const prevThumbButton:Electron.ThumbarButton = {
             tooltip: "Previous",
             icon: nativeImage.createFromPath(path.join(staticDir, "img", "backward.png")),
-            click: () => onclick(ThumbButtonTypes.Previous)
+            click: () => onclick("Previous")
         }
         const nextThumbButton:Electron.ThumbarButton = {
             tooltip: "Next",
             icon: nativeImage.createFromPath(path.join(staticDir, "img", "forward.png")),
-            click: () => onclick(ThumbButtonTypes.Next)
+            click: () => onclick("Next")
         }
 
         const thumbButtonsOptionsPaused:Electron.ThumbarButton[] = [

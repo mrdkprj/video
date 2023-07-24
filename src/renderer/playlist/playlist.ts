@@ -6,7 +6,7 @@ const Dom = {
     fileListContainer:null as HTMLElement,
 }
 
-const selection:string[] = [];
+const selectedFileIds:string[] = [];
 
 const dragState:Mp.PlaylistDragState = {
     dragging: false,
@@ -20,45 +20,23 @@ let selectedElement:HTMLElement;
 let fileListContainerRect:DOMRect;
 let mouseEnterDisabled = false;
 
-window.addEventListener("load", () => {
-
-    Dom.playlist = document.getElementById("playlist")
-    Dom.playlistTitleBar = document.getElementById("playlistTitleBar")
-    Dom.playlistFooter = document.getElementById("playlistFooter")
-    Dom.fileList = document.getElementById("fileList")
-    Dom.fileListContainer = document.getElementById("fileListContainer")
-    fileListContainerRect = Dom.fileListContainer.getBoundingClientRect();
-    document.getElementById("closePlaylistBtn").addEventListener("click", () => window.api.send("close-playlist"))
-
-    Dom.fileList.addEventListener("mouseleave", onMouseLeave)
-
-    Dom.playlist.addEventListener("mouseleave", onMouseLeave)
-
-    window.addEventListener("resize", () => {
-        fileListContainerRect = Dom.fileListContainer.getBoundingClientRect()
-    })
-
-})
-
-window.addEventListener("contextmenu", e => {
+const onContextMenu = (e:MouseEvent) => {
     e.preventDefault()
-    window.api.send<Mp.OpenPlaylistContextRequest>("open-playlist-context", {selectedFileRange:selection})
-})
+    window.api.send<Mp.OpenPlaylistContextRequest>("open-playlist-context", {fileIds:selectedFileIds})
+}
 
-window.addEventListener("keydown", e => {
+const onKeydown = (e:KeyboardEvent) => {
 
     if(e.ctrlKey && e.key === "r") e.preventDefault();
 
-    if(e.key === "Enter") window.api.send("toggle-play")
+    if(e.key === "Enter"){
+        window.api.send("toggle-play")
+    }
 
-})
-
-document.addEventListener("keydown", e =>{
-
-    if(selection.length > 0){
+    if(selectedFileIds.length > 0){
 
         if(e.key === "Delete"){
-            window.api.send<Mp.RemovePlaylistRequest>("remove", {selectedFileRange:selection})
+            window.api.send<Mp.RemovePlaylistItemRequest>("remove-playlist-item", {fileIds:selectedFileIds})
         }
     }
 
@@ -66,31 +44,17 @@ document.addEventListener("keydown", e =>{
         selectAll();
     }
 
-})
+}
 
-document.addEventListener("click", e => {
-
+const onClick = (e:MouseEvent) => {
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
     if(e.target.id === "shuffleBtn"){
         toggleShuffle();
     }
+}
 
-})
-
-document.addEventListener("mousedown", onMouseDown);
-
-document.addEventListener("dragover", e => {
-    e.preventDefault();
-})
-
-document.addEventListener("mouseup", onMouseUp);
-
-document.addEventListener("drop", e => {
-    onFileDrop(e)
-})
-
-function onMouseDown(e:MouseEvent){
+const onMouseDown = (e:MouseEvent) => {
 
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
@@ -100,15 +64,15 @@ function onMouseDown(e:MouseEvent){
 
         e.stopPropagation();
 
-        if(e.button === 2 && selection.length > 1){
-            if(selection.includes(e.target.id)){
+        if(e.button === 2 && selectedFileIds.length > 1){
+            if(selectedFileIds.includes(e.target.id)){
                 return;
             }
         }
 
         toggleSelect(e)
 
-        if(selection.length > 1) return;
+        if(selectedFileIds.length > 1) return;
 
         dragState.dragging = true;
         dragState.startElement = e.target;
@@ -119,7 +83,7 @@ function onMouseDown(e:MouseEvent){
     }
 }
 
-function onMouseUp(_e:MouseEvent){
+const onMouseUp = (_e:MouseEvent) => {
     if(dragState.dragging){
         const args = {start:dragState.startIndex, end:getChildIndex(dragState.startElement), currentIndex:getChildIndex(currentElement)}
         window.api.send<Mp.ChangePlaylistOrderRequet>("change-playlist-order", args);
@@ -127,7 +91,7 @@ function onMouseUp(_e:MouseEvent){
     dragState.dragging = false;
 }
 
-function onMouseEnter(e:MouseEvent){
+const onMouseEnter = (e:MouseEvent) => {
 
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
@@ -138,11 +102,15 @@ function onMouseEnter(e:MouseEvent){
     movePlaylistItem(e);
 }
 
-function onMouseLeave(){
+const onMouseLeave = () => {
     window.api.send("hide-tooltip")
 }
 
-function movePlaylistItem(e:MouseEvent){
+const onResize = () => {
+    fileListContainerRect = Dom.fileListContainer.getBoundingClientRect()
+}
+
+const movePlaylistItem = (e:MouseEvent) => {
 
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
@@ -155,7 +123,7 @@ function movePlaylistItem(e:MouseEvent){
 
     dragState.working = true;
 
-    const currentIndex = selection.indexOf(dragState.startElement.id);
+    const currentIndex = selectedFileIds.indexOf(dragState.startElement.id);
     const dropRect = e.target.getBoundingClientRect();
     const dropPosition = e.clientY - dropRect.top;
     if(dropPosition <= dropRect.height){
@@ -163,17 +131,17 @@ function movePlaylistItem(e:MouseEvent){
     }else{
         e.target.parentNode.insertBefore(e.target, dragState.startElement);
     }
-    selection[currentIndex] = dragState.startElement.id;
+    selectedFileIds[currentIndex] = dragState.startElement.id;
 
     dragState.working = false;
 
 }
 
-function clearPlaylist(){
+const clearPlaylist = () => {
     Dom.fileList.innerHTML = "";
 }
 
-function onFileDrop(e:DragEvent){
+const onFileDrop = (e:DragEvent) => {
 
     e.preventDefault();
     e.stopPropagation();
@@ -185,15 +153,17 @@ function onFileDrop(e:DragEvent){
     })
 
     if(dropFiles.length > 0){
-        window.api.send<Mp.DropRequest>("drop", {files:dropFiles.map(item => item.getAsFile().path), onPlaylist:true})
+        window.api.send<Mp.DropRequest>("drop", {files:dropFiles.map(item => item.getAsFile().path), renderer:"Playlist"})
     }
 }
 
-function addPlaylist(files:Mp.MediaFile[]){
+const addToPlaylist = (data:Mp.DropResult) => {
+
+    if(!data.files.length) return;
 
     const fragment = document.createDocumentFragment();
 
-    files.forEach(file => {
+    data.files.forEach(file => {
 
         const item = document.createElement("li");
         item.textContent = file.name;
@@ -226,19 +196,19 @@ const removeFromPlaylist = (data:Mp.RemovePlaylistResult) => {
     })
 }
 
-function preventMouseEnter(){
+const preventMouseEnter = () => {
     mouseEnterDisabled = true;
     setTimeout(() => {
         mouseEnterDisabled = false;
     }, 500);
 }
 
-function clearSelection(){
-    selection.forEach(id => document.getElementById(id).classList.remove("selected"))
-    selection.length = 0;
+const clearSelection = () => {
+    selectedFileIds.forEach(id => document.getElementById(id).classList.remove("selected"))
+    selectedFileIds.length = 0;
 }
 
-function toggleSelect(e:MouseEvent){
+const toggleSelect = (e:MouseEvent) => {
 
     if(e.ctrlKey){
         selectByCtrl(e)
@@ -254,18 +224,18 @@ function toggleSelect(e:MouseEvent){
 
 }
 
-function select(e:MouseEvent){
+const select = (e:MouseEvent) => {
 
     clearSelection();
 
     selectedElement = e.target as HTMLElement;
 
-    selection.push(selectedElement.id)
+    selectedFileIds.push(selectedElement.id)
 
     selectedElement.classList.add("selected")
 }
 
-function selectByShift(e:MouseEvent){
+const selectByShift = (e:MouseEvent) => {
 
     clearSelection();
 
@@ -282,13 +252,13 @@ function selectByShift(e:MouseEvent){
     range.sort((a,b) => a - b);
 
     for(let i = range[0]; i <= range[1]; i++){
-        selection.push(Dom.fileList.children[i].id);
+        selectedFileIds.push(Dom.fileList.children[i].id);
         Dom.fileList.children[i].classList.add("selected")
     }
 
 }
 
-function selectByCtrl(e:MouseEvent){
+const selectByCtrl = (e:MouseEvent) => {
 
     if(!selectedElement){
         select(e);
@@ -296,23 +266,23 @@ function selectByCtrl(e:MouseEvent){
     }
 
     const target = (e.target as HTMLElement);
-    selection.push(target.id)
+    selectedFileIds.push(target.id)
 
     target.classList.add("selected")
 }
 
-function selectAll(){
+const selectAll = () => {
 
     clearSelection();
 
     Array.from(Dom.fileList.children).forEach((node,_index) => {
         node.classList.add("selected")
-        selection.push(node.id);
+        selectedFileIds.push(node.id);
     })
 
 }
 
-function onFileListItemClicked(e:MouseEvent){
+const onFileListItemClicked = (e:MouseEvent) => {
     const index = getChildIndex(e.target as HTMLElement);
     window.api.send<Mp.LoadFileRequest>("load-file", {index, isAbsolute:true});
 }
@@ -323,7 +293,7 @@ function getChildIndex(node:HTMLElement) {
     return Array.prototype.indexOf.call(Dom.fileList.childNodes, node);
 }
 
-function changeCurrent(data:Mp.LoadFileResult){
+const changeCurrent = (data:Mp.OnFileLoad) => {
 
     if(currentElement){
         currentElement.classList.remove("current");
@@ -344,25 +314,15 @@ function changeCurrent(data:Mp.LoadFileResult){
     }
 }
 
-function addFiles(data:Mp.DropResult){
-
-    if(data.clearPlaylist){
-        clearPlaylist();
-    }
-
-    addPlaylist(data.files);
-
-}
-
-function reset(){
+const onReset = () => {
     currentElement = null;
     selectedElement = null;
     mouseEnterDisabled = false;
-    selection.length = 0;
+    selectedFileIds.length = 0;
     clearPlaylist();
 }
 
-function toggleShuffle(){
+const toggleShuffle = () => {
 
     if(Dom.playlistFooter.classList.contains("shuffle")){
         Dom.playlistFooter.classList.remove("shuffle")
@@ -373,25 +333,57 @@ function toggleShuffle(){
     window.api.send("toggle-shuffle")
 }
 
-function sortList(fileIds:string[]){
+const onAfterSort = (data:Mp.SortResult) => {
 
     const lists = Array.from(Dom.fileList.children)
 
-    lists.sort((a,b) => fileIds.indexOf(a.id) - fileIds.indexOf(b.id))
+    if(!lists.length) return;
+
+    lists.sort((a,b) => data.fileIds.indexOf(a.id) - data.fileIds.indexOf(b.id))
 
     Dom.fileList.innerHTML = "";
+
     lists.forEach(li => Dom.fileList.appendChild(li))
 
 }
 
-window.api.receive<Mp.DropResult>("after-drop", (data:Mp.DropResult) => addFiles(data))
+window.api.receive("clear-playlist", clearPlaylist)
 
-window.api.receive<Mp.LoadFileResult>("play", (data: Mp.LoadFileResult) => changeCurrent(data))
+window.api.receive<Mp.DropResult>("after-drop", addToPlaylist)
 
-window.api.receive<Mp.RemovePlaylistResult>("after-remove-playlist", (data: Mp.RemovePlaylistResult) => removeFromPlaylist(data))
+window.api.receive<Mp.OnFileLoad>("on-file-load", changeCurrent)
 
-window.api.receive<Mp.SortResult>("after-sort", (data:Mp.SortResult) => sortList(data.fileIds))
+window.api.receive<Mp.RemovePlaylistResult>("after-remove-playlist", removeFromPlaylist)
 
-window.api.receive("reset", () => reset())
+window.api.receive<Mp.SortResult>("after-sort", onAfterSort)
+
+window.api.receive("reset", onReset)
+
+window.addEventListener("load", () => {
+
+    Dom.playlist = document.getElementById("playlist")
+    Dom.playlistTitleBar = document.getElementById("playlistTitleBar")
+    Dom.playlistFooter = document.getElementById("playlistFooter")
+    Dom.fileList = document.getElementById("fileList")
+    Dom.fileListContainer = document.getElementById("fileListContainer")
+    fileListContainerRect = Dom.fileListContainer.getBoundingClientRect();
+    document.getElementById("closePlaylistBtn").addEventListener("click", () => window.api.send("close-playlist"))
+
+    Dom.fileList.addEventListener("mouseleave", onMouseLeave)
+
+    Dom.playlist.addEventListener("mouseleave", onMouseLeave)
+
+    window.addEventListener("resize", onResize)
+
+})
+
+window.addEventListener("contextmenu", onContextMenu)
+
+window.addEventListener("keydown",onKeydown)
+document.addEventListener("click", onClick)
+document.addEventListener("mousedown", onMouseDown);
+document.addEventListener("dragover", e => e.preventDefault())
+document.addEventListener("mouseup", onMouseUp);
+document.addEventListener("drop", onFileDrop)
 
 export {}

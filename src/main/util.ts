@@ -1,28 +1,7 @@
-import fs from "fs/promises"
+import fs from "fs"
 import path from "path";
 import ffmpeg from "fluent-ffmpeg"
-
-const resolutions = {
-    "Same": "",
-    "360p":"480x360",
-    "480p":"640x480",
-    "720p":"1280x720",
-    "1080p":"1920x1080",
-}
-
-const rotations = {
-    "None": -1,
-    "90Clockwise": 1,
-    "90CounterClockwise":2
-}
-
-export const EmptyFile:Mp.MediaFile = {
-    id:"",
-    fullPath:"",
-    src:"",
-    name:"",
-    date: 0
-}
+import { resolutions, rotations } from "../constants";
 
 export default class Util{
 
@@ -46,32 +25,29 @@ export default class Util{
             return target.slice(1, target.length)
         }
 
+        if(process.argv[1] == ".") return [];
+
         return process.argv.slice(1, process.argv.length)
 
     }
 
-    async exists(target:string, createIfNotFound = false){
+    exists(target:string, createIfNotFound = false){
 
         if(!target) return false;
 
-        try{
-            await fs.stat(target);
+        const result = fs.existsSync(target)
 
-            return true;
-
-        }catch(ex){
-
-            if(createIfNotFound){
-                await fs.mkdir(target);
-            }
-
-            return false;
+        if(result == false && createIfNotFound){
+            fs.mkdirSync(target);
         }
+
+        return result;
+
     }
 
-    async toFile(fullPath:string):Promise<Mp.MediaFile>{
+    toFile(fullPath:string):Mp.MediaFile{
 
-        const statInfo = await fs.stat(fullPath);
+        const statInfo = fs.statSync(fullPath);
 
         const encodedPath = path.join(path.dirname(fullPath), encodeURIComponent(path.basename(fullPath)))
 
@@ -99,6 +75,27 @@ export default class Util{
         }
 
         return result;
+    }
+
+    sort(files:Mp.MediaFile[], sortType:SortType){
+
+        if(!files.length) return;
+
+        switch(sortType){
+            case "NameAsc":
+                files.sort((a,b) => a.name.replace(path.extname(a.name), "").localeCompare(b.name.replace(path.extname(b.name), "")))
+                break;
+            case "NameDesc":
+                files.sort((a,b) => b.name.replace(path.extname(b.name), "").localeCompare(a.name.replace(path.extname(a.name), "")))
+                break;
+            case "DateAsc":
+                files.sort((a,b) => a.date - b.date)
+                break;
+            case "DateDesc":
+                files.sort((a,b) => b.date - a.date)
+                break;
+        }
+
     }
 
     getMediaDetail(fullPath:string):Promise<ffmpeg.FfprobeData>{
@@ -135,7 +132,7 @@ export default class Util{
                 .audioCodec("libmp3lame")
                 .audioBitrate(bitrate)
                 .on("error", async (err:any) => {
-                    await this.cleanUp();
+                    this.cleanUp();
                     reject(new Error(err.message))
                 })
                 .on("end", () => {
@@ -162,7 +159,7 @@ export default class Util{
                 .videoCodec("libx264")
                 .size(size)
                 .on("error", async (err:any) => {
-                    await this.cleanUp();
+                    this.cleanUp();
                     reject(new Error(err.message))
                 })
                 .on("end", () => {
@@ -204,7 +201,7 @@ export default class Util{
             this.command.format("mp4")
                 .withVideoFilter(`transpose=${rotation}`)
                 .on("error", async (err:any) => {
-                    await this.cleanUp();
+                    this.cleanUp();
                     reject(new Error(err.message))
                 })
                 .on("end", () => {
@@ -221,12 +218,12 @@ export default class Util{
         this.convertDestFile = null;
     }
 
-    private async cleanUp(){
+    private cleanUp(){
 
-        const shouldDelete = await this.exists(this.convertDestFile)
+        const shouldDelete = this.exists(this.convertDestFile)
 
         if(shouldDelete){
-            await fs.rm(this.convertDestFile);
+            fs.rmSync(this.convertDestFile);
         }
 
         this.finishConvert();
