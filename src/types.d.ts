@@ -7,21 +7,19 @@ declare global {
     }
 
     type MainChannel = "minimize" | "toggle-maximize" | "close" | "drop" | "load-file" | "progress" | "open-main-context" |
-                        "played" | "paused" | "reload" | "save-image" | "close-playlist" | "file-released" |
-                        "remove-playlist-item" | "open-playlist-context" | "change-playlist-order" | "prepare-tooltip" | "show-tooltip" | "hide-tooltip" |
+                        "play-status-change" | "reload" | "save-image" | "close-playlist" | "file-released" |
+                        "remove-playlist-item" | "open-playlist-context" | "change-playlist-order" |
                         "toggle-play" | "toggle-shuffle" | "toggle-fullscreen" |"close-convert" | "request-convert" |
                         "open-convert-sourcefile-dialog" | "request-cancel-convert" |
-                        "rename-file" | "before-rename"
+                        "rename-file"
 
-    type MainRendererChannel = "ready" | "on-file-load" | "toggle-play" | "change-display-mode" | "reset" | "error" | "release-file" | "log" |
+    type MainRendererChannel = "ready" | "on-file-load" | "toggle-play" | "change-display-mode" | "reset" | "release-file" | "log" | "replace-file" |
                                 "after-toggle-maximize" | "toggle-convert" | "change-playback-rate" | "change-seek-speed" | "before-convert"
-                                "before-rename"
     type PlaylistRendererChannel = "after-drop"| "on-file-load" | "after-remove-playlist" | "reset" | "after-sort" | "after-rename" | "clear-playlist";
-    type TooltipRendererChannel = "prepare-tooltip";
     type ConvertRendererChannel = "before-open" |"after-sourcefile-select" | "after-convert" | "after-sourcefile-select"
 
-    type RendererChannel = MainRendererChannel | PlaylistRendererChannel | TooltipRendererChannel | ConvertRendererChannel
-    type RendererName = "Main" | "Playlist" | "Tooltip" | "Convert"
+    type RendererChannel = MainRendererChannel | PlaylistRendererChannel | ConvertRendererChannel
+    type RendererName = "Main" | "Playlist" | "Convert"
     type Renderer = {[key in RendererName] : Electron.BrowserWindow}
 
     interface IpcMainHandler {
@@ -33,7 +31,7 @@ declare global {
 
     interface Api {
         send: <T extends Mp.Args>(channel: MainChannel, data?:T) => void;
-        receive: <T extends Mp.Args>(channel:MainRendererChannel | PlaylistRendererChannel | TooltipRendererChannel | ConvertRendererChannel, listener: (data?: T) => void) => () => void;
+        receive: <T extends Mp.Args>(channel:MainRendererChannel | PlaylistRendererChannel | ConvertRendererChannel, listener: (data?: T) => void) => () => void;
     }
 
     type ThumbButtonType = "Play" | "Pause" | "Previous" | "Next"
@@ -45,8 +43,6 @@ declare global {
     const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
     const PLAYLIST_WINDOW_WEBPACK_ENTRY: string;
     const PLAYLIST_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
-    const TOOLTIP_WINDOW_WEBPACK_ENTRY: string;
-    const TOOLTIP_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
     const CONVERT_WINDOW_WEBPACK_ENTRY: string;
     const CONVERT_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
@@ -54,6 +50,7 @@ declare global {
 
         type VideoFrameSize = "Same" | "360p" | "480p" | "720p" | "1080p";
         type VideoRotation = "90Clockwise" | "90CounterClockwise" | "None"
+        type PlayStatus = "playing" | "paused" | "stopped"
 
         type Bounds = {
             width:number;
@@ -94,6 +91,7 @@ declare global {
 
         type MediaFile = {
             id:string;
+            uuid:string;
             fullPath:string;
             src:string;
             name:string;
@@ -163,13 +161,16 @@ declare global {
         }
 
         type ChangePlayStatusRequest = {
-            played:boolean;
+            status:PlayStatus;
         }
 
         type OnFileLoad = {
             currentFile:MediaFile;
             autoPlay:boolean;
-            startAt?:number;
+        }
+
+        type ReplaceFileRequest = {
+            file:MediaFile;
         }
 
         type SaveImageRequet = {
@@ -204,31 +205,23 @@ declare global {
         }
 
         type RenameRequest = {
-            fileId:string;
-        }
-
-        type BeforeRename = {
-            fileId:string;
-            currentTime:number;
+            id:string;
+            name:string
         }
 
         type RenameResult = {
             file:MediaFile;
+            error?:boolean;
+        }
+
+        type RenameData = {
+            elementId:string;
+            oldName:string;
+            newName:string;
         }
 
         type SortResult = {
             fileIds:string[]
-        }
-
-        type PrepareTooltipRequest = {
-            fileName:string;
-            position:Position;
-        }
-
-        type ShowTooltipRequest = {
-            width:number;
-            height:number;
-            position:Position;
         }
 
         type ConvertRequest = {
@@ -256,18 +249,14 @@ declare global {
             config:Config;
         }
 
-        type ErrorArgs = {
-            message:string;
-        }
-
         type Logging = {
             log:any;
         }
 
         type Args = OnReady | OnFileLoad | DropRequest | OnProgress | LoadFileRequest | SaveImageRequet | CloseRequest | ChangePlaylistOrderRequet |
-                    DropResult | RemovePlaylistResult | SortResult | PrepareTooltipRequest | ShowTooltipRequest | OpenPlaylistContextRequest | ChangePlaySpeedRequest |
-                    ConvertRequest | FileSelectResult | RenameRequest | BeforeRename |RenameResult | ReleaseFileRequest | ConvertResult | ChangePlayStatusRequest |
-                    ConfigChanged | ErrorArgs | Logging
+                    DropResult | RemovePlaylistResult | SortResult | OpenPlaylistContextRequest | ChangePlaySpeedRequest | ReplaceFileRequest |
+                    ConvertRequest | FileSelectResult | RenameRequest | RenameResult | ReleaseFileRequest | ConvertResult | ChangePlayStatusRequest |
+                    ConfigChanged | Logging
 
     }
 

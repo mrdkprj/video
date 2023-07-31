@@ -326,16 +326,20 @@ const beforeDelete = (data:Mp.ReleaseFileRequest) => {
     window.api.send("file-released")
 }
 
-const loadVideo = (autoplay:boolean) => {
+const loadMedia = (autoplay:boolean) => {
     Dom.video.src = currentFile.src ? `${currentFile.src}?${new Date().getTime()}` : ""
-    const doAuthplay = autoplay ? autoplay : Dom.buttons.classList.contains("playing")
-    Dom.video.autoplay = doAuthplay;
+    Dom.video.autoplay = autoplay ? autoplay : Dom.buttons.classList.contains("playing");
     Dom.video.muted = mediaState.mute;
     Dom.video.playbackRate = mediaState.playbackRate
     Dom.video.load();
 }
 
-const onVideoLoaded = () => {
+const replaceMedia = (data:Mp.ReplaceFileRequest) => {
+    currentFile = data.file;
+    Dom.video.src = currentFile.src ? `${currentFile.src}?${new Date().getTime()}` : ""
+}
+
+const onMediaLoaded = () => {
 
     document.title = `MediaPlayer - ${currentFile.name}`
     Dom.title.textContent = currentFile.name
@@ -434,7 +438,7 @@ const togglePlay = () => {
 }
 
 const onPlayed = () => {
-    window.api.send<Mp.ChangePlayStatusRequest>("played", {played:true})
+    window.api.send<Mp.ChangePlayStatusRequest>("play-status-change", {status:"playing"})
     Dom.buttons.classList.add("playing")
 }
 
@@ -442,7 +446,7 @@ const onPaused = () => {
 
     if(Dom.video.currentTime == Dom.video.duration) return;
 
-    window.api.send<Mp.ChangePlayStatusRequest>("paused", {played:false})
+    window.api.send<Mp.ChangePlayStatusRequest>("play-status-change", {status:"paused"})
     Dom.buttons.classList.remove("playing")
 }
 
@@ -450,7 +454,7 @@ const stop = () => {
 
     if(!currentFile) return;
 
-    window.api.send<Mp.ChangePlayStatusRequest>("paused", {played:false})
+    window.api.send<Mp.ChangePlayStatusRequest>("play-status-change", {status:"stopped"})
     Dom.buttons.classList.remove("playing")
     Dom.video.load();
 }
@@ -566,34 +570,24 @@ const load = (e:Mp.OnFileLoad) => {
     currentFile = e.currentFile;
 
     if(currentFile.id){
-        loadVideo(e.autoPlay)
+        loadMedia(e.autoPlay)
     }else{
         initPlayer();
     }
+
 }
 
 window.api.receive<Mp.OnReady>("ready", prepare)
-
 window.api.receive<Mp.OnFileLoad>("on-file-load", load)
-
 window.api.receive("toggle-play", togglePlay)
-
 window.api.receive<Mp.ConfigChanged>("change-display-mode", onChangeDisplayMode)
-
 window.api.receive("reset", initPlayer)
-
-window.api.receive<Mp.ErrorArgs>("error", (data:Mp.ErrorArgs) => alert(data.message))
-
 window.api.receive<Mp.ReleaseFileRequest>("release-file", beforeDelete)
-
 window.api.receive<Mp.ConfigChanged>("after-toggle-maximize", onWindowSizeChanged)
-
 window.api.receive("toggle-convert", () => toggleConvert())
-
 window.api.receive<Mp.ChangePlaySpeedRequest>("change-playback-rate", changePlaybackRate)
-
 window.api.receive<Mp.ChangePlaySpeedRequest>("change-seek-speed", changeSeekSpeed);
-
+window.api.receive<Mp.ReplaceFileRequest>("replace-file", replaceMedia)
 window.api.receive<Mp.Logging>("log", data => console.log(data.log))
 
 window.addEventListener("load", () => {
@@ -611,7 +605,7 @@ window.addEventListener("load", () => {
 
     containerRect = Dom.container.getBoundingClientRect();
 
-    Dom.video.addEventListener("canplaythrough", onVideoLoaded)
+    Dom.video.addEventListener("canplaythrough", onMediaLoaded)
 
     Dom.video.addEventListener("ended", () => changeFile(FORWARD))
 

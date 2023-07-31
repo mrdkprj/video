@@ -60,10 +60,7 @@ export default class Config{
         return config;
     }
 
-    save(mediaState:Mp.MediaState, isMaximized:boolean, mainBounds:Electron.Rectangle, playlistBounds:Electron.Rectangle){
-        this.data.isMaximized = isMaximized;
-        this.data.bounds = mainBounds
-        this.data.playlistBounds = playlistBounds;
+    save(mediaState:Mp.MediaState){
         this.data.audio.volume = mediaState.videoVolume;
         this.data.audio.ampLevel = mediaState.ampLevel;
         this.data.video.fitToWindow = mediaState.fitToWindow;

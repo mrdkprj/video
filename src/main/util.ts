@@ -1,5 +1,6 @@
 import fs from "fs"
 import path from "path";
+import crypto from "crypto"
 import ffmpeg from "fluent-ffmpeg"
 import { resolutions, rotations } from "../constants";
 
@@ -52,11 +53,26 @@ export default class Util{
         const encodedPath = path.join(path.dirname(fullPath), encodeURIComponent(path.basename(fullPath)))
 
         return {
-            id:encodeURIComponent(fullPath),
+            id: encodeURIComponent(fullPath),
+            uuid: crypto.randomUUID(),
             fullPath,
             src:`app://${encodedPath}`,
             name:decodeURIComponent(encodeURIComponent(path.basename(fullPath))),
             date:statInfo.mtimeMs
+        }
+    }
+
+    updateFile(fullPath:string, currentFile:Mp.MediaFile):Mp.MediaFile{
+
+        const encodedPath = path.join(path.dirname(fullPath), encodeURIComponent(path.basename(fullPath)))
+
+        return {
+            id: encodeURIComponent(fullPath),
+            uuid: currentFile.uuid,
+            fullPath,
+            src:`app://${encodedPath}`,
+            name:decodeURIComponent(encodeURIComponent(path.basename(fullPath))),
+            date:currentFile.date,
         }
     }
 

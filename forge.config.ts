@@ -29,14 +29,6 @@ const config: ForgeConfig = {
               },
             },
             {
-              html: "./src/renderer/tooltip/tooltip.html",
-              js: "./src/renderer/tooltip/tooltip.ts",
-              name: "tooltip_window",
-              preload: {
-                js: "./src/renderer/tooltip/tooltipPreload.ts",
-              },
-            },
-            {
               html: "./src/renderer/convert/convert.html",
               js: "./src/renderer/convert/convert.ts",
               name: "convert_window",

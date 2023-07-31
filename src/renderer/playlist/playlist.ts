@@ -1,9 +1,12 @@
+const List_Item_Padding = 10;
+
 const Dom = {
     playlist: null as HTMLElement,
     playlistTitleBar:null as HTMLElement,
     playlistFooter:null as HTMLElement,
     fileList:null as HTMLElement,
     fileListContainer:null as HTMLElement,
+    renameInput:null as HTMLInputElement,
 }
 
 const selectedFileIds:string[] = [];
@@ -15,10 +18,21 @@ const dragState:Mp.PlaylistDragState = {
     working:false,
 }
 
+const RenameState = {
+    renaming:false,
+    data:{
+        elementId:"",
+        oldName:"",
+        newName:""
+    }
+
+}
+const undoStack:Mp.RenameData[] = []
+const redoStack:Mp.RenameData[] = []
+
 let currentElement:HTMLElement;
 let selectedElement:HTMLElement;
 let fileListContainerRect:DOMRect;
-let mouseEnterDisabled = false;
 
 const onContextMenu = (e:MouseEvent) => {
     e.preventDefault()
@@ -30,7 +44,10 @@ const onKeydown = (e:KeyboardEvent) => {
     if(e.ctrlKey && e.key === "r") e.preventDefault();
 
     if(e.key === "Enter"){
-        window.api.send("toggle-play")
+
+        if(!RenameState.renaming){
+            window.api.send("toggle-play")
+        }
     }
 
     if(selectedFileIds.length > 0){
@@ -44,6 +61,24 @@ const onKeydown = (e:KeyboardEvent) => {
         selectAll();
     }
 
+    if(e.key == "F2"){
+        startEditFileName()
+    }
+
+    if(e.ctrlKey && e.key === "z"){
+        undoRename();
+    }
+
+    if(e.ctrlKey && e.key === "y"){
+        redoRename();
+    }
+
+}
+
+const onRenameInputKeyDown = (e:KeyboardEvent) => {
+    if(RenameState.renaming && e.key === "Enter"){
+        endEditFileName();
+    }
 }
 
 const onClick = (e:MouseEvent) => {
@@ -59,8 +94,6 @@ const onMouseDown = (e:MouseEvent) => {
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
     if(e.target.classList.contains("playlist-item")){
-
-        window.api.send("hide-tooltip")
 
         e.stopPropagation();
 
@@ -95,15 +128,7 @@ const onMouseEnter = (e:MouseEvent) => {
 
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
-    if(!dragState.dragging && !mouseEnterDisabled){
-        window.api.send<Mp.PrepareTooltipRequest>("prepare-tooltip", {fileName: e.target.getAttribute("data-title"), position:{x:e.screenX, y:e.screenY}})
-    }
-
     movePlaylistItem(e);
-}
-
-const onMouseLeave = () => {
-    window.api.send("hide-tooltip")
 }
 
 const onResize = () => {
@@ -157,6 +182,21 @@ const onFileDrop = (e:DragEvent) => {
     }
 }
 
+const createListItem = (file:Mp.MediaFile) => {
+
+    const item = document.createElement("li");
+    item.title = file.name
+    item.id = file.uuid;
+    item.setAttribute("file-id", file.id)
+    item.textContent = file.name
+    item.classList.add("playlist-item")
+    item.addEventListener("dblclick", onFileListItemClicked);
+    item.addEventListener("mouseenter", onMouseEnter)
+    item.addEventListener("mouseleave", movePlaylistItem)
+
+    return item
+}
+
 const addToPlaylist = (data:Mp.DropResult) => {
 
     if(!data.files.length) return;
@@ -165,27 +205,15 @@ const addToPlaylist = (data:Mp.DropResult) => {
 
     data.files.forEach(file => {
 
-        const item = document.createElement("li");
-        item.textContent = file.name;
-        item.setAttribute("data-title", file.name)
-        item.id = file.id;
-        item.classList.add("playlist-item")
-        item.addEventListener("dblclick", onFileListItemClicked);
-        item.addEventListener("mouseenter", onMouseEnter)
-        item.addEventListener("mouseleave", movePlaylistItem)
-
-        fragment.appendChild(item);
+        fragment.appendChild(createListItem(file));
 
     });
 
     Dom.fileList.appendChild(fragment)
 
-    preventMouseEnter();
-
 }
 
 const removeFromPlaylist = (data:Mp.RemovePlaylistResult) => {
-    preventMouseEnter();
     clearSelection();
     const targetNodes = data.removedFileIds.map(id => document.getElementById(id))
     targetNodes.forEach(node => {
@@ -194,13 +222,6 @@ const removeFromPlaylist = (data:Mp.RemovePlaylistResult) => {
         }
         Dom.fileList.removeChild(node)
     })
-}
-
-const preventMouseEnter = () => {
-    mouseEnterDisabled = true;
-    setTimeout(() => {
-        mouseEnterDisabled = false;
-    }, 500);
 }
 
 const clearSelection = () => {
@@ -220,19 +241,26 @@ const toggleSelect = (e:MouseEvent) => {
         return
     }
 
-    select(e);
+    selectByClick(e);
 
 }
 
-const select = (e:MouseEvent) => {
+const select = (target:HTMLElement | string) => {
 
     clearSelection();
 
-    selectedElement = e.target as HTMLElement;
+    const targetElement = typeof target === "string" ? document.getElementById(target) : target;
+
+    selectedElement = targetElement;
 
     selectedFileIds.push(selectedElement.id)
 
     selectedElement.classList.add("selected")
+
+}
+
+const selectByClick = (e:MouseEvent) => {
+    select(e.target as HTMLElement);
 }
 
 const selectByShift = (e:MouseEvent) => {
@@ -261,7 +289,7 @@ const selectByShift = (e:MouseEvent) => {
 const selectByCtrl = (e:MouseEvent) => {
 
     if(!selectedElement){
-        select(e);
+        selectByClick(e);
         return;
     }
 
@@ -300,7 +328,7 @@ const changeCurrent = (data:Mp.OnFileLoad) => {
     }
 
     if(data.currentFile){
-        currentElement = document.getElementById(data.currentFile.id);
+        currentElement = document.getElementById(data.currentFile.uuid);
         currentElement.classList.add("current");
 
         const rect = currentElement.getBoundingClientRect();
@@ -314,10 +342,114 @@ const changeCurrent = (data:Mp.OnFileLoad) => {
     }
 }
 
+const requestRename = (elementId:string, name:string) => {
+    preventRenameBlur(true)
+    const id = document.getElementById(elementId).getAttribute("file-id")
+    window.api.send<Mp.RenameRequest>("rename-file", {id, name})
+}
+
+const onRename = (data:Mp.RenameResult) => {
+
+    if(data.error && RenameState.renaming){
+
+        const stack = undoStack.pop();
+        if(selectedElement.id !== stack.elementId) select(stack.elementId);
+        startEditFileName();
+        return;
+
+    }
+
+    const fileName = data.file.name
+
+    selectedElement.textContent = fileName
+    selectedElement.title = fileName
+    selectedElement.setAttribute("file-id", data.file.id)
+
+    hideRenameField();
+
+}
+
+const undoRename = () => {
+    if(!undoStack.length) return;
+
+    const stack = undoStack.pop();
+    redoStack.push(stack);
+
+    select(stack.elementId)
+
+    requestRename(stack.elementId, stack.oldName)
+
+}
+
+const redoRename = () => {
+    if(!redoStack.length) return;
+
+    const stack = redoStack.pop();
+    undoStack.push(stack);
+
+    select(stack.elementId)
+
+    requestRename(stack.elementId, stack.newName)
+
+}
+
+const startEditFileName = () => {
+
+    if(!selectedElement) return;
+
+    const fileName = selectedElement.textContent;
+
+    RenameState.renaming = true;
+    RenameState.data.elementId = selectedElement.id;
+    RenameState.data.oldName = fileName;
+
+    const rect = selectedElement.getBoundingClientRect();
+    Dom.renameInput.style.top = rect.top + "px"
+    Dom.renameInput.style.left = rect.left + "px"
+    Dom.renameInput.style.width = selectedElement.offsetWidth - List_Item_Padding + "px";
+    Dom.renameInput.style.height = selectedElement.offsetHeight - List_Item_Padding + "px";
+    Dom.renameInput.value = fileName;
+    Dom.renameInput.style.display = "block"
+    selectFileName(fileName);
+
+    preventRenameBlur(false);
+}
+
+const selectFileName = (fileName:string) => {
+    Dom.renameInput.focus();
+    Dom.renameInput.setSelectionRange(0, fileName.lastIndexOf("."));
+}
+
+const preventRenameBlur = (disable:boolean) => {
+
+    if(disable){
+        Dom.renameInput.removeEventListener("blur", endEditFileName);
+    }else{
+        Dom.renameInput.addEventListener("blur", endEditFileName);
+    }
+
+}
+
+const endEditFileName = () => {
+
+    if(RenameState.data.oldName === Dom.renameInput.value){
+        hideRenameField();
+    }else{
+        RenameState.data.newName = Dom.renameInput.value;
+        undoStack.push({...RenameState.data})
+        requestRename(RenameState.data.elementId, RenameState.data.newName);
+    }
+
+}
+
+const hideRenameField = () => {
+    RenameState.renaming = false;
+    Dom.renameInput.style.display = "none"
+}
+
 const onReset = () => {
     currentElement = null;
     selectedElement = null;
-    mouseEnterDisabled = false;
     selectedFileIds.length = 0;
     clearPlaylist();
 }
@@ -357,6 +489,8 @@ window.api.receive<Mp.RemovePlaylistResult>("after-remove-playlist", removeFromP
 
 window.api.receive<Mp.SortResult>("after-sort", onAfterSort)
 
+window.api.receive<Mp.RenameResult>("after-rename", onRename);
+
 window.api.receive("reset", onReset)
 
 window.addEventListener("load", () => {
@@ -367,11 +501,11 @@ window.addEventListener("load", () => {
     Dom.fileList = document.getElementById("fileList")
     Dom.fileListContainer = document.getElementById("fileListContainer")
     fileListContainerRect = Dom.fileListContainer.getBoundingClientRect();
+    Dom.renameInput = document.getElementById("rename") as HTMLInputElement
+    Dom.renameInput.addEventListener("blur", endEditFileName)
+    Dom.renameInput.addEventListener("keydown", onRenameInputKeyDown)
+
     document.getElementById("closePlaylistBtn").addEventListener("click", () => window.api.send("close-playlist"))
-
-    Dom.fileList.addEventListener("mouseleave", onMouseLeave)
-
-    Dom.playlist.addEventListener("mouseleave", onMouseLeave)
 
     window.addEventListener("resize", onResize)
 
