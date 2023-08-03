@@ -3,8 +3,6 @@ import path from "path"
 
 export default class Helper{
 
-    private playlistSortMenu:Electron.Menu;
-
     createMainWindow(config:Mp.Config){
 
         const mainWindow = new BrowserWindow({
@@ -53,32 +51,6 @@ export default class Helper{
         playlist.loadURL(PLAYLIST_WINDOW_WEBPACK_ENTRY);
 
         return playlist;
-    }
-
-    createTooltipWindow(parent:BrowserWindow){
-
-        const tooltip = new BrowserWindow({
-            parent: parent,
-            backgroundColor: "#272626",
-            resizable: false,
-            autoHideMenuBar: true,
-            show: false,
-            frame:false,
-            minimizable: false,
-            maximizable: false,
-            thickFrame: false,
-            focusable: false,
-            transparent: true,
-            webPreferences: {
-                nodeIntegration: false,
-                contextIsolation: true,
-                preload: TOOLTIP_WINDOW_PRELOAD_WEBPACK_ENTRY
-            },
-        })
-
-        tooltip.loadURL(TOOLTIP_WINDOW_WEBPACK_ENTRY);
-
-        return tooltip;
     }
 
     createConvertWindow(parent:BrowserWindow){
@@ -253,9 +225,7 @@ export default class Helper{
         return Menu.buildFromTemplate(contextTemplate);
     }
 
-    createPlaylistContextMenu(onclick: (menu:PlaylistContextMenuType) => void){
-
-        this.playlistSortMenu = this.createPlaylistSortContextMenu(onclick);
+    createPlaylistContextMenu(config:Mp.Config, onclick: (menu:PlaylistContextMenuType) => void){
 
         const playlistContextTemplate:Electron.MenuItemConstructorOptions[] = [
             {
@@ -278,7 +248,7 @@ export default class Helper{
             { type: "separator" },
             {
                 label: "Sort by",
-                submenu: this.playlistSortMenu
+                submenu: this.createPlaylistSortContextMenu(config, onclick)
             },
             { type: "separator" },
             {
@@ -290,32 +260,35 @@ export default class Helper{
         return Menu.buildFromTemplate(playlistContextTemplate);
     }
 
-    private createPlaylistSortContextMenu(onclick: (menu:PlaylistContextMenuType) => void){
+    private createPlaylistSortContextMenu(config:Mp.Config, onclick: (menu:PlaylistContextMenuType) => void){
 
         const playlistSortMenuTemplate:Electron.MenuItemConstructorOptions[] = [
             {
                 id: "NameAsc",
                 label: "Name(Asc)",
                 type: "checkbox",
-                checked: true,
+                checked: config.sortType === "NameAsc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("NameAsc"))
             },
             {
                 id: "NameDesc",
                 label: "Name(Desc)",
                 type: "checkbox",
+                checked: config.sortType === "NameDesc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("NameDesc"))
             },
             {
                 id: "DateAsc",
                 label: "Date(Asc)",
                 type: "checkbox",
+                checked: config.sortType === "DateAsc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("DateAsc"))
             },
             {
                 id: "DateDesc",
                 label: "Date(Desk)",
                 type: "checkbox",
+                checked: config.sortType === "DateDesc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("DateDesc"))
             },
         ]

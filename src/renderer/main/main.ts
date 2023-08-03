@@ -38,8 +38,7 @@ const slideState:Mp.SliderState = {
     slider:undefined,
 }
 
-const THUMB_RADIUS = 4;
-const SLIDE_MARGIN = 8;
+const THUM_WIDTH = 8;
 
 let containerRect:DOMRect;
 let isMaximized:boolean;
@@ -103,7 +102,7 @@ const onMousedown = (e:MouseEvent) =>{
     }
 
     if(e.target.id == "time" || e.target.id == "timeTrack"){
-        const progress = (e.offsetX - SLIDE_MARGIN) / sliders.Time.rect.width;
+        const progress = (e.offsetX - 4) / sliders.Time.rect.width;
         updateTime(progress)
     }
 
@@ -119,11 +118,7 @@ const onMousedown = (e:MouseEvent) =>{
 }
 
 const onMouseup = (e:MouseEvent) => {
-    if(slideState.sliding){
-        e.preventDefault();
-        e.stopPropagation();
-        slideState.sliding = false;
-    }
+    endSlide(e);
 }
 
 const onKeydown = (e:KeyboardEvent) => {
@@ -178,6 +173,7 @@ const onResize = () => {
     containerRect = Dom.container.getBoundingClientRect();
     sliders.Time.rect = sliders.Time.slider.getBoundingClientRect();
     sliders.Volume.rect = sliders.Volume.slider.getBoundingClientRect();
+    sliders.Amp.rect = sliders.Amp.slider.getBoundingClientRect();
     changeVideoSize()
 }
 
@@ -229,20 +225,29 @@ const startSlide = (e:MouseEvent) => {
     slideState.sliding = true;
     const target = (e.target as HTMLElement).getAttribute("data-target")
     slideState.slider = sliders[target as keyof Mp.Sliders];
-    slideState.startX = e.offsetX
-
+    slideState.startX = e.clientX
+    slideState.slider.slider.classList.add("sliding")
 }
 
 const moveSlider = (e:MouseEvent) => {
 
-    if(!slideState.sliding) return;
+    if(!slideState.sliding || e.clientX == slideState.startX) return;
 
-    const progress = (e.pageX - slideState.slider.rect.left - THUMB_RADIUS) / slideState.slider.rect.width
+    const progress = (e.clientX - slideState.slider.rect.left) / slideState.slider.rect.width
 
     if(progress > 1 || progress < 0) return;
 
     slideState.slider.handler(progress)
 
+}
+
+const endSlide = (e:MouseEvent) => {
+    if(slideState.sliding){
+        e.preventDefault();
+        e.stopPropagation();
+        slideState.sliding = false;
+        slideState.slider.slider.classList.remove("sliding")
+    }
 }
 
 const updateTime = (progress:number) => {
@@ -252,31 +257,34 @@ const updateTime = (progress:number) => {
 const onTimeUpdate = () => {
     const duration = mediaState.videoDuration > 0 ? mediaState.videoDuration : 1
     const progress = (Dom.video.currentTime / duration) * 100;
+    const progressRate = `${progress}%`;
 
-    sliders.Time.track.style.width = progress + "%"
-    sliders.Time.thumb.style.left  = progress + "%"
+    sliders.Time.track.style.width = progressRate
+    sliders.Time.thumb.style.left = `max(${progressRate} - ${THUM_WIDTH}px, 0px)`;
     Dom.currentTimeArea.textContent = formatTime(Dom.video.currentTime);
 
     window.api.send<Mp.OnProgress>("progress", {progress:Dom.video.currentTime / duration})
 }
 
-const updateVolume = (progress:number) => {
-    Dom.video.volume = progress
+const updateVolume = (volume:number) => {
+    Dom.video.volume = volume
     mediaState.videoVolume = Dom.video.volume;
-    const value = `${mediaState.videoVolume * 100}%`;
-    sliders.Volume.track.style.width = value;
-    sliders.Volume.thumb.style.left = value;
-    sliders.Volume.thumb.title = value;
-    sliders.Volume.trackValue.textContent = `${parseInt(value)}%`;
+    const progress = Math.floor(mediaState.videoVolume * 100)
+    const progressRate = `${progress}%`;
+    sliders.Volume.track.style.width = progressRate;
+    sliders.Volume.thumb.style.left = `max(${progressRate} - ${THUM_WIDTH}px, 0px)`;
+    sliders.Volume.thumb.title = progressRate;
+    sliders.Volume.trackValue.textContent = progressRate;
 }
 
-const updateAmpLevel = (progress:number) => {
-    mediaState.ampLevel = progress;
-    const value = `${mediaState.ampLevel * 100}%`;
-    sliders.Amp.track.style.width = value;
-    sliders.Amp.thumb.style.left = value;
-    sliders.Amp.thumb.title = value;
-    sliders.Amp.trackValue.textContent = `${parseInt(value)}%`;
+const updateAmpLevel = (ampLevel:number) => {
+    mediaState.ampLevel = ampLevel;
+    const progress = Math.floor(mediaState.ampLevel * 100)
+    const progressRate = `${progress}%`;
+    sliders.Amp.track.style.width = progressRate;
+    sliders.Amp.thumb.style.left = `max(${progressRate} - ${THUM_WIDTH}px, 0px)`;
+    sliders.Amp.thumb.title = progressRate;
+    sliders.Amp.trackValue.textContent = progressRate;
     mediaState.gainNode.gain.value = mediaState.ampLevel * 10;
 }
 

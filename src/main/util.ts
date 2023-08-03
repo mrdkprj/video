@@ -4,6 +4,15 @@ import crypto from "crypto"
 import ffmpeg from "fluent-ffmpeg"
 import { resolutions, rotations } from "../constants";
 
+export const EmptyFile:Mp.MediaFile = {
+    id:"",
+    uuid:"",
+    fullPath:"",
+    src:"",
+    name:"",
+    date: 0
+}
+
 export default class Util{
 
     private convertDestFile:string;

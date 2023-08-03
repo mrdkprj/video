@@ -4,9 +4,9 @@ import path from "path";
 import proc from "child_process";
 import url from "url"
 import Helper from "./helper";
-import Util from "./util";
+import Util, {EmptyFile} from "./util";
 import Config from "./config";
-import { FORWARD, BACKWARD, FIT_TO_WINDOW_ITEM_INDEX, videoFormats, audioFormats, EmptyFile } from "../constants";
+import { FORWARD, BACKWARD, FIT_TO_WINDOW_ITEM_INDEX, videoFormats, audioFormats } from "../constants";
 
 protocol.registerSchemesAsPrivileged([
     { scheme: "app", privileges: { bypassCSP: true } },
@@ -105,7 +105,7 @@ const playlistContextMenuCallback = (menu:PlaylistContextMenuType) => {
     }
 }
 
-const playlistContext = helper.createPlaylistContextMenu(playlistContextMenuCallback)
+const playlistContext = helper.createPlaylistContextMenu(config.data, playlistContextMenuCallback)
 
 const locked = app.requestSingleInstanceLock(process.argv);
 
@@ -562,6 +562,8 @@ const copyFileNameToClipboard = () => {
 }
 
 const sortPlayList = (sortType:SortType, currentFile?:Mp.MediaFile) => {
+
+    config.data.sortType = sortType;
 
     if(!playlistFiles.length) return;
 

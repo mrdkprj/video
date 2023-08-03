@@ -293,6 +293,7 @@ body{
     background-color: rgba(255,255,255,0.15);
 }
 
+.slider.sliding,
 .slider:hover{
     height:6px;
 }
@@ -321,9 +322,6 @@ body{
     border-radius: 8px;
     border: 2px solid black;
     z-index: 900;
-}
-
-.time-area .thumb{
     position: absolute;
 }
 
@@ -356,6 +354,7 @@ body{
     visibility: hidden;
 }
 
+.volume.sliding .thumb,
 .volume:hover .thumb{
     visibility: visible;
 }
@@ -417,18 +416,6 @@ body{
 
 .full-screen .track-value{
     color: #e3e0e0;
-}
-
-.nex{
-    width: 30px;
-    height: 29px;
-}
-
-.nex::before{
-    content: "";
-    width: 30px;
-    height: 29px;
-    transform: rotate(45deg);
 }
 
 .canvas{

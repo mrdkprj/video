@@ -1,7 +1,30 @@
 import fs from "fs"
 import path from "path";
 import Util from "./util";
-import { CONFIG_FILE_NAME, defaultConfig } from "../constants";
+
+const CONFIG_FILE_NAME = "mediaplayer.config.json"
+
+const defaultConfig :Mp.Config = {
+    bounds: {width:1200, height:800, x:0, y:0},
+    playlistBounds: {width:400, height:700, x:0, y:0},
+    isMaximized: false,
+    playlistVisible:true,
+    sortType: "NameAsc",
+    video:{
+        playbackRate:1,
+        seekSpeed:10,
+        fitToWindow: true,
+    },
+    audio:{
+        volume: 1,
+        ampLevel: 0.07,
+        mute:false,
+    },
+    path:{
+        captureDestDir:"",
+        convertDestDir:""
+    }
+}
 
 export default class Config{
 

@@ -69,6 +69,7 @@ declare global {
             playlistBounds:Bounds;
             isMaximized:boolean;
             playlistVisible:boolean;
+            sortType:SortType;
             video:{
                 fitToWindow:boolean;
                 playbackRate:number;
