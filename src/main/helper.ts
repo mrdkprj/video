@@ -78,7 +78,7 @@ export default class Helper{
         return convertDialog;
     }
 
-    createMainContextMenu(onclick: (menu:MainContextMenuType, args?:any) => void){
+    createMainContextMenu(onclick: (menu:Mp.MainContextMenuType, args?:any) => void){
         const mainContextTemplate:Electron.MenuItemConstructorOptions[] = [
             {
                 label: "Playback Rate",
@@ -109,7 +109,7 @@ export default class Helper{
         return Menu.buildFromTemplate(mainContextTemplate)
     }
 
-    private playbackRateMenu(onclick: (menu:MainContextMenuType, args?:any) => void){
+    private playbackRateMenu(onclick: (menu:Mp.MainContextMenuType, args?:any) => void){
 
         const type = "PlaybackRate"
         const contextTemplate:Electron.MenuItemConstructorOptions[] = [
@@ -167,7 +167,7 @@ export default class Helper{
         return Menu.buildFromTemplate(contextTemplate);
     }
 
-    private seekSpeedMenu(onclick: (menu:MainContextMenuType, args?:any) => void){
+    private seekSpeedMenu(onclick: (menu:Mp.MainContextMenuType, args?:any) => void){
 
         const type = "SeekSpeed"
         const contextTemplate:Electron.MenuItemConstructorOptions[] = [
@@ -225,7 +225,7 @@ export default class Helper{
         return Menu.buildFromTemplate(contextTemplate);
     }
 
-    createPlaylistContextMenu(config:Mp.Config, onclick: (menu:PlaylistContextMenuType) => void){
+    createPlaylistContextMenu(config:Mp.Config, onclick: (menu:Mp.PlaylistContextMenuType) => void){
 
         const playlistContextTemplate:Electron.MenuItemConstructorOptions[] = [
             {
@@ -260,7 +260,7 @@ export default class Helper{
         return Menu.buildFromTemplate(playlistContextTemplate);
     }
 
-    private createPlaylistSortContextMenu(config:Mp.Config, onclick: (menu:PlaylistContextMenuType) => void){
+    private createPlaylistSortContextMenu(config:Mp.Config, onclick: (menu:Mp.PlaylistContextMenuType) => void){
 
         const playlistSortMenuTemplate:Electron.MenuItemConstructorOptions[] = [
             {
@@ -296,7 +296,7 @@ export default class Helper{
         return Menu.buildFromTemplate(playlistSortMenuTemplate);
     }
 
-    createThumButtons(onclick: (button:ThumbButtonType) => void){
+    createThumButtons(onclick: (button:Mp.ThumbButtonType) => void){
 
         const staticDir = path.join(__dirname, "..", "static");
 

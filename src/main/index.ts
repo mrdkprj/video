@@ -32,7 +32,7 @@ let selectedFileIds:string[] = [];
 let randomIndices:number[] = [];
 let fileMap:{[key:string]:Mp.MediaFile} = {}
 
-const thumbButtonCallback = (button:ThumbButtonType) => {
+const thumbButtonCallback = (button:Mp.ThumbButtonType) => {
     switch(button){
         case "Next":
             changeIndex(FORWARD);
@@ -51,7 +51,7 @@ const thumbButtonCallback = (button:ThumbButtonType) => {
 
 const thumButtons = helper.createThumButtons(thumbButtonCallback)
 
-const mainContextMenuCallback = (menu:MainContextMenuType, args?:any) => {
+const mainContextMenuCallback = (menu:Mp.MainContextMenuType, args?:any) => {
     switch(menu){
         case "PlaybackRate":
             changePlaybackRate(args);
@@ -73,7 +73,7 @@ const mainContextMenuCallback = (menu:MainContextMenuType, args?:any) => {
 
 const mainContext = helper.createMainContextMenu(mainContextMenuCallback)
 
-const playlistContextMenuCallback = (menu:PlaylistContextMenuType) => {
+const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType) => {
     switch(menu){
         case "Remove":
             removeFromPlaylist();
@@ -561,7 +561,9 @@ const copyFileNameToClipboard = () => {
 
 }
 
-const sortPlayList = (sortType:SortType, currentFile?:Mp.MediaFile) => {
+const sortPlayList = (sortType:Mp.SortType) => {
+
+    const currentFileId = getCurrentFile().id;
 
     config.data.sortType = sortType;
 
@@ -571,9 +573,11 @@ const sortPlayList = (sortType:SortType, currentFile?:Mp.MediaFile) => {
 
     const sortedIds = playlistFiles.map(file => file.id);
 
-    if(currentFile){
-        currentIndex = sortedIds.findIndex(id => id === currentFile.id);
+    if(currentFileId){
+        currentIndex = sortedIds.findIndex(id => id === currentFileId);
     }
+
+    console.log(currentIndex)
 
     respond<Mp.SortResult>("Playlist", "after-sort", {fileIds:sortedIds})
 

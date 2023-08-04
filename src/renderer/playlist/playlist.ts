@@ -186,8 +186,8 @@ const createListItem = (file:Mp.MediaFile) => {
 
     const item = document.createElement("li");
     item.title = file.name
-    item.id = file.uuid;
-    item.setAttribute("file-id", file.id)
+    item.id = file.id;
+    item.setAttribute("data-uuid", file.uuid)
     item.textContent = file.name
     item.classList.add("playlist-item")
     item.addEventListener("dblclick", onFileListItemClicked);
@@ -327,8 +327,8 @@ const changeCurrent = (data:Mp.OnFileLoad) => {
         currentElement.classList.remove("current");
     }
 
-    if(data.currentFile){
-        currentElement = document.getElementById(data.currentFile.uuid);
+    if(data.currentFile.id){
+        currentElement = document.getElementById(data.currentFile.id);
         currentElement.classList.add("current");
 
         const rect = currentElement.getBoundingClientRect();

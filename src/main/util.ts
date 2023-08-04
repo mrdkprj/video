@@ -102,7 +102,7 @@ export default class Util{
         return result;
     }
 
-    sort(files:Mp.MediaFile[], sortType:SortType){
+    sort(files:Mp.MediaFile[], sortType:Mp.SortType){
 
         if(!files.length) return;
 

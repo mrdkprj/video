@@ -34,11 +34,6 @@ declare global {
         receive: <T extends Mp.Args>(channel:MainRendererChannel | PlaylistRendererChannel | ConvertRendererChannel, listener: (data?: T) => void) => () => void;
     }
 
-    type ThumbButtonType = "Play" | "Pause" | "Previous" | "Next"
-    type MainContextMenuType = "PlaybackRate" | "SeekSpeed" | "OpenPlaylist" | "FitToWindow" | "Convert"
-    type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "Reveal" | SortType
-    type SortType = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
-
     const MAIN_WINDOW_WEBPACK_ENTRY: string;
     const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
     const PLAYLIST_WINDOW_WEBPACK_ENTRY: string;
@@ -47,6 +42,11 @@ declare global {
     const CONVERT_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
     namespace Mp {
+
+        type ThumbButtonType = "Play" | "Pause" | "Previous" | "Next"
+        type MainContextMenuType = "PlaybackRate" | "SeekSpeed" | "OpenPlaylist" | "FitToWindow" | "Convert"
+        type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "Reveal" | SortType
+        type SortType = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
 
         type VideoFrameSize = "Same" | "360p" | "480p" | "720p" | "1080p";
         type VideoRotation = "90Clockwise" | "90CounterClockwise" | "None"
