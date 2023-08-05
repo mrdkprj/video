@@ -21,7 +21,7 @@ const dragState:Mp.PlaylistDragState = {
 const RenameState = {
     renaming:false,
     data:{
-        elementId:"",
+        fileId:"",
         oldName:"",
         newName:""
     }
@@ -187,7 +187,7 @@ const createListItem = (file:Mp.MediaFile) => {
     const item = document.createElement("li");
     item.title = file.name
     item.id = file.id;
-    item.setAttribute("data-uuid", file.uuid)
+    //item.setAttribute("data-uuid", file.uuid)
     item.textContent = file.name
     item.classList.add("playlist-item")
     item.addEventListener("dblclick", onFileListItemClicked);
@@ -342,28 +342,27 @@ const changeCurrent = (data:Mp.OnFileLoad) => {
     }
 }
 
-const requestRename = (elementId:string, name:string) => {
+const requestRename = (id:string, name:string) => {
     preventRenameBlur(true)
-    const id = document.getElementById(elementId).getAttribute("file-id")
     window.api.send<Mp.RenameRequest>("rename-file", {id, name})
 }
 
 const onRename = (data:Mp.RenameResult) => {
 
-    if(data.error && RenameState.renaming){
+    if(selectedElement.id !== data.file.id){
+        select(data.file.id);
+    }
 
-        const stack = undoStack.pop();
-        if(selectedElement.id !== stack.elementId) select(stack.elementId);
+    if(data.error && RenameState.renaming){
+        undoStack.pop();
         startEditFileName();
         return;
-
     }
 
     const fileName = data.file.name
 
     selectedElement.textContent = fileName
     selectedElement.title = fileName
-    selectedElement.setAttribute("file-id", data.file.id)
 
     hideRenameField();
 
@@ -375,9 +374,9 @@ const undoRename = () => {
     const stack = undoStack.pop();
     redoStack.push(stack);
 
-    select(stack.elementId)
+    select(stack.fileId)
 
-    requestRename(stack.elementId, stack.oldName)
+    requestRename(stack.fileId, stack.oldName)
 
 }
 
@@ -387,9 +386,9 @@ const redoRename = () => {
     const stack = redoStack.pop();
     undoStack.push(stack);
 
-    select(stack.elementId)
+    select(stack.fileId)
 
-    requestRename(stack.elementId, stack.newName)
+    requestRename(stack.fileId, stack.newName)
 
 }
 
@@ -400,7 +399,7 @@ const startEditFileName = () => {
     const fileName = selectedElement.textContent;
 
     RenameState.renaming = true;
-    RenameState.data.elementId = selectedElement.id;
+    RenameState.data.fileId = selectedElement.id;
     RenameState.data.oldName = fileName;
 
     const rect = selectedElement.getBoundingClientRect();
@@ -437,7 +436,7 @@ const endEditFileName = () => {
     }else{
         RenameState.data.newName = Dom.renameInput.value;
         undoStack.push({...RenameState.data})
-        requestRename(RenameState.data.elementId, RenameState.data.newName);
+        requestRename(RenameState.data.fileId, RenameState.data.newName);
     }
 
 }

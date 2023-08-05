@@ -286,7 +286,7 @@ export default class Helper{
             },
             {
                 id: "DateDesc",
-                label: "Date(Desk)",
+                label: "Date(Desc)",
                 type: "checkbox",
                 checked: config.sortType === "DateDesc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("DateDesc"))

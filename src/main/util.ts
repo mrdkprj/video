@@ -6,7 +6,6 @@ import { resolutions, rotations } from "../constants";
 
 export const EmptyFile:Mp.MediaFile = {
     id:"",
-    uuid:"",
     fullPath:"",
     src:"",
     name:"",
@@ -62,8 +61,7 @@ export default class Util{
         const encodedPath = path.join(path.dirname(fullPath), encodeURIComponent(path.basename(fullPath)))
 
         return {
-            id: encodeURIComponent(fullPath),
-            uuid: crypto.randomUUID(),
+            id: crypto.randomUUID(),
             fullPath,
             src:`app://${encodedPath}`,
             name:decodeURIComponent(encodeURIComponent(path.basename(fullPath))),
@@ -76,8 +74,7 @@ export default class Util{
         const encodedPath = path.join(path.dirname(fullPath), encodeURIComponent(path.basename(fullPath)))
 
         return {
-            id: encodeURIComponent(fullPath),
-            uuid: currentFile.uuid,
+            id: currentFile.id,
             fullPath,
             src:`app://${encodedPath}`,
             name:decodeURIComponent(encodeURIComponent(path.basename(fullPath))),

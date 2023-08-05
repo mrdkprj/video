@@ -92,7 +92,6 @@ declare global {
 
         type MediaFile = {
             id:string;
-            uuid:string;
             fullPath:string;
             src:string;
             name:string;
@@ -216,7 +215,7 @@ declare global {
         }
 
         type RenameData = {
-            elementId:string;
+            fileId:string;
             oldName:string;
             newName:string;
         }

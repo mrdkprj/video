@@ -30,7 +30,6 @@ let doShuffle = false;
 let currentIndex = 0;
 let selectedFileIds:string[] = [];
 let randomIndices:number[] = [];
-let fileMap:{[key:string]:Mp.MediaFile} = {}
 
 const thumbButtonCallback = (button:Mp.ThumbButtonType) => {
     switch(button){
@@ -250,11 +249,7 @@ const initPlaylist = (fullPaths:string[]) => {
 
     reset();
 
-    fullPaths.concat(additionalFiles).forEach(fullPath => {
-        const file = util.toFile(fullPath)
-        playlistFiles.push(file)
-        fileMap[file.id] = file;
-    })
+    fullPaths.concat(additionalFiles).map(fullPath => util.toFile(fullPath)).forEach(file => playlistFiles.push(file))
 
     sortPlayList("NameAsc");
 
@@ -274,12 +269,9 @@ const initPlaylist = (fullPaths:string[]) => {
 
 const addToPlaylist = (fullPaths:string[]) => {
 
-    const newFiles = fullPaths.map(fullpath => util.toFile(fullpath)).filter(file => !fileMap[file.id]);
+    const newFiles = fullPaths.filter(fullPath => playlistFiles.findIndex(o => o.fullPath == fullPath) < 0).map(fullPath => util.toFile(fullPath));
 
-    newFiles.forEach(file => {
-        playlistFiles.push(file)
-        fileMap[file.id] = file
-    })
+    newFiles.forEach(file => playlistFiles.push(file))
 
     shuffleList();
 
@@ -304,7 +296,6 @@ const getCurrentFile = () => {
 const reset = () => {
     playlistFiles.length = 0;
     randomIndices.length = 0;
-    fileMap = {}
     currentIndex = -1;
     renderer.Main.webContents.send("reset")
     renderer.Playlist.webContents.send("reset")
@@ -448,10 +439,22 @@ const removeFromPlaylist = () => {
 
     if(!selectedFileIds.length) return;
 
-    selectedFileIds.forEach(id => {
-        delete fileMap[id];
-    })
+    const removeIndices = playlistFiles.filter(file => selectedFileIds.includes(file.id)).map(file => playlistFiles.indexOf(file))
+    const isCurrentFileRemoved = removeIndices.includes(currentIndex);
 
+    const newFiles = playlistFiles.filter((_,index) => !removeIndices.includes(index));
+    playlistFiles.length = 0;
+    playlistFiles.push(...newFiles)
+
+    respond<Mp.RemovePlaylistResult>("Playlist", "after-remove-playlist", {removedFileIds:selectedFileIds})
+
+    currentIndex = getIndexAfterRemove(removeIndices)
+
+    if(isCurrentFileRemoved){
+        sendCurrentFile(false);
+    }
+
+/*
     const removeIndices = selectedFileIds.map(id => playlistFiles.map(e => e.id).indexOf(id))
     const isCurrentFileRemoved = removeIndices.includes(currentIndex);
 
@@ -466,6 +469,7 @@ const removeFromPlaylist = () => {
     if(isCurrentFileRemoved){
         sendCurrentFile(false);
     }
+    */
 
 }
 
@@ -500,11 +504,15 @@ const requestReleaseFile = () => {
 
 const deleteFile = async () => {
 
+    if(!selectedFileIds.length) return;
+
     try{
 
-        const targetFiles = selectedFileIds.map(id => fileMap[id].fullPath);
+        const targetFilePaths = playlistFiles.filter(file => selectedFileIds.includes(file.id)).map(file => file.fullPath);
 
-        await Promise.all(targetFiles.map(async item => await shell.trashItem(item)))
+        if(!targetFilePaths.length) return;
+
+        await Promise.all(targetFilePaths.map(async item => await shell.trashItem(item)))
 
         removeFromPlaylist();
 
@@ -517,11 +525,43 @@ const reveal = () => {
 
     if(!selectedFileIds.length || selectedFileIds.length > 1) return;
 
-    const targetId = selectedFileIds[0];
+    const file = playlistFiles.find(file => file.id == selectedFileIds[0])
 
-    if(!fileMap[targetId]) return;
+    if(!file) return;
 
-    proc.exec("explorer /e,/select," + fileMap[targetId].fullPath);
+    proc.exec("explorer /e,/select," + file.fullPath);
+}
+
+const copyFileNameToClipboard = () => {
+
+    if(!selectedFileIds.length || selectedFileIds.length > 1) return;
+
+    const file = playlistFiles.find(file => file.id == selectedFileIds[0])
+
+    if(!file) return;
+
+    clipboard.writeText(file.name);
+
+}
+
+const sortPlayList = (sortType:Mp.SortType) => {
+
+    const currentFileId = getCurrentFile().id;
+
+    config.data.sortType = sortType;
+
+    if(!playlistFiles.length) return;
+
+    util.sort(playlistFiles, sortType)
+
+    const sortedIds = playlistFiles.map(file => file.id);
+
+    if(currentFileId){
+        currentIndex = sortedIds.findIndex(id => id === currentFileId);
+    }
+
+    respond<Mp.SortResult>("Playlist", "after-sort", {fileIds:sortedIds})
+
 }
 
 const openPlaylist = () => {
@@ -547,40 +587,6 @@ const openConvertSourceFileDialog = () => {
     if(files){
         respond<Mp.FileSelectResult>("Convert", "after-sourcefile-select", {fullPath:files[0]})
     }
-}
-
-const copyFileNameToClipboard = () => {
-
-    if(!selectedFileIds.length || selectedFileIds.length > 1) return;
-
-    const targetId = selectedFileIds[0];
-
-    if(!fileMap[targetId]) return;
-
-    clipboard.writeText(fileMap[targetId].name);
-
-}
-
-const sortPlayList = (sortType:Mp.SortType) => {
-
-    const currentFileId = getCurrentFile().id;
-
-    config.data.sortType = sortType;
-
-    if(!playlistFiles.length) return;
-
-    util.sort(playlistFiles, sortType)
-
-    const sortedIds = playlistFiles.map(file => file.id);
-
-    if(currentFileId){
-        currentIndex = sortedIds.findIndex(id => id === currentFileId);
-    }
-
-    console.log(currentIndex)
-
-    respond<Mp.SortResult>("Playlist", "after-sort", {fileIds:sortedIds})
-
 }
 
 const changePlaybackRate = (playbackRate:number) => {
@@ -682,9 +688,10 @@ const onConvertEnd = (message?:string) => {
 
 const renameFile = async (data:Mp.RenameRequest) => {
 
-    const oldFile = fileMap[data.id];
-    const oldPath = oldFile.fullPath;
-    const newPath = path.join(path.dirname(oldPath), data.name)
+    const fileIndex = playlistFiles.findIndex(file => file.id == data.id)
+    const file = playlistFiles[fileIndex];
+    const filePath = file.fullPath;
+    const newPath = path.join(path.dirname(filePath), data.name)
 
     try{
 
@@ -692,24 +699,20 @@ const renameFile = async (data:Mp.RenameRequest) => {
             throw new Error(`File name "${data.name}" exists`)
         }
 
-        fs.renameSync(oldPath, newPath)
+        fs.renameSync(filePath, newPath)
 
-        const newMediaFile = util.updateFile(newPath, oldFile);
-        const targetIndex = playlistFiles.findIndex(file => file.id == data.id)
-        playlistFiles[targetIndex] = newMediaFile
-        delete fileMap[data.id]
-        fileMap[newMediaFile.id] = newMediaFile;
-        data.id = newMediaFile.id;
+        const newMediaFile = util.updateFile(newPath, file);
+        playlistFiles[fileIndex] = newMediaFile
 
         respond<Mp.RenameResult>("Playlist", "after-rename", {file:newMediaFile})
 
-        if(targetIndex == currentIndex){
+        if(fileIndex == currentIndex){
             respond<Mp.OnFileLoad>("Main", "on-file-load", {currentFile:newMediaFile, autoPlay:mediaPlayStatus == "playing"})
         }
 
     }catch(ex){
         await showErrorMessage(ex)
-        respond<Mp.RenameResult>("Playlist", "after-rename", {file:oldFile, error:true})
+        respond<Mp.RenameResult>("Playlist", "after-rename", {file:file, error:true})
     }
 }
 
