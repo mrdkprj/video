@@ -15,7 +15,7 @@ export const audioFormats = [
 ]
 
 export const resolutions = {
-    "Same": "",
+    "SizeNone": "",
     "360p":"480x360",
     "480p":"640x480",
     "720p":"1280x720",
@@ -23,7 +23,7 @@ export const resolutions = {
 }
 
 export const rotations = {
-    "None": -1,
+    "RotationNone": 0,
     "90Clockwise": 1,
     "90CounterClockwise":2
 }

@@ -64,19 +64,17 @@ body{
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
     min-width: 320px;
-    max-width: 540px;
-}
-
-.video .audio-options{
-    display: none;
+    max-width: 500px;
 }
 
 .video-options{
     display: none;
 }
 
-.video .video-options{
+.video .video-options,
+.video .audio-options{
     display: block;
 }
 
@@ -94,7 +92,7 @@ body{
 
 .option-area .radio {
     position: relative;
-    height: 60px;
+    height: 50px;
     flex: 1;
 }
 
@@ -120,6 +118,19 @@ body{
 
 .option-area input[type=text]:focus{
     outline: none;
+}
+
+.option-area input[type=range]{
+    flex: 1 1 auto;
+}
+
+.option-area input[type=range],
+.option-area input[type=range] + span{
+    margin: 10px;
+}
+
+#MaxVolume{
+    margin-left: 10px;
 }
 
 .btn{
@@ -176,7 +187,7 @@ body{
 }
 
 button{
-    line-height: 4rem;
+    line-height: 3rem;
     font-size: 2em;
     border: 1px solid #c19292;
     border-radius: 5px;

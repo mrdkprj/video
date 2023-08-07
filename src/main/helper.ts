@@ -59,6 +59,7 @@ export default class Helper{
             parent: parent,
             backgroundColor: "#272626",
             width:640,
+            height:700,
             resizable: true,
             autoHideMenuBar: true,
             show: false,

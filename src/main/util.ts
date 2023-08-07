@@ -140,20 +140,54 @@ export default class Util{
         }
     }
 
-    async extractAudio(sourcePath:string, destPath:string, bitrate:string){
+    async getMaxVolume(sourcePath:string):Promise<string>{
+        return new Promise((resolve,reject)=>{
+
+            this.command = ffmpeg({source:sourcePath})
+
+            this.command.outputOptions([
+                "-vn",
+                "-af",
+                "volumedetect",
+                "-f null",
+            ]).on("error", async (err:any) => {
+                reject(new Error(err.message))
+            })
+            .on("end", (stdout, stderr) => {
+                this.finishConvert();
+                const data = stderr.match(/max_volume:\s?([^ ]*)\s?dB/)
+                if(data && data.length > 1){
+                    resolve(data[1])
+                }
+                reject(new Error("Cannot get volume"))
+            })
+            .saveToFile('-');
+
+        })
+    }
+
+    async extractAudio(sourcePath:string, destPath:string, options:Mp.ConvertOptions){
 
         if(this.command) throw new Error("Process busy")
 
         this.convertDestFile = destPath;
 
+        const metadata = await this.getMediaDetail(sourcePath);
+
+        const audioBitrate = options.audioBitrate !== "BitrateNone" ? options.audioBitrate : Math.ceil(parseInt(metadata.streams[1].bit_rate)/1000)
+        const audioVolume = options.audioVolume !== "1" ? `volume=${options.audioVolume}` : ""
+
         return new Promise((resolve,reject)=>{
 
             this.command = ffmpeg({source:sourcePath})
 
-            this.command.format("mp3")
-                .audioCodec("libmp3lame")
-                .audioBitrate(bitrate)
-                .on("error", async (err:any) => {
+            this.command.format("mp3").audioCodec("libmp3lame").audioBitrate(audioBitrate)
+
+            if(audioVolume){
+                this.command.audioFilters(audioVolume)
+            }
+
+            this.command.on("error", async (err:any) => {
                     this.cleanUp();
                     reject(new Error(err.message))
                 })
@@ -167,20 +201,41 @@ export default class Util{
 
     }
 
-    async convertVideo(sourcePath:string, destPath:string, frameSize:Mp.VideoFrameSize){
+    async convertVideo(sourcePath:string, destPath:string, options:Mp.ConvertOptions){
 
         if(this.command) throw new Error("Process busy")
 
-        this.command = ffmpeg({source:sourcePath})
+        this.convertDestFile = destPath;
 
-        const size = await this.getSize(sourcePath, frameSize)
+        const metadata = await this.getMediaDetail(sourcePath);
+
+        const size = resolutions[options.frameSize] ? resolutions[options.frameSize] : await this.getSize(metadata)
+        const rotation = rotations[options.rotation] ? `transpose=${rotations[options.rotation]}` : "";
+        const audioBitrate = options.audioBitrate !== "BitrateNone" ? options.audioBitrate : Math.ceil(parseInt(metadata.streams[1].bit_rate)/1000)
+        let audioVolume = options.audioVolume !== "1" ? `volume=${options.audioVolume}` : ""
+
+        if(options.maxAudioVolume){
+            const maxVolumeText = await this.getMaxVolume(sourcePath);
+            const maxVolume = parseFloat(maxVolumeText);
+            if(maxVolume >= 0){
+                throw new Error("No max_volume")
+            }
+            audioVolume = `volume=${maxVolume * -1}dB`
+        }
 
         return new Promise((resolve,reject)=>{
 
-            this.command.format("mp4")
-                .videoCodec("libx264")
-                .size(size)
-                .on("error", async (err:any) => {
+            this.command = ffmpeg({source:sourcePath})
+
+            this.command.format("mp4").videoCodec("libx264").size(size)
+            if(rotation){
+                this.command.withVideoFilter(rotation)
+            }
+            this.command.audioCodec("libmp3lame").audioBitrate(audioBitrate)
+            if(audioVolume){
+                this.command.audioFilters(audioVolume)
+            }
+            this.command.on("error", async (err:any) => {
                     this.cleanUp();
                     reject(new Error(err.message))
                 })
@@ -193,13 +248,7 @@ export default class Util{
         })
     }
 
-    private async getSize(sourcePath:string, frameSize:Mp.VideoFrameSize){
-
-        const desiredSize = resolutions[frameSize];
-
-        if(desiredSize) return desiredSize;
-
-        const metadata = await this.getMediaDetail(sourcePath);
+    private async getSize(metadata:ffmpeg.FfprobeData){
 
         const rotation = metadata.streams[0].rotation
 
@@ -208,31 +257,6 @@ export default class Util{
         }
 
         return `${metadata.streams[0].width}x${metadata.streams[0].height}`
-    }
-
-    async rotateVideo(sourcePath:string, destPath:string, ratationName:Mp.VideoRotation){
-
-        if(this.command) throw new Error("Process busy")
-
-        const rotation = rotations[ratationName];
-
-        return new Promise((resolve,reject)=>{
-
-            this.command = ffmpeg({source:sourcePath})
-
-            this.command.format("mp4")
-                .withVideoFilter(`transpose=${rotation}`)
-                .on("error", async (err:any) => {
-                    this.cleanUp();
-                    reject(new Error(err.message))
-                })
-                .on("end", () => {
-                    this.finishConvert();
-                    resolve(undefined)
-                })
-                .save(destPath);
-
-        })
     }
 
     private finishConvert(){

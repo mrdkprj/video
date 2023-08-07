@@ -236,7 +236,6 @@ const onReady = () => {
     togglePlay();
 
     initPlaylist(util.extractFilesFromArgv())
-
 }
 
 const sendCurrentFile = (autoPlay:boolean) => {
@@ -648,13 +647,9 @@ const startConvert = async (data:Mp.ConvertRequest) => {
     try{
 
         if(data.video){
-            if(data.options.rotation !== "None"){
-                await util.rotateVideo(data.sourcePath, savePath, data.options.rotation)
-            }else{
-                await util.convertVideo(data.sourcePath, savePath, data.options.frameSize)
-            }
+            await util.convertVideo(data.sourcePath, savePath, data.options)
         }else{
-            await util.extractAudio(data.sourcePath, savePath, data.options.bitrate)
+            await util.extractAudio(data.sourcePath, savePath, data.options)
         }
 
         if(shouldReplace){

@@ -2,24 +2,47 @@ const Dom = {
     viewport:null as HTMLElement,
     srcFileInput:null as HTMLInputElement,
     srcFileSelectBtn:null as HTMLElement,
+    maxVolumeCheckbox:null as HTMLInputElement,
+    volumeInput:null as HTMLInputElement,
     convertBtn:null as HTMLButtonElement,
     cancelBtn:null as HTMLButtonElement,
     message:null as HTMLElement,
 }
 
 let convertType = "video";
-let frameSize:Mp.VideoFrameSize = "Same";
-let bitrate = "128"
-let rotation:Mp.VideoRotation = "None"
+let frameSize:Mp.VideoFrameSize = "SizeNone";
+let audioBitrate:Mp.AudioBitrate = "BitrateNone"
+let rotation:Mp.VideoRotation = "RotationNone"
+let audioVolume = "1";
+let maxVolume = false;
 let converting = false;
+
+const onMaxVolumeChange = (e:Event) => {
+    maxVolume = (e.target as HTMLInputElement).checked;
+    if(maxVolume){
+        Dom.volumeInput.disabled = true;
+    }else{
+        Dom.volumeInput.disabled = false;
+    }
+}
+
+const onVolumeChange = (e:Event) => {
+    audioVolume = (e.target as HTMLInputElement).value
+    document.getElementById("volumeLabel").textContent = `${parseFloat(audioVolume) * 100}%`
+}
 
 window.onload = () => {
     Dom.viewport = document.getElementById("viewport");
     Dom.srcFileInput = document.getElementById("sourceFile") as HTMLInputElement
     Dom.srcFileSelectBtn = document.getElementById("sourceFileSelection")
+    Dom.maxVolumeCheckbox = document.getElementById("MaxVolume") as HTMLInputElement
+    Dom.volumeInput = document.getElementById("volume") as HTMLInputElement
     Dom.convertBtn = document.getElementById("convertBtn") as HTMLButtonElement
     Dom.cancelBtn = document.getElementById("cancelBtn") as HTMLButtonElement
     Dom.message = document.getElementById("message")
+
+    Dom.maxVolumeCheckbox.addEventListener("change", onMaxVolumeChange)
+    Dom.volumeInput.addEventListener("input", onVolumeChange)
 
     Dom.cancelBtn.disabled = true;
     Dom.convertBtn.disabled = false;
@@ -69,7 +92,7 @@ document.addEventListener("change", e => {
     }
 
     if(e.target.name === "audioBitrate"){
-        bitrate = e.target.id;
+        audioBitrate = e.target.id as Mp.AudioBitrate;
     }
 
     if(e.target.name === "rotation"){
@@ -122,8 +145,10 @@ const requestConvert = () => {
         video:convertType === "video",
         options: {
             frameSize,
-            bitrate,
-            rotation
+            audioBitrate,
+            rotation,
+            audioVolume,
+            maxAudioVolume:maxVolume
         }
     }
 

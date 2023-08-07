@@ -48,8 +48,10 @@ declare global {
         type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "Reveal" | SortType
         type SortType = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
 
-        type VideoFrameSize = "Same" | "360p" | "480p" | "720p" | "1080p";
-        type VideoRotation = "90Clockwise" | "90CounterClockwise" | "None"
+        type VideoFrameSize = "SizeNone" | "360p" | "480p" | "720p" | "1080p";
+        type VideoRotation = "RotationNone" | "90Clockwise" | "90CounterClockwise"
+        type AudioBitrate = "BitrateNone" | "128" | "160" | "192" | "320"
+
         type PlayStatus = "playing" | "paused" | "stopped"
 
         type Bounds = {
@@ -231,9 +233,11 @@ declare global {
         }
 
         type ConvertOptions = {
-            frameSize?:VideoFrameSize;
-            bitrate?:string;
-            rotation?:VideoRotation;
+            frameSize:VideoFrameSize;
+            audioBitrate:AudioBitrate;
+            rotation:VideoRotation;
+            audioVolume:string;
+            maxAudioVolume:boolean;
         }
 
         type ConvertResult = {
