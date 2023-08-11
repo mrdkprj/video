@@ -16,12 +16,13 @@ export default class Util{
 
     private convertDestFile:string;
     private command:ffmpeg.FfmpegCommand;
+    private isDev:boolean;
 
     constructor(){
         this.convertDestFile = null;
         this.command = null;
-        const isDev = process.env.NODE_ENV === "development";
-        const resourcePath = isDev ? path.join(__dirname, "..", "..", "resources") : path.join(process.resourcesPath, "resources")
+        this.isDev = process.env.NODE_ENV === "development";
+        const resourcePath = this.isDev ? path.join(__dirname, "..", "..", "resources") : path.join(process.resourcesPath, "resources")
         const ffmpegPath = path.join(resourcePath, "ffmpeg.exe")
         const ffprobePath = path.join(resourcePath, "ffprobe.exe")
         ffmpeg.setFfmpegPath(ffmpegPath)
@@ -63,7 +64,7 @@ export default class Util{
         return {
             id: crypto.randomUUID(),
             fullPath,
-            src:`app://${encodedPath}`,
+            src: this.isDev ? `app://${encodedPath}` : encodedPath,
             name:decodeURIComponent(encodeURIComponent(path.basename(fullPath))),
             date:statInfo.mtimeMs
         }

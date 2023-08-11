@@ -365,12 +365,10 @@ const onMediaLoaded = () => {
 
 const changeVideoSize = () => {
 
-    if(mediaState.fitToWindow){
+    if(mediaState.fitToWindow && containerRect.height > Dom.video.videoHeight){
         const ratio = Math.min(containerRect.width / Dom.video.videoWidth, containerRect.height / Dom.video.videoHeight);
-        Dom.video.style.width = `${Dom.video.videoWidth * ratio}px`
         Dom.video.style.height = `${Dom.video.videoHeight * ratio}px`
     }else{
-        Dom.video.style.width = ""
         Dom.video.style.height = ""
     }
 }
