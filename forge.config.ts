@@ -17,7 +17,7 @@ const config: ForgeConfig = {
               js: "./src/renderer/main/main.ts",
               name: "main_window",
               preload: {
-                js: "./src/renderer/main/mainPreload.ts",
+                js: "./src/renderer/preload.ts",
               },
             },
             {
@@ -25,7 +25,7 @@ const config: ForgeConfig = {
               js: "./src/renderer/playlist/playlist.ts",
               name: "playlist_window",
               preload: {
-                js: "./src/renderer/playlist/playlistPreload.ts",
+                js: "./src/renderer/preload.ts",
               },
             },
             {
@@ -33,7 +33,7 @@ const config: ForgeConfig = {
               js: "./src/renderer/convert/convert.ts",
               name: "convert_window",
               preload: {
-                js: "./src/renderer/convert/convertPreload.ts",
+                js: "./src/renderer/preload.ts",
               },
             },
           ],

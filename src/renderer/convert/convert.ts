@@ -51,7 +51,7 @@ window.onload = () => {
 window.addEventListener("keydown", e => {
 
     if(e.key === "Escape"){
-        window.api.send("close-convert")
+        window.api.send("close-convert", null)
     }
 
 })
@@ -61,7 +61,7 @@ document.addEventListener("click", e => {
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
     if(e.target.id === "sourceFileSelection"){
-        window.api.send("open-convert-sourcefile-dialog")
+        window.api.send("open-convert-sourcefile-dialog", null)
     }
 
     if(e.target.id === "closeConvertBtn"){
@@ -100,16 +100,16 @@ document.addEventListener("change", e => {
     }
 })
 
-const onOpen = (data:Mp.MediaFile) => {
+const onOpen = (data:Mp.OpenConvertDialogEvent) => {
 
     if(!converting){
-        Dom.srcFileInput.value = data.fullPath
+        Dom.srcFileInput.value = data.file.fullPath
     }
 
 }
 
 const closeDialog = () => {
-    window.api.send("close-convert")
+    window.api.send("close-convert", null)
 }
 
 const changeType = () => {
@@ -152,11 +152,11 @@ const requestConvert = () => {
         }
     }
 
-    window.api.send<Mp.ConvertRequest>("request-convert", args)
+    window.api.send("request-convert", args)
 }
 
 const requestCancelConvert = () => {
-    window.api.send("request-cancel-convert")
+    window.api.send("request-cancel-convert", null)
 }
 
 const onAfterConvert = (data:Mp.ConvertResult) => {
@@ -170,8 +170,12 @@ const onAfterConvert = (data:Mp.ConvertResult) => {
     }
 }
 
-window.api.receive<Mp.MediaFile>("before-open", (data:Mp.MediaFile) => onOpen(data))
-window.api.receive<Mp.ConvertResult>("after-convert", (data:Mp.ConvertResult) => onAfterConvert(data))
-window.api.receive<Mp.FileSelectResult>("after-sourcefile-select", (data:Mp.FileSelectResult) => Dom.srcFileInput.value = data.fullPath)
+const onSourceFileSelect = (data:Mp.FileSelectResult) => {
+    Dom.srcFileInput.value = data.fullPath
+}
+
+window.api.receive("open-convert", onOpen)
+window.api.receive("after-convert", onAfterConvert)
+window.api.receive("after-sourcefile-select", onSourceFileSelect)
 
 export {}

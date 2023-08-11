@@ -2,11 +2,11 @@ import {contextBridge, ipcRenderer} from "electron";
 
 contextBridge.exposeInMainWorld(
     "api", {
-        send: (channel:MainChannel, data:any) => {
+        send: (channel:keyof MainChannelEventMap, data:any) => {
             ipcRenderer.send(channel, data);
         },
 
-        receive: (channel:MainRendererChannel, listener:(data?: any) => void) => {
+        receive: (channel:keyof RendererChannelEventMap, listener:(data?: any) => void) => {
             ipcRenderer.on(channel, (event, ...args) => listener(...args));
         }
   }

@@ -77,7 +77,7 @@ export default class Util{
         return {
             id: currentFile.id,
             fullPath,
-            src:`app://${encodedPath}`,
+            src: this.isDev ? `app://${encodedPath}` : encodedPath,
             name:decodeURIComponent(encodeURIComponent(path.basename(fullPath))),
             date:currentFile.date,
         }

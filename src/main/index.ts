@@ -12,7 +12,7 @@ protocol.registerSchemesAsPrivileged([
     { scheme: "app", privileges: { bypassCSP: true } },
 ])
 
-const renderer:Renderer = {
+const Renderers:Renderer = {
     Main:null,
     Playlist:null,
     Convert:null,
@@ -114,7 +114,7 @@ if(!locked) {
 
 const onSecondInstanceReady = () => {
     initPlaylist([additionalFiles.shift()])
-    renderer.Main.show();
+    Renderers.Main.show();
 }
 
 app.on("second-instance", (_event:Event, _argv:string[], _workingDirectory:string, additionalData:string[]) => {
@@ -152,67 +152,70 @@ app.on("ready", () => {
         callback(filePath);
     });
 
-    renderer.Main = helper.createMainWindow(config.data)
+    Renderers.Main = helper.createMainWindow(config.data)
 
-    renderer.Main.on("ready-to-show", () => {
+    Renderers.Main.on("ready-to-show", () => {
 
         if(config.data.isMaximized){
-            renderer.Main.maximize();
+            Renderers.Main.maximize();
         }
 
-        renderer.Main.setBounds(config.data.bounds)
-        renderer.Main.setThumbarButtons(thumButtons[0])
+        Renderers.Main.setBounds(config.data.bounds)
+        Renderers.Main.setThumbarButtons(thumButtons[0])
 
         onReady();
 
     })
 
-    renderer.Main.on("closed", () => {
-        renderer.Main = null
+    Renderers.Main.on("closed", () => {
+        Renderers.Main = null
     });
 
-    renderer.Main.on("maximize", onMaximize);
-    renderer.Main.on("unmaximize", onUnmaximize);
+    Renderers.Main.on("maximize", onMaximize);
+    Renderers.Main.on("unmaximize", onUnmaximize);
 
-    renderer.Playlist = helper.createPlaylistWindow(renderer.Main, config.data)
+    Renderers.Playlist = helper.createPlaylistWindow(Renderers.Main, config.data)
 
-    renderer.Convert = helper.createConvertWindow(renderer.Main)
+    Renderers.Convert = helper.createConvertWindow(Renderers.Main)
 
 });
 
 const registerIpcChannels = () => {
 
-    const handlers:IpcMainHandler[] = [
-        {channel:"minimize", handle:onMinimize},
-        {channel:"toggle-maximize", handle:toggleMaximize},
-        {channel:"close", handle:onClose},
-        {channel:"drop", handle:onDrop},
-        {channel:"load-file", handle:onLoadRequest},
-        {channel:"progress", handle:onProgress},
-        {channel:"open-main-context", handle:onOpenMainContext},
-        {channel:"play-status-change", handle:onPlayStatusChanged},
-        {channel:"reload", handle:onReload},
-        {channel:"save-image", handle:onSaveImage},
-        {channel:"close-playlist", handle:onClosePlaylist},
-        {channel:"remove-playlist-item", handle:onRemovePlaylistItem},
-        {channel:"file-released", handle:onFileReleased},
-        {channel:"open-playlist-context", handle:onOpenPlaylistContext},
-        {channel:"change-playlist-order", handle:onChangePlaylistOrder},
-        {channel:"toggle-play", handle:onTogglePlay},
-        {channel:"toggle-shuffle", handle:onToggleShuffle},
-        {channel:"toggle-fullscreen", handle:onToggleFullscreen},
-        {channel:"close-convert", handle:onCloseConvertDiglog},
-        {channel:"request-convert", handle:onConnvertRequest},
-        {channel:"request-cancel-convert", handle:onCancelConvertRequest},
-        {channel: "open-convert-sourcefile-dialog", handle:onOpenConvertSourceFileDialog},
-        {channel:"rename-file", handle:onRenameRequest},
-    ]
+    const addEventHandler = <K extends keyof MainChannelEventMap>(
+        channel:K,
+        handler: (data: MainChannelEventMap[K]) => void | Promise<void>
+    ) => {
+        ipcMain.on(channel, (_event, request) => handler(request))
+    }
 
-    handlers.forEach(handler => ipcMain.on(handler.channel, (event, request) => handler.handle(event, request)));
+    addEventHandler("minimize", onMinimize)
+    addEventHandler("toggle-maximize", toggleMaximize)
+    addEventHandler("close", onClose)
+    addEventHandler("drop", onDrop)
+    addEventHandler("load-file", onLoadRequest)
+    addEventHandler("progress", onProgress)
+    addEventHandler("open-main-context", onOpenMainContext)
+    addEventHandler("play-status-change", onPlayStatusChanged)
+    addEventHandler("reload", onReload)
+    addEventHandler("save-image", onSaveImage)
+    addEventHandler("close-playlist", onClosePlaylist)
+    addEventHandler("remove-playlist-item", onRemovePlaylistItem)
+    addEventHandler("file-released", onFileReleased)
+    addEventHandler("open-playlist-context", onOpenPlaylistContext)
+    addEventHandler("change-playlist-order", onChangePlaylistOrder)
+    addEventHandler("toggle-play", onTogglePlay)
+    addEventHandler("toggle-shuffle", onToggleShuffle)
+    addEventHandler("toggle-fullscreen", onToggleFullscreen)
+    addEventHandler("close-convert", onCloseConvertDiglog)
+    addEventHandler("request-convert", onConnvertRequest)
+    addEventHandler("request-cancel-convert", onCancelConvertRequest)
+    addEventHandler( "open-convert-sourcefile-dialog", onOpenConvertSourceFileDialog)
+    addEventHandler("rename-file", onRenameRequest)
 }
 
-const respond = <T extends Mp.Args>(rendererName:RendererName, channel:RendererChannel, data:T) => {
-    renderer[rendererName].webContents.send(channel, data);
+const respond = <K extends keyof RendererChannelEventMap>(rendererName:RendererName, channel:K, data:RendererChannelEventMap[K]) => {
+    Renderers[rendererName].webContents.send(channel, data);
 }
 
 const showErrorMessage = async (ex:any) => {
@@ -223,15 +226,15 @@ const onReady = () => {
 
     isReady = true;
 
-    renderer.Main.show();
+    Renderers.Main.show();
 
     if(config.data.playlistVisible){
-        renderer.Playlist.show();
+        Renderers.Playlist.show();
     }
 
     mainContext.items[FIT_TO_WINDOW_ITEM_INDEX].checked = config.data.video.fitToWindow
 
-    respond<Mp.OnReady>("Main", "ready", {config:config.data});
+    respond("Main", "ready", {config:config.data});
 
     togglePlay();
 
@@ -240,8 +243,8 @@ const onReady = () => {
 
 const sendCurrentFile = (autoPlay:boolean) => {
     const currentFile = getCurrentFile();
-    respond<Mp.OnFileLoad>("Playlist", "on-file-load", {currentFile, autoPlay})
-    respond<Mp.OnFileLoad>("Main", "on-file-load", {currentFile, autoPlay})
+    respond("Playlist", "after-file-load", {currentFile, autoPlay})
+    respond("Main", "after-file-load", {currentFile, autoPlay})
 }
 
 const initPlaylist = (fullPaths:string[]) => {
@@ -258,9 +261,9 @@ const initPlaylist = (fullPaths:string[]) => {
 
     shuffleList();
 
-    respond<Mp.Args>("Playlist", "clear-playlist", null)
+    respond("Playlist", "clear-playlist", null)
 
-    respond<Mp.DropResult>("Playlist", "after-drop", {files:playlistFiles})
+    respond("Playlist", "after-drop", {files:playlistFiles})
 
     sendCurrentFile(true);
 
@@ -274,7 +277,7 @@ const addToPlaylist = (fullPaths:string[]) => {
 
     shuffleList();
 
-    respond<Mp.DropResult>("Playlist", "after-drop", {files:newFiles})
+    respond("Playlist", "after-drop", {files:newFiles})
 
     if(currentIndex < 0){
         sendCurrentFile(false);
@@ -296,42 +299,42 @@ const reset = () => {
     playlistFiles.length = 0;
     randomIndices.length = 0;
     currentIndex = -1;
-    renderer.Main.webContents.send("reset")
-    renderer.Playlist.webContents.send("reset")
+    Renderers.Main.webContents.send("reset")
+    Renderers.Playlist.webContents.send("reset")
 }
 
 const changeSizeMode = () => {
     config.data.video.fitToWindow = !config.data.video.fitToWindow
     mainContext.items[1].checked = config.data.video.fitToWindow
-    respond<Mp.ConfigChanged>("Main", "change-display-mode", {config:config.data})
+    respond("Main", "change-display-mode", {config:config.data})
 }
 
 const onUnmaximize = () => {
     config.data.isMaximized = false;
-    respond<Mp.ConfigChanged>("Main", "after-toggle-maximize", {config:config.data})
+    respond("Main", "after-toggle-maximize", {config:config.data})
 }
 
 const onMaximize = () => {
     config.data.isMaximized = true;
-    respond<Mp.ConfigChanged>("Main","after-toggle-maximize", {config:config.data})
+    respond("Main","after-toggle-maximize", {config:config.data})
 }
 
 const toggleMaximize = () => {
 
-    if(renderer.Main.isMaximized()){
-        renderer.Main.unmaximize();
-        renderer.Main.setBounds(config.data.bounds)
+    if(Renderers.Main.isMaximized()){
+        Renderers.Main.unmaximize();
+        Renderers.Main.setBounds(config.data.bounds)
     }else{
-        config.data.bounds = renderer.Main.getBounds();
-        renderer.Main.maximize();
+        config.data.bounds = Renderers.Main.getBounds();
+        Renderers.Main.maximize();
     }
 }
 
 const saveConfig = (data:Mp.MediaState) => {
 
     try{
-        config.data.isMaximized = renderer.Main.isMaximized();
-        config.data.playlistBounds = renderer.Playlist.getBounds()
+        config.data.isMaximized = Renderers.Main.isMaximized();
+        config.data.playlistBounds = Renderers.Playlist.getBounds()
         config.save(data);
     }catch(ex){
         return showErrorMessage(ex);
@@ -340,8 +343,8 @@ const saveConfig = (data:Mp.MediaState) => {
 
 const closeWindow = (data:Mp.CloseRequest) => {
     saveConfig(data.mediaState);
-    renderer.Playlist.close();
-    renderer.Main.close();
+    Renderers.Playlist.close();
+    Renderers.Main.close();
 }
 
 const shuffleList = () => {
@@ -391,18 +394,18 @@ const changePlayStatus = (status:Mp.PlayStatus) => {
 
     mediaPlayStatus = status;
 
-    renderer.Main.setThumbarButtons([])
+    Renderers.Main.setThumbarButtons([])
 
     if(mediaPlayStatus == "playing"){
-        renderer.Main.setThumbarButtons(thumButtons[1])
+        Renderers.Main.setThumbarButtons(thumButtons[1])
     }else{
-        renderer.Main.setThumbarButtons(thumButtons[0])
+        Renderers.Main.setThumbarButtons(thumButtons[0])
     }
 
 }
 
 const togglePlay = () => {
-    respond("Main", "toggle-play", {})
+    respond("Main", "toggle-play", null)
 }
 
 const dropFiles = (data:Mp.DropRequest) => {
@@ -445,30 +448,13 @@ const removeFromPlaylist = () => {
     playlistFiles.length = 0;
     playlistFiles.push(...newFiles)
 
-    respond<Mp.RemovePlaylistResult>("Playlist", "after-remove-playlist", {removedFileIds:selectedFileIds})
+    respond("Playlist", "after-remove-playlist", {removedFileIds:selectedFileIds})
 
     currentIndex = getIndexAfterRemove(removeIndices)
 
     if(isCurrentFileRemoved){
         sendCurrentFile(false);
     }
-
-/*
-    const removeIndices = selectedFileIds.map(id => playlistFiles.map(e => e.id).indexOf(id))
-    const isCurrentFileRemoved = removeIndices.includes(currentIndex);
-
-    const newFiles = playlistFiles.filter(file => !selectedFileIds.includes(file.id));
-    playlistFiles.length = 0;
-    playlistFiles.push(...newFiles)
-
-    respond<Mp.RemovePlaylistResult>("Playlist", "after-remove-playlist", {removedFileIds:selectedFileIds})
-
-    currentIndex = getIndexAfterRemove(removeIndices)
-
-    if(isCurrentFileRemoved){
-        sendCurrentFile(false);
-    }
-    */
 
 }
 
@@ -497,7 +483,7 @@ const requestReleaseFile = () => {
 
     if(!selectedFileIds.length) return;
 
-    respond<Mp.ReleaseFileRequest>("Main", "release-file", {fileIds:selectedFileIds})
+    respond("Main", "release-file", {fileIds:selectedFileIds})
 
 }
 
@@ -559,22 +545,22 @@ const sortPlayList = (sortType:Mp.SortType) => {
         currentIndex = sortedIds.findIndex(id => id === currentFileId);
     }
 
-    respond<Mp.SortResult>("Playlist", "after-sort", {fileIds:sortedIds})
+    respond("Playlist", "after-sort", {fileIds:sortedIds})
 
 }
 
 const openPlaylist = () => {
     config.data.playlistVisible = true;
-    renderer.Playlist.show();
+    Renderers.Playlist.show();
 }
 
 const openConvertDialog = () => {
-    respond<Mp.MediaFile>("Convert", "before-open", getCurrentFile())
-    renderer.Convert.show();
+    respond("Convert", "open-convert", {file:getCurrentFile()})
+    Renderers.Convert.show();
 }
 
 const openConvertSourceFileDialog = () => {
-    const files = dialog.showOpenDialogSync(renderer.Convert, {
+    const files = dialog.showOpenDialogSync(Renderers.Convert, {
         title: "Select file to convert",
         defaultPath: getCurrentFile().fullPath,
         filters: [
@@ -584,21 +570,21 @@ const openConvertSourceFileDialog = () => {
     })
 
     if(files){
-        respond<Mp.FileSelectResult>("Convert", "after-sourcefile-select", {fullPath:files[0]})
+        respond("Convert", "after-sourcefile-select", {fullPath:files[0]})
     }
 }
 
 const changePlaybackRate = (playbackRate:number) => {
-    respond<Mp.ChangePlaySpeedRequest>("Main", "change-playback-rate", {playbackRate})
+    respond("Main", "change-playback-rate", {playbackRate})
 }
 
 const changeSeekSpeed = (seekSpeed:number) => {
-    respond<Mp.ChangePlaySpeedRequest>("Main", "change-seek-speed", {seekSpeed});
+    respond("Main", "change-seek-speed", {seekSpeed});
 }
 
 const saveImage = (data:Mp.SaveImageRequet) => {
 
-    const savePath = dialog.showSaveDialogSync(renderer.Main, {
+    const savePath = dialog.showSaveDialogSync(Renderers.Main, {
         defaultPath: path.join(config.data.path.captureDestDir, `${getCurrentFile().name}-${data.timestamp}.jpeg`),
         filters: [
             { name: "Image", extensions: ["jpeg", "jpg"] },
@@ -624,7 +610,7 @@ const startConvert = async (data:Mp.ConvertRequest) => {
     const file = util.toFile(data.sourcePath);
     const fileName =  file.name.replace(path.extname(file.name), "")
 
-    const selectedPath = dialog.showSaveDialogSync(renderer.Convert, {
+    const selectedPath = dialog.showSaveDialogSync(Renderers.Convert, {
         defaultPath: path.join(config.data.path.convertDestDir, `${fileName}.${extension}`),
         filters: [
             { name: name, extensions: [extension] },
@@ -640,9 +626,9 @@ const startConvert = async (data:Mp.ConvertRequest) => {
     const timestamp = String(new Date().getTime());
     const savePath = shouldReplace ? path.join(path.dirname(selectedPath), path.basename(selectedPath) + timestamp) : selectedPath
 
-    renderer.Convert.hide()
+    Renderers.Convert.hide()
 
-    respond("Main", "toggle-convert", {})
+    respond("Main", "toggle-convert", null)
 
     try{
 
@@ -665,7 +651,7 @@ const startConvert = async (data:Mp.ConvertRequest) => {
     }finally{
 
         openConvertDialog();
-        respond("Main", "toggle-convert", {})
+        respond("Main", "toggle-convert", null)
 
     }
 
@@ -674,9 +660,9 @@ const startConvert = async (data:Mp.ConvertRequest) => {
 const onConvertEnd = (message?:string) => {
 
     if(message){
-        respond<Mp.ConvertResult>("Convert", "after-convert", {success:false, message})
+        respond("Convert", "after-convert", {success:false, message})
     }else{
-        respond<Mp.ConvertResult>("Convert", "after-convert", {success:true})
+        respond("Convert", "after-convert", {success:true})
     }
 
 }
@@ -699,25 +685,25 @@ const renameFile = async (data:Mp.RenameRequest) => {
         const newMediaFile = util.updateFile(newPath, file);
         playlistFiles[fileIndex] = newMediaFile
 
-        respond<Mp.RenameResult>("Playlist", "after-rename", {file:newMediaFile})
+        respond("Playlist", "after-rename", {file:newMediaFile})
 
         if(fileIndex == currentIndex){
-            respond<Mp.OnFileLoad>("Main", "on-file-load", {currentFile:newMediaFile, autoPlay:mediaPlayStatus == "playing"})
+            respond("Main", "after-file-load", {currentFile:newMediaFile, autoPlay:mediaPlayStatus == "playing"})
         }
 
     }catch(ex){
         await showErrorMessage(ex)
-        respond<Mp.RenameResult>("Playlist", "after-rename", {file:file, error:true})
+        respond("Playlist", "after-rename", {file:file, error:true})
     }
 }
 
-const onMinimize:handler<Mp.Args> = () => renderer.Main.minimize();
+const onMinimize = () => Renderers.Main.minimize();
 
-const onClose:handler<Mp.CloseRequest> = (_event:Electron.IpcMainEvent, data:Mp.CloseRequest) => closeWindow(data);
+const onClose = (data:Mp.CloseRequest) => closeWindow(data);
 
-const onDrop:handler<Mp.DropRequest> = (_event:Electron.IpcMainEvent, data:Mp.DropRequest) => dropFiles(data);
+const onDrop = (data:Mp.DropRequest) => dropFiles(data);
 
-const onLoadRequest:handler<Mp.LoadFileRequest> = (_event:Electron.IpcMainEvent, data:Mp.LoadFileRequest) => {
+const onLoadRequest = (data:Mp.LoadFileRequest) => {
     if(data.isAbsolute){
         selectFile(data.index)
     }else{
@@ -725,25 +711,25 @@ const onLoadRequest:handler<Mp.LoadFileRequest> = (_event:Electron.IpcMainEvent,
     }
 }
 
-const onProgress:handler<Mp.OnProgress> = (_event:Electron.IpcMainEvent, data:Mp.OnProgress) => renderer.Main.setProgressBar(data.progress);
+const onProgress = (data:Mp.ProgressEvent) => Renderers.Main.setProgressBar(data.progress);
 
-const onOpenMainContext:handler<Mp.Args> = () => mainContext.popup({window:renderer.Main});
+const onOpenMainContext = () => mainContext.popup({window:Renderers.Main});
 
-const onPlayStatusChanged:handler<Mp.ChangePlayStatusRequest> = (_event:Electron.IpcMainEvent, data:Mp.ChangePlayStatusRequest) => changePlayStatus(data.status);
+const onPlayStatusChanged = (data:Mp.ChangePlayStatusRequest) => changePlayStatus(data.status);
 
-const onReload:handler<Mp.Args> = () => {
-    renderer.Playlist.reload();
-    renderer.Main.reload();
+const onReload = () => {
+    Renderers.Playlist.reload();
+    Renderers.Main.reload();
 }
 
-const onSaveImage:handler<Mp.SaveImageRequet> = (_event:Electron.IpcMainEvent, data:Mp.SaveImageRequet) => saveImage(data);
+const onSaveImage = (data:Mp.SaveImageRequet) => saveImage(data);
 
-const onClosePlaylist:handler<Mp.Args> = () => {
+const onClosePlaylist = () => {
     config.data.playlistVisible = false;
-    renderer.Playlist.hide()
+    Renderers.Playlist.hide()
 }
 
-const onRemovePlaylistItem:handler<Mp.RemovePlaylistItemRequest> = (_event:Electron.IpcMainEvent, data:Mp.RemovePlaylistItemRequest) => {
+const onRemovePlaylistItem = (data:Mp.RemovePlaylistItemRequest) => {
     selectedFileIds = data.fileIds;
     removeFromPlaylist();
 }
@@ -752,38 +738,38 @@ const onFileReleased = async () => {
     await deleteFile()
 }
 
-const onOpenPlaylistContext:handler<Mp.OpenPlaylistContextRequest> = (_event:Electron.IpcMainEvent, data:Mp.OpenPlaylistContextRequest) => {
+const onOpenPlaylistContext = (data:Mp.OpenPlaylistContextRequest) => {
     selectedFileIds = data.fileIds;
-    playlistContext.popup({window:renderer.Playlist})
+    playlistContext.popup({window:Renderers.Playlist})
 }
 
-const onChangePlaylistOrder:handler<Mp.ChangePlaylistOrderRequet> = (_event:Electron.IpcMainEvent, data:Mp.ChangePlaylistOrderRequet) => movePlaylistFiles(data);
+const onChangePlaylistOrder = (data:Mp.ChangePlaylistOrderRequet) => movePlaylistFiles(data);
 
-const onTogglePlay:handler<Mp.Args> = () => togglePlay();
+const onTogglePlay = () => togglePlay();
 
-const onToggleShuffle:handler<Mp.Args> = () => {
+const onToggleShuffle = () => {
     doShuffle = !doShuffle;
     shuffleList();
 }
 
-const onToggleFullscreen:handler<Mp.Args> = () => {
+const onToggleFullscreen = () => {
 
-    if(renderer.Main.isFullScreen()){
-        renderer.Main.setFullScreen(false)
-        if(config.data.playlistVisible) renderer.Playlist.show();
-        renderer.Main.focus();
+    if(Renderers.Main.isFullScreen()){
+        Renderers.Main.setFullScreen(false)
+        if(config.data.playlistVisible) Renderers.Playlist.show();
+        Renderers.Main.focus();
     }else{
-        renderer.Main.setFullScreen(true)
-        renderer.Playlist.hide();
+        Renderers.Main.setFullScreen(true)
+        Renderers.Playlist.hide();
     }
 }
 
-const onCloseConvertDiglog:handler<Mp.Args> = () => renderer.Convert.hide();
+const onCloseConvertDiglog = () => Renderers.Convert.hide();
 
-const onConnvertRequest:handler<Mp.ConvertRequest> = (_event:Electron.IpcMainEvent, data:Mp.ConvertRequest) => startConvert(data)
+const onConnvertRequest = (data:Mp.ConvertRequest) => startConvert(data)
 
-const onCancelConvertRequest:handler<Mp.Args> = () => util.cancelConvert();
+const onCancelConvertRequest = () => util.cancelConvert();
 
-const onOpenConvertSourceFileDialog:handler<Mp.Args> = () => openConvertSourceFileDialog();
+const onOpenConvertSourceFileDialog = () => openConvertSourceFileDialog();
 
-const onRenameRequest:handler<Mp.RenameRequest> = async (_event:Electron.IpcMainEvent, data:Mp.RenameRequest) => await renameFile(data)
+const onRenameRequest = async (data:Mp.RenameRequest) => await renameFile(data)

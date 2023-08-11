@@ -36,7 +36,7 @@ let fileListContainerRect:DOMRect;
 
 const onContextMenu = (e:MouseEvent) => {
     e.preventDefault()
-    window.api.send<Mp.OpenPlaylistContextRequest>("open-playlist-context", {fileIds:selectedFileIds})
+    window.api.send("open-playlist-context", {fileIds:selectedFileIds})
 }
 
 const onKeydown = (e:KeyboardEvent) => {
@@ -46,14 +46,14 @@ const onKeydown = (e:KeyboardEvent) => {
     if(e.key === "Enter"){
 
         if(!RenameState.renaming){
-            window.api.send("toggle-play")
+            window.api.send("toggle-play", null)
         }
     }
 
     if(selectedFileIds.length > 0){
 
         if(e.key === "Delete"){
-            window.api.send<Mp.RemovePlaylistItemRequest>("remove-playlist-item", {fileIds:selectedFileIds})
+            window.api.send("remove-playlist-item", {fileIds:selectedFileIds})
         }
     }
 
@@ -119,7 +119,7 @@ const onMouseDown = (e:MouseEvent) => {
 const onMouseUp = (_e:MouseEvent) => {
     if(dragState.dragging){
         const args = {start:dragState.startIndex, end:getChildIndex(dragState.startElement), currentIndex:getChildIndex(currentElement)}
-        window.api.send<Mp.ChangePlaylistOrderRequet>("change-playlist-order", args);
+        window.api.send("change-playlist-order", args);
     }
     dragState.dragging = false;
 }
@@ -178,7 +178,7 @@ const onFileDrop = (e:DragEvent) => {
     })
 
     if(dropFiles.length > 0){
-        window.api.send<Mp.DropRequest>("drop", {files:dropFiles.map(item => item.getAsFile().path), renderer:"Playlist"})
+        window.api.send("drop", {files:dropFiles.map(item => item.getAsFile().path), renderer:"Playlist"})
     }
 }
 
@@ -312,7 +312,7 @@ const selectAll = () => {
 
 const onFileListItemClicked = (e:MouseEvent) => {
     const index = getChildIndex(e.target as HTMLElement);
-    window.api.send<Mp.LoadFileRequest>("load-file", {index, isAbsolute:true});
+    window.api.send("load-file", {index, isAbsolute:true});
 }
 
 function getChildIndex(node:HTMLElement) {
@@ -321,7 +321,7 @@ function getChildIndex(node:HTMLElement) {
     return Array.prototype.indexOf.call(Dom.fileList.childNodes, node);
 }
 
-const changeCurrent = (data:Mp.OnFileLoad) => {
+const changeCurrent = (data:Mp.FileLoadEvent) => {
 
     if(currentElement){
         currentElement.classList.remove("current");
@@ -344,7 +344,7 @@ const changeCurrent = (data:Mp.OnFileLoad) => {
 
 const requestRename = (id:string, name:string) => {
     preventRenameBlur(true)
-    window.api.send<Mp.RenameRequest>("rename-file", {id, name})
+    window.api.send("rename-file", {id, name})
 }
 
 const onRename = (data:Mp.RenameResult) => {
@@ -461,7 +461,7 @@ const toggleShuffle = () => {
         Dom.playlistFooter.classList.add("shuffle")
     }
 
-    window.api.send("toggle-shuffle")
+    window.api.send("toggle-shuffle", null)
 }
 
 const onAfterSort = (data:Mp.SortResult) => {
@@ -480,17 +480,17 @@ const onAfterSort = (data:Mp.SortResult) => {
 
 window.api.receive("clear-playlist", clearPlaylist)
 
-window.api.receive<Mp.DropResult>("after-drop", addToPlaylist)
+window.api.receive("after-drop", addToPlaylist)
 
-window.api.receive<Mp.OnFileLoad>("on-file-load", changeCurrent)
+window.api.receive("after-file-load", changeCurrent)
 
-window.api.receive<Mp.RemovePlaylistResult>("after-remove-playlist", removeFromPlaylist)
+window.api.receive("after-remove-playlist", removeFromPlaylist)
 
-window.api.receive<Mp.SortResult>("after-sort", onAfterSort)
+window.api.receive("after-sort", onAfterSort)
 
-window.api.receive<Mp.RenameResult>("after-rename", onRename);
+window.api.receive("after-rename", onRename);
 
-window.api.receive("reset", onReset)
+window.api.receive("restart", onReset)
 
 window.addEventListener("load", () => {
 
@@ -504,7 +504,7 @@ window.addEventListener("load", () => {
     Dom.renameInput.addEventListener("blur", endEditFileName)
     Dom.renameInput.addEventListener("keydown", onRenameInputKeyDown)
 
-    document.getElementById("closePlaylistBtn").addEventListener("click", () => window.api.send("close-playlist"))
+    document.getElementById("closePlaylistBtn").addEventListener("click", () => window.api.send("close-playlist", null))
 
     window.addEventListener("resize", onResize)
 

@@ -125,7 +125,7 @@ const onKeydown = (e:KeyboardEvent) => {
 
     if(e.ctrlKey && e.key === "r") e.preventDefault();
 
-    if(e.key === "F5") window.api.send("reload");
+    if(e.key === "F5") window.api.send("reload", null);
 
     if(e.key === "ArrowRight"){
 
@@ -180,7 +180,7 @@ const onResize = () => {
 const onContextMenu = (e:MouseEvent) => {
     if((e.target as HTMLElement).classList.contains("media")){
         e.preventDefault()
-        window.api.send("open-main-context")
+        window.api.send("open-main-context", null)
     }
 }
 
@@ -263,7 +263,7 @@ const onTimeUpdate = () => {
     sliders.Time.thumb.style.left = `max(${progressRate} - ${THUM_WIDTH}px, 0px)`;
     Dom.currentTimeArea.textContent = formatTime(Dom.video.currentTime);
 
-    window.api.send<Mp.OnProgress>("progress", {progress:Dom.video.currentTime / duration})
+    window.api.send("progress", {progress:Dom.video.currentTime / duration})
 }
 
 const updateVolume = (volume:number) => {
@@ -297,7 +297,7 @@ const onFileDrop = (e:DragEvent) => {
     })
 
     if(dropFiles.length > 0){
-        window.api.send<Mp.DropRequest>("drop", {files:dropFiles.map(item => item.getAsFile().path), renderer:"Main"})
+        window.api.send("drop", {files:dropFiles.map(item => item.getAsFile().path), renderer:"Main"})
     }
 }
 
@@ -331,7 +331,7 @@ const beforeDelete = (data:Mp.ReleaseFileRequest) => {
     if(data.fileIds.includes(currentFile.id)){
         releaseFile();
     }
-    window.api.send("file-released")
+    window.api.send("file-released", null)
 }
 
 const loadMedia = (autoplay:boolean) => {
@@ -340,11 +340,6 @@ const loadMedia = (autoplay:boolean) => {
     Dom.video.muted = mediaState.mute;
     Dom.video.playbackRate = mediaState.playbackRate
     Dom.video.load();
-}
-
-const replaceMedia = (data:Mp.ReplaceFileRequest) => {
-    currentFile = data.file;
-    Dom.video.src = currentFile.src ? `${currentFile.src}?${new Date().getTime()}` : ""
 }
 
 const onMediaLoaded = () => {
@@ -429,7 +424,7 @@ const changeCurrentTime = (time:number) => {
 }
 
 const changeFile = (index:number) => {
-    return window.api.send<Mp.LoadFileRequest>("load-file", {index, isAbsolute:false})
+    return window.api.send("load-file", {index, isAbsolute:false})
 }
 
 const togglePlay = () => {
@@ -444,7 +439,7 @@ const togglePlay = () => {
 }
 
 const onPlayed = () => {
-    window.api.send<Mp.ChangePlayStatusRequest>("play-status-change", {status:"playing"})
+    window.api.send("play-status-change", {status:"playing"})
     Dom.buttons.classList.add("playing")
 }
 
@@ -452,7 +447,7 @@ const onPaused = () => {
 
     if(Dom.video.currentTime == Dom.video.duration) return;
 
-    window.api.send<Mp.ChangePlayStatusRequest>("play-status-change", {status:"paused"})
+    window.api.send("play-status-change", {status:"paused"})
     Dom.buttons.classList.remove("playing")
 }
 
@@ -460,7 +455,7 @@ const stop = () => {
 
     if(!currentFile) return;
 
-    window.api.send<Mp.ChangePlayStatusRequest>("play-status-change", {status:"stopped"})
+    window.api.send("play-status-change", {status:"stopped"})
     Dom.buttons.classList.remove("playing")
     Dom.video.load();
 }
@@ -485,7 +480,7 @@ const saveImage = () => {
     ctx.drawImage(Dom.video, 0, 0, width, height);
     const image = canvas.toDataURL("image/jpeg").replace(/^data:image\/jpeg;base64,/, "");
 
-    window.api.send<Mp.SaveImageRequet>("save-image", {data:image, timestamp:Dom.video.currentTime})
+    window.api.send("save-image", {data:image, timestamp:Dom.video.currentTime})
 }
 
 const toggleMute = () => {
@@ -509,16 +504,16 @@ const changeMaximizeIcon = () => {
 }
 
 const minimize = () => {
-    window.api.send("minimize")
+    window.api.send("minimize", null)
 }
 
 const toggleMaximize = () => {
-    window.api.send("toggle-maximize")
+    window.api.send("toggle-maximize", null)
     isMaximized = !isMaximized;
     changeMaximizeIcon();
 }
 
-const onWindowSizeChanged = (e:Mp.ConfigChanged) => {
+const onWindowSizeChanged = (e:Mp.ConfigChangeEvent) => {
     isMaximized = e.config.isMaximized;
     changeMaximizeIcon();
 }
@@ -533,7 +528,7 @@ const toggleFullScreen = () => {
 
     isFullScreen = !isFullScreen;
 
-    window.api.send("toggle-fullscreen")
+    window.api.send("toggle-fullscreen", null)
 }
 
 const toggleConvert = () => {
@@ -544,16 +539,16 @@ const toggleConvert = () => {
     }
 }
 
-const onChangeDisplayMode = (e:Mp.ConfigChanged) => {
+const onChangeDisplayMode = (e:Mp.ConfigChangeEvent) => {
     mediaState.fitToWindow = e.config.video.fitToWindow;
     changeVideoSize();
 }
 
 const close = () => {
-    window.api.send<Mp.CloseRequest>("close", {mediaState});
+    window.api.send("close", {mediaState});
 }
 
-const prepare = (e:Mp.OnReady) => {
+const prepare = (e:Mp.ReadyEvent) => {
     isMaximized = e.config.isMaximized;
     changeMaximizeIcon();
 
@@ -571,7 +566,7 @@ const prepare = (e:Mp.OnReady) => {
     mediaState.seekSpeed = e.config.video.seekSpeed;
 }
 
-const load = (e:Mp.OnFileLoad) => {
+const load = (e:Mp.FileLoadEvent) => {
 
     currentFile = e.currentFile;
 
@@ -583,18 +578,17 @@ const load = (e:Mp.OnFileLoad) => {
 
 }
 
-window.api.receive<Mp.OnReady>("ready", prepare)
-window.api.receive<Mp.OnFileLoad>("on-file-load", load)
+window.api.receive("ready", prepare)
+window.api.receive("after-file-load", load)
 window.api.receive("toggle-play", togglePlay)
-window.api.receive<Mp.ConfigChanged>("change-display-mode", onChangeDisplayMode)
-window.api.receive("reset", initPlayer)
-window.api.receive<Mp.ReleaseFileRequest>("release-file", beforeDelete)
-window.api.receive<Mp.ConfigChanged>("after-toggle-maximize", onWindowSizeChanged)
-window.api.receive("toggle-convert", () => toggleConvert())
-window.api.receive<Mp.ChangePlaySpeedRequest>("change-playback-rate", changePlaybackRate)
-window.api.receive<Mp.ChangePlaySpeedRequest>("change-seek-speed", changeSeekSpeed);
-window.api.receive<Mp.ReplaceFileRequest>("replace-file", replaceMedia)
-window.api.receive<Mp.Logging>("log", data => console.log(data.log))
+window.api.receive("change-display-mode", onChangeDisplayMode)
+window.api.receive("restart", initPlayer)
+window.api.receive("release-file", beforeDelete)
+window.api.receive("after-toggle-maximize", onWindowSizeChanged)
+window.api.receive("toggle-convert", toggleConvert)
+window.api.receive("change-playback-rate", changePlaybackRate)
+window.api.receive("change-seek-speed", changeSeekSpeed);
+window.api.receive("log", data => console.log(data.log))
 
 window.addEventListener("load", () => {
     Dom.title = document.getElementById("title");

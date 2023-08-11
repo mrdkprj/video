@@ -1,37 +1,63 @@
-import { IpcMainEvent } from "electron";
-
 declare global {
 
     interface Window {
         api: Api;
     }
 
-    type MainChannel = "minimize" | "toggle-maximize" | "close" | "drop" | "load-file" | "progress" | "open-main-context" |
-                        "play-status-change" | "reload" | "save-image" | "close-playlist" | "file-released" |
-                        "remove-playlist-item" | "open-playlist-context" | "change-playlist-order" |
-                        "toggle-play" | "toggle-shuffle" | "toggle-fullscreen" |"close-convert" | "request-convert" |
-                        "open-convert-sourcefile-dialog" | "request-cancel-convert" |
-                        "rename-file"
-
-    type MainRendererChannel = "ready" | "on-file-load" | "toggle-play" | "change-display-mode" | "reset" | "release-file" | "log" | "replace-file" |
-                                "after-toggle-maximize" | "toggle-convert" | "change-playback-rate" | "change-seek-speed" | "before-convert"
-    type PlaylistRendererChannel = "after-drop"| "on-file-load" | "after-remove-playlist" | "reset" | "after-sort" | "after-rename" | "clear-playlist";
-    type ConvertRendererChannel = "before-open" |"after-sourcefile-select" | "after-convert" | "after-sourcefile-select"
-
-    type RendererChannel = MainRendererChannel | PlaylistRendererChannel | ConvertRendererChannel
     type RendererName = "Main" | "Playlist" | "Convert"
     type Renderer = {[key in RendererName] : Electron.BrowserWindow}
 
-    interface IpcMainHandler {
-        channel: MainChannel;
-        handle: handler;
+    type MainChannelEventMap = {
+        "minimize": Mp.Event;
+        "toggle-maximize": Mp.Event;
+        "close": Mp.CloseRequest;
+        "drop": Mp.DropRequest;
+        "load-file": Mp.LoadFileRequest;
+        "progress": Mp.ProgressEvent;
+        "open-main-context": Mp.Event;
+        "play-status-change": Mp.ChangePlayStatusRequest;
+        "reload": Mp.Event;
+        "save-image": Mp.SaveImageRequet;
+        "close-playlist": Mp.Event;
+        "file-released": Mp.Event;
+        "remove-playlist-item": Mp.RemovePlaylistItemRequest;
+        "open-playlist-context": Mp.OpenPlaylistContextRequest;
+        "change-playlist-order": Mp.ChangePlaylistOrderRequet;
+        "toggle-play": Mp.Event;
+        "toggle-shuffle": Mp.Event;
+        "toggle-fullscreen": Mp.Event;
+        "close-convert": Mp.Event;
+        "request-convert": Mp.ConvertRequest;
+        "open-convert-sourcefile-dialog": Mp.Event;
+        "request-cancel-convert": Mp.Event;
+        "rename-file": Mp.RenameRequest;
     }
 
-    type handler<T extends Mp.Args> = (event: IpcMainEvent, data?:T) => (void | Promise<void>)
+    type RendererChannelEventMap = {
+        "ready": Mp.ReadyEvent;
+        "after-file-load": Mp.FileLoadEvent;
+        "toggle-play": Mp.Event;
+        "change-display-mode": Mp.ConfigChangeEvent;
+        "restart": Mp.Event;
+        "release-file": Mp.ReleaseFileRequest;
+        "log": Mp.Logging;
+        "after-toggle-maximize": Mp.ConfigChangeEvent;
+        "toggle-convert": Mp.Event;
+        "change-playback-rate": Mp.ChangePlaySpeedRequest;
+        "change-seek-speed": Mp.ChangePlaySpeedRequest;
+        "after-drop": Mp.DropResult;
+        "after-remove-playlist": Mp.RemovePlaylistItemResult;
+        "after-sort": Mp.SortResult;
+        "after-rename": Mp.RenameResult;
+        "clear-playlist": Mp.Event;
+        "after-sourcefile-select": Mp.FileSelectResult;
+        "open-convert": Mp.OpenConvertDialogEvent;
+        "after-convert": Mp.ConvertResult;
+    }
 
     interface Api {
-        send: <T extends Mp.Args>(channel: MainChannel, data?:T) => void;
-        receive: <T extends Mp.Args>(channel:MainRendererChannel | PlaylistRendererChannel | ConvertRendererChannel, listener: (data?: T) => void) => () => void;
+        send: <K extends keyof MainChannelEventMap>(channel: K, data:MainChannelEventMap[K]) => void;
+        receive: <K extends keyof RendererChannelEventMap>(channel:K, listener: (data: RendererChannelEventMap[K]) => void) => () => void;
     }
 
     const MAIN_WINDOW_WEBPACK_ENTRY: string;
@@ -88,10 +114,6 @@ declare global {
             }
         }
 
-        type OnReady = {
-            config:Config;
-        }
-
         type MediaFile = {
             id:string;
             fullPath:string;
@@ -109,11 +131,6 @@ declare global {
             gainNode: GainNode;
             playbackRate:number;
             seekSpeed:number;
-        }
-
-        type ChangePlaySpeedRequest = {
-            playbackRate?:number;
-            seekSpeed?:number;
         }
 
         type Slider = {
@@ -144,6 +161,29 @@ declare global {
             working:boolean,
         }
 
+        type RenameData = {
+            fileId:string;
+            oldName:string;
+            newName:string;
+        }
+
+        type ConvertOptions = {
+            frameSize:VideoFrameSize;
+            audioBitrate:AudioBitrate;
+            rotation:VideoRotation;
+            audioVolume:string;
+            maxAudioVolume:boolean;
+        }
+
+        type ReadyEvent = {
+            config:Config;
+        }
+
+        type ChangePlaySpeedRequest = {
+            playbackRate?:number;
+            seekSpeed?:number;
+        }
+
         type DropRequest = {
             files:string[];
             renderer:RendererName;
@@ -153,7 +193,7 @@ declare global {
             files:MediaFile[];
         }
 
-        type OnProgress = {
+        type ProgressEvent = {
             progress:number;
         }
 
@@ -166,7 +206,7 @@ declare global {
             status:PlayStatus;
         }
 
-        type OnFileLoad = {
+        type FileLoadEvent = {
             currentFile:MediaFile;
             autoPlay:boolean;
         }
@@ -216,28 +256,18 @@ declare global {
             error?:boolean;
         }
 
-        type RenameData = {
-            fileId:string;
-            oldName:string;
-            newName:string;
-        }
-
         type SortResult = {
             fileIds:string[]
+        }
+
+        type OpenConvertDialogEvent = {
+            file:MediaFile;
         }
 
         type ConvertRequest = {
             sourcePath:string;
             video:boolean;
             options:ConvertOptions;
-        }
-
-        type ConvertOptions = {
-            frameSize:VideoFrameSize;
-            audioBitrate:AudioBitrate;
-            rotation:VideoRotation;
-            audioVolume:string;
-            maxAudioVolume:boolean;
         }
 
         type ConvertResult = {
@@ -249,19 +279,20 @@ declare global {
             fullPath:string;
         }
 
-        type ConfigChanged = {
+        type ConfigChangeEvent = {
             config:Config;
+        }
+
+        type Event = {
+            args:any;
         }
 
         type Logging = {
             log:any;
         }
 
-        type Args = OnReady | OnFileLoad | DropRequest | OnProgress | LoadFileRequest | SaveImageRequet | CloseRequest | ChangePlaylistOrderRequet |
-                    DropResult | RemovePlaylistResult | SortResult | OpenPlaylistContextRequest | ChangePlaySpeedRequest | ReplaceFileRequest |
-                    ConvertRequest | FileSelectResult | RenameRequest | RenameResult | ReleaseFileRequest | ConvertResult | ChangePlayStatusRequest |
-                    ConfigChanged | Logging
-
     }
 
 }
+
+export {}
