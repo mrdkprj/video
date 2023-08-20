@@ -14,8 +14,8 @@ export const EmptyFile:Mp.MediaFile = {
 
 export default class Util{
 
-    private convertDestFile:string;
-    private command:ffmpeg.FfmpegCommand;
+    private convertDestFile:string | null;
+    private command:ffmpeg.FfmpegCommand | null;
     private isDev:boolean;
 
     constructor(){
@@ -41,7 +41,7 @@ export default class Util{
 
     }
 
-    exists(target:string, createIfNotFound = false){
+    exists(target:string | undefined | null, createIfNotFound = false){
 
         if(!target) return false;
 
@@ -100,22 +100,26 @@ export default class Util{
         return result;
     }
 
+    private localCompareName(a:Mp.MediaFile, b:Mp.MediaFile){
+        return a.name.replace(path.extname(a.name),"").localeCompare(b.name.replace(path.extname(a.name),""))
+    }
+
     sort(files:Mp.MediaFile[], sortType:Mp.SortType){
 
         if(!files.length) return;
 
         switch(sortType){
             case "NameAsc":
-                files.sort((a,b) => a.name.replace(path.extname(a.name), "").localeCompare(b.name.replace(path.extname(b.name), "")))
+                files.sort((a,b) => this.localCompareName(a,b))
                 break;
             case "NameDesc":
-                files.sort((a,b) => b.name.replace(path.extname(b.name), "").localeCompare(a.name.replace(path.extname(a.name), "")))
+                files.sort((a,b) => this.localCompareName(b,a))
                 break;
             case "DateAsc":
-                files.sort((a,b) => a.date - b.date)
+                files.sort((a,b) => a.date - b.date || this.localCompareName(a,b))
                 break;
             case "DateDesc":
-                files.sort((a,b) => b.date - a.date)
+                files.sort((a,b) => b.date - a.date || this.localCompareName(a,b))
                 break;
         }
 
@@ -175,7 +179,10 @@ export default class Util{
 
         const metadata = await this.getMediaDetail(sourcePath);
 
-        const audioBitrate = options.audioBitrate !== "BitrateNone" ? options.audioBitrate : Math.ceil(parseInt(metadata.streams[1].bit_rate)/1000)
+        const bit_rate = metadata.streams[1].bit_rate;
+        if(!bit_rate) throw new Error("No audio bitrate detected")
+
+        const audioBitrate = options.audioBitrate !== "BitrateNone" ? options.audioBitrate : Math.ceil(parseInt(bit_rate)/1000)
         const audioVolume = options.audioVolume !== "1" ? `volume=${options.audioVolume}` : ""
 
         return new Promise((resolve,reject)=>{
@@ -212,7 +219,11 @@ export default class Util{
 
         const size = resolutions[options.frameSize] ? resolutions[options.frameSize] : await this.getSize(metadata)
         const rotation = rotations[options.rotation] ? `transpose=${rotations[options.rotation]}` : "";
-        const audioBitrate = options.audioBitrate !== "BitrateNone" ? options.audioBitrate : Math.ceil(parseInt(metadata.streams[1].bit_rate)/1000)
+
+        const bit_rate = metadata.streams[1].bit_rate;
+        if(!bit_rate) throw new Error("No audio bitrate detected")
+
+        const audioBitrate = options.audioBitrate !== "BitrateNone" ? options.audioBitrate : Math.ceil(parseInt(bit_rate)/1000)
         let audioVolume = options.audioVolume !== "1" ? `volume=${options.audioVolume}` : ""
 
         if(options.maxAudioVolume){
@@ -267,9 +278,7 @@ export default class Util{
 
     private cleanUp(){
 
-        const shouldDelete = this.exists(this.convertDestFile)
-
-        if(shouldDelete){
+        if(this.convertDestFile && this.exists(this.convertDestFile)){
             fs.rmSync(this.convertDestFile);
         }
 

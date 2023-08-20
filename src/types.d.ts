@@ -5,7 +5,7 @@ declare global {
     }
 
     type RendererName = "Main" | "Playlist" | "Convert"
-    type Renderer = {[key in RendererName] : Electron.BrowserWindow}
+    type Renderer = {[key in RendererName] : Electron.BrowserWindow | undefined}
 
     type MainChannelEventMap = {
         "minimize": Mp.Event;
@@ -25,7 +25,7 @@ declare global {
         "change-playlist-order": Mp.ChangePlaylistOrderRequet;
         "toggle-play": Mp.Event;
         "toggle-shuffle": Mp.Event;
-        "toggle-fullscreen": Mp.Event;
+        "toggle-fullscreen": Mp.FullscreenChange;
         "close-convert": Mp.Event;
         "request-convert": Mp.ConvertRequest;
         "open-convert-sourcefile-dialog": Mp.Event;
@@ -43,13 +43,12 @@ declare global {
         "log": Mp.Logging;
         "after-toggle-maximize": Mp.ConfigChangeEvent;
         "toggle-convert": Mp.Event;
-        "change-playback-rate": Mp.ChangePlaySpeedRequest;
-        "change-seek-speed": Mp.ChangePlaySpeedRequest;
-        "after-drop": Mp.DropResult;
+        "change-playback-rate": Mp.ChangePlaybackRateRequest;
+        "change-seek-speed": Mp.ChangeSeekSpeedRequest;
+        "playlist-change": Mp.PlaylistChangeEvent;
         "after-remove-playlist": Mp.RemovePlaylistItemResult;
         "after-sort": Mp.SortResult;
         "after-rename": Mp.RenameResult;
-        "clear-playlist": Mp.Event;
         "after-sourcefile-select": Mp.FileSelectResult;
         "open-convert": Mp.OpenConvertDialogEvent;
         "after-convert": Mp.ConvertResult;
@@ -128,7 +127,7 @@ declare global {
             videoDuration: number;
             videoVolume: number;
             ampLevel: number;
-            gainNode: GainNode;
+            gainNode: GainNode | undefined;
             playbackRate:number;
             seekSpeed:number;
         }
@@ -142,21 +141,17 @@ declare global {
             handler: (progress:number) => void;
         }
 
-        type Sliders = {
-            Time:Mp.Slider,
-            Volume:Mp.Slider,
-            Amp:Mp.Slider
-        }
+        type Elements = {[key:string]:HTMLElement & HTMLInputElement & HTMLVideoElement |null}
 
         type SliderState = {
             sliding:boolean;
             startX:number;
-            slider:Slider;
+            slider:Slider | undefined;
         }
 
         type PlaylistDragState = {
             dragging: boolean,
-            startElement:HTMLElement,
+            startElement:HTMLElement | undefined,
             startIndex: number,
             working:boolean,
         }
@@ -179,9 +174,16 @@ declare global {
             config:Config;
         }
 
-        type ChangePlaySpeedRequest = {
-            playbackRate?:number;
-            seekSpeed?:number;
+        type FullscreenChange = {
+            fullscreen:boolean;
+        }
+
+        type ChangePlaybackRateRequest = {
+            playbackRate:number;
+        }
+
+        type ChangeSeekSpeedRequest = {
+            seekSpeed:number;
         }
 
         type DropRequest = {
@@ -189,8 +191,9 @@ declare global {
             renderer:RendererName;
         }
 
-        type DropResult = {
+        type PlaylistChangeEvent = {
             files:MediaFile[];
+            clearPlaylist:boolean;
         }
 
         type ProgressEvent = {
@@ -284,7 +287,7 @@ declare global {
         }
 
         type Event = {
-            args:any;
+            args?:any;
         }
 
         type Logging = {

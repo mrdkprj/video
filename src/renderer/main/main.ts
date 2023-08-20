@@ -1,25 +1,21 @@
+import { DomElement } from "../dom"
 import { FORWARD, BACKWARD } from "../../constants";
 
 const Dom = {
-    title: null as HTMLElement,
-    resizeBtn:null as HTMLElement,
-    video:null as HTMLVideoElement,
-    loader:null as HTMLElement,
-    viewport:null as HTMLElement,
-    container:null as HTMLElement,
-    currentTimeArea:null as HTMLElement,
-    durationArea:null as HTMLElement,
-    buttons:null as HTMLElement,
-    ampArea:null as HTMLElement,
-    setting:null as HTMLElement,
-    convertState:null as HTMLElement,
+    title: new DomElement("title"),
+    resizeBtn: new DomElement("resizeBtn"),
+    video: new DomElement<HTMLVideoElement>("video"),
+    loader: new DomElement("loader"),
+    viewport: new DomElement("viewport"),
+    container: new DomElement("container"),
+    currentTimeArea: new DomElement("videoCurrentTime"),
+    durationArea: new DomElement("videoDuration"),
+    buttons: new DomElement("buttons"),
+    ampArea: new DomElement("ampArea"),
+    convertState: new DomElement("convertState"),
 }
 
-const sliders:Mp.Sliders = {
-    Time: null,
-    Volume: null,
-    Amp: null,
-}
+const sliders:{[key:string]:Mp.Slider} = {}
 
 const mediaState:Mp.MediaState = {
     mute:false,
@@ -27,7 +23,7 @@ const mediaState:Mp.MediaState = {
     videoDuration:0,
     videoVolume:0,
     ampLevel:0,
-    gainNode:null,
+    gainNode:undefined,
     playbackRate:0,
     seekSpeed:0
 }
@@ -125,7 +121,7 @@ const onKeydown = (e:KeyboardEvent) => {
 
     if(e.ctrlKey && e.key === "r") e.preventDefault();
 
-    if(e.key === "F5") window.api.send("reload", null);
+    if(e.key === "F5") window.api.send("reload", {});
 
     if(e.key === "ArrowRight"){
 
@@ -152,8 +148,12 @@ const onKeydown = (e:KeyboardEvent) => {
         updateVolume(mediaState.videoVolume - 0.01)
     }
 
-    if(e.key === "F1" || e.key === "Escape"){
-        toggleFullScreen();
+    if(e.key === "F11"){
+        enterFullscreen();
+    }
+
+    if(e.key === "Escape"){
+        exitFullscreen();
     }
 
     if(e.key === "p"){
@@ -170,7 +170,7 @@ const onKeydown = (e:KeyboardEvent) => {
 }
 
 const onResize = () => {
-    containerRect = Dom.container.getBoundingClientRect();
+    containerRect = Dom.container.element.getBoundingClientRect();
     sliders.Time.rect = sliders.Time.slider.getBoundingClientRect();
     sliders.Volume.rect = sliders.Volume.slider.getBoundingClientRect();
     sliders.Amp.rect = sliders.Amp.slider.getBoundingClientRect();
@@ -180,40 +180,36 @@ const onResize = () => {
 const onContextMenu = (e:MouseEvent) => {
     if((e.target as HTMLElement).classList.contains("media")){
         e.preventDefault()
-        window.api.send("open-main-context", null)
+        window.api.send("open-main-context", {})
     }
 }
 
 const prepareSliders = () => {
     const timeSlider:Mp.Slider = {
-        slider: document.getElementById("time"),
-        track:document.getElementById("timeTrack"),
-        thumb:document.getElementById("timeThumb"),
-        rect:null,
+        slider: new DomElement("time").fill(),
+        track: new DomElement("timeTrack").fill(),
+        thumb: new DomElement("timeThumb").fill(),
+        rect: new DomElement("time").fill().getBoundingClientRect(),
         handler: updateTime,
     }
 
     const volumeSlider:Mp.Slider = {
-        slider:document.getElementById("volume"),
-        track:document.getElementById("volumeTrack"),
-        thumb:document.getElementById("volumeThumb"),
-        rect:null,
-        trackValue:document.getElementById("volumeValue"),
+        slider:new DomElement("volume").fill(),
+        track:new DomElement("volumeTrack").fill(),
+        thumb:new DomElement("volumeThumb").fill(),
+        rect: new DomElement("volume").fill().getBoundingClientRect(),
+        trackValue:new DomElement("volumeValue").fill(),
         handler:updateVolume
     }
 
     const ampSlider:Mp.Slider = {
-        slider:document.getElementById("amp"),
-        track:document.getElementById("ampTrack"),
-        thumb:document.getElementById("ampThumb"),
-        rect:null,
-        trackValue:document.getElementById("ampValue"),
+        slider:new DomElement("amp").fill(),
+        track:new DomElement("ampTrack").fill(),
+        thumb:new DomElement("ampThumb").fill(),
+        rect: new DomElement("amp").fill().getBoundingClientRect(),
+        trackValue:new DomElement("ampValue").fill(),
         handler:updateAmpLevel
     }
-
-    timeSlider.rect = timeSlider.slider.getBoundingClientRect();
-    volumeSlider.rect = volumeSlider.slider.getBoundingClientRect();
-    ampSlider.rect = ampSlider.slider.getBoundingClientRect();
 
     sliders.Time = timeSlider;
     sliders.Volume = volumeSlider;
@@ -223,15 +219,17 @@ const prepareSliders = () => {
 const startSlide = (e:MouseEvent) => {
 
     slideState.sliding = true;
-    const target = (e.target as HTMLElement).getAttribute("data-target")
-    slideState.slider = sliders[target as keyof Mp.Sliders];
+    const target = (e.target as HTMLElement).getAttribute("data-target") ?? ""
+    slideState.slider = sliders[target];
     slideState.startX = e.clientX
-    slideState.slider.slider.classList.add("sliding")
+    slideState.slider.slider?.classList.add("sliding")
 }
 
 const moveSlider = (e:MouseEvent) => {
 
     if(!slideState.sliding || e.clientX == slideState.startX) return;
+
+    if(!slideState.slider) return;
 
     const progress = (e.clientX - slideState.slider.rect.left) / slideState.slider.rect.width
 
@@ -246,29 +244,29 @@ const endSlide = (e:MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
         slideState.sliding = false;
-        slideState.slider.slider.classList.remove("sliding")
+        slideState.slider?.slider.classList.remove("sliding")
     }
 }
 
 const updateTime = (progress:number) => {
-    Dom.video.currentTime = mediaState.videoDuration * progress;
+    Dom.video.element.currentTime = mediaState.videoDuration * progress;
 }
 
 const onTimeUpdate = () => {
     const duration = mediaState.videoDuration > 0 ? mediaState.videoDuration : 1
-    const progress = (Dom.video.currentTime / duration) * 100;
+    const progress = (Dom.video.element.currentTime / duration) * 100;
     const progressRate = `${progress}%`;
 
     sliders.Time.track.style.width = progressRate
     sliders.Time.thumb.style.left = `max(${progressRate} - ${THUM_WIDTH}px, 0px)`;
-    Dom.currentTimeArea.textContent = formatTime(Dom.video.currentTime);
+    Dom.currentTimeArea.element.textContent = formatTime(Dom.video.element.currentTime);
 
-    window.api.send("progress", {progress:Dom.video.currentTime / duration})
+    window.api.send("progress", {progress:Dom.video.element.currentTime / duration})
 }
 
 const updateVolume = (volume:number) => {
-    Dom.video.volume = volume
-    mediaState.videoVolume = Dom.video.volume;
+    Dom.video.element.volume = volume
+    mediaState.videoVolume = Dom.video.element.volume;
     const progress = Math.floor(mediaState.videoVolume * 100)
     const progressRate = `${progress}%`;
     sliders.Volume.track.style.width = progressRate;
@@ -285,19 +283,24 @@ const updateAmpLevel = (ampLevel:number) => {
     sliders.Amp.thumb.style.left = `max(${progressRate} - ${THUM_WIDTH}px, 0px)`;
     sliders.Amp.thumb.title = progressRate;
     sliders.Amp.trackValue.textContent = progressRate;
-    mediaState.gainNode.gain.value = mediaState.ampLevel * 10;
+    if(mediaState.gainNode){
+        mediaState.gainNode.gain.value = mediaState.ampLevel * 10;
+    }
 }
 
 const onFileDrop = (e:DragEvent) => {
 
     e.preventDefault();
 
-    const dropFiles = Array.from(e.dataTransfer.items).filter(item => {
+    const items = e.dataTransfer ? e.dataTransfer.items : []
+
+    const dropItems = Array.from(items).filter(item => {
         return item.kind === "file" && (item.type.includes("video") || item.type.includes("audio"));
     })
 
-    if(dropFiles.length > 0){
-        window.api.send("drop", {files:dropFiles.map(item => item.getAsFile().path), renderer:"Main"})
+    if(dropItems.length){
+        const files = dropItems.map(item => item.getAsFile()?.path ?? "")
+        window.api.send("drop", {files, renderer:"Main"})
     }
 }
 
@@ -310,68 +313,68 @@ const formatTime = (secondValue:number) => {
 }
 
 const initPlayer = () => {
-    Dom.video.src = "";
-    Dom.title.textContent = "";
+    Dom.video.element.src = "";
+    Dom.title.element.textContent = "";
     document.title = "MediaPlayer";
     mediaState.videoDuration = 0;
-    Dom.durationArea.textContent = formatTime(mediaState.videoDuration);
-    Dom.currentTimeArea.textContent = formatTime(0);
-    currentFile = null;
-    Dom.viewport.classList.remove("loaded");
-    Dom.buttons.classList.remove("playing")
-    Dom.video.load();
+    Dom.durationArea.element.textContent = formatTime(mediaState.videoDuration);
+    Dom.currentTimeArea.element.textContent = formatTime(0);
+    Dom.viewport.element.classList.remove("loaded");
+    Dom.buttons.element.classList.remove("playing")
+    Dom.video.element.load();
 }
 
 const releaseFile = () => {
-    Dom.video.src = "";
-    Dom.video.load();
+    Dom.video.element.src = "";
+    Dom.video.element.load();
 }
 
 const beforeDelete = (data:Mp.ReleaseFileRequest) => {
     if(data.fileIds.includes(currentFile.id)){
         releaseFile();
     }
-    window.api.send("file-released", null)
+    window.api.send("file-released", {})
 }
 
-const loadMedia = (autoplay:boolean) => {
-    Dom.video.src = currentFile.src ? `${currentFile.src}?${new Date().getTime()}` : ""
-    Dom.video.autoplay = autoplay ? autoplay : Dom.buttons.classList.contains("playing");
-    Dom.video.muted = mediaState.mute;
-    Dom.video.playbackRate = mediaState.playbackRate
-    Dom.video.load();
+const loadMedia = (e:Mp.FileLoadEvent) => {
+    currentFile = e.currentFile;
+    Dom.video.element.src = currentFile.src ? `${currentFile.src}?${new Date().getTime()}` : ""
+    Dom.video.element.autoplay = e.autoPlay ? e.autoPlay : Dom.buttons.element.classList.contains("playing");
+    Dom.video.element.muted = mediaState.mute;
+    Dom.video.element.playbackRate = mediaState.playbackRate
+    Dom.video.element.load();
 }
 
 const onMediaLoaded = () => {
 
     document.title = `MediaPlayer - ${currentFile.name}`
-    Dom.title.textContent = currentFile.name
+    Dom.title.element.textContent = currentFile.name
     changeVideoSize();
 
-    mediaState.videoDuration = Dom.video.duration;
+    mediaState.videoDuration = Dom.video.element.duration;
 
-    Dom.durationArea.textContent = formatTime(mediaState.videoDuration);
-    Dom.currentTimeArea.textContent = formatTime(Dom.video.currentTime);
+    Dom.durationArea.element.textContent = formatTime(mediaState.videoDuration);
+    Dom.currentTimeArea.element.textContent = formatTime(Dom.video.element.currentTime);
 
-    Dom.viewport.classList.add("loaded");
+    Dom.viewport.element.classList.add("loaded");
 
-    Dom.video.autoplay = false;
+    Dom.video.element.autoplay = false;
 }
 
 const changeVideoSize = () => {
 
-    if(mediaState.fitToWindow && containerRect.height > Dom.video.videoHeight){
-        const ratio = Math.min(containerRect.width / Dom.video.videoWidth, containerRect.height / Dom.video.videoHeight);
-        Dom.video.style.height = `${Dom.video.videoHeight * ratio}px`
+    if(mediaState.fitToWindow && containerRect.height > Dom.video.element.videoHeight){
+        const ratio = Math.min(containerRect.width / Dom.video.element.videoWidth, containerRect.height / Dom.video.element.videoHeight);
+        Dom.video.element.style.height = `${Dom.video.element.videoHeight * ratio}px`
     }else{
-        Dom.video.style.height = ""
+        Dom.video.element.style.height = ""
     }
 }
 
 const amplify = () => {
 
     const audioCtx = new AudioContext();
-    const source = audioCtx.createMediaElementSource(Dom.video);
+    const source = audioCtx.createMediaElementSource(Dom.video.element);
 
     mediaState.gainNode = audioCtx.createGain();
     updateAmpLevel(mediaState.ampLevel);
@@ -409,9 +412,9 @@ const playBackward = (button:number) => {
 
 const changeCurrentTime = (time:number) => {
 
-    const nextTime = Dom.video.currentTime + time;
+    const nextTime = Dom.video.element.currentTime + time;
 
-    if(nextTime >= Dom.video.duration){
+    if(nextTime >= Dom.video.element.duration){
         return changeFile(FORWARD)
     }
 
@@ -419,7 +422,7 @@ const changeCurrentTime = (time:number) => {
         return changeFile(BACKWARD)
     }
 
-    Dom.video.currentTime = nextTime;
+    Dom.video.element.currentTime = nextTime;
 
 }
 
@@ -431,24 +434,24 @@ const togglePlay = () => {
 
     if(!currentFile) return;
 
-    if(Dom.video.paused){
-        Dom.video.play();
+    if(Dom.video.element.paused){
+        Dom.video.element.play();
     }else{
-        Dom.video.pause();
+        Dom.video.element.pause();
     }
 }
 
 const onPlayed = () => {
     window.api.send("play-status-change", {status:"playing"})
-    Dom.buttons.classList.add("playing")
+    Dom.buttons.element.classList.add("playing")
 }
 
 const onPaused = () => {
 
-    if(Dom.video.currentTime == Dom.video.duration) return;
+    if(Dom.video.element.currentTime == Dom.video.element.duration) return;
 
     window.api.send("play-status-change", {status:"paused"})
-    Dom.buttons.classList.remove("playing")
+    Dom.buttons.element.classList.remove("playing")
 }
 
 const stop = () => {
@@ -456,59 +459,61 @@ const stop = () => {
     if(!currentFile) return;
 
     window.api.send("play-status-change", {status:"stopped"})
-    Dom.buttons.classList.remove("playing")
-    Dom.video.load();
+    Dom.buttons.element.classList.remove("playing")
+    Dom.video.element.load();
 }
 
-const changePlaybackRate = (data:Mp.ChangePlaySpeedRequest) => {
+const changePlaybackRate = (data:Mp.ChangePlaybackRateRequest) => {
     mediaState.playbackRate = data.playbackRate
-    Dom.video.playbackRate = mediaState.playbackRate
+    Dom.video.element.playbackRate = mediaState.playbackRate
 }
 
-const changeSeekSpeed = (data:Mp.ChangePlaySpeedRequest) => {
+const changeSeekSpeed = (data:Mp.ChangeSeekSpeedRequest) => {
     mediaState.seekSpeed = data.seekSpeed;
 }
 
 const saveImage = () => {
     const canvas = document.createElement("canvas");
-    const width = parseInt(Dom.video.style.width.replace("px", ""));
-    const height = parseInt(Dom.video.style.height.replace("px", ""));
+    const width = parseInt(Dom.video.element.style.width.replace("px", ""));
+    const height = parseInt(Dom.video.element.style.height.replace("px", ""));
     canvas.width = width;
     canvas.height = height;
 
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(Dom.video, 0, 0, width, height);
+    const context = canvas.getContext("2d");
+    if(context){
+        context.drawImage(Dom.video.element, 0, 0, width, height);
+    }
     const image = canvas.toDataURL("image/jpeg").replace(/^data:image\/jpeg;base64,/, "");
 
-    window.api.send("save-image", {data:image, timestamp:Dom.video.currentTime})
+    window.api.send("save-image", {data:image, timestamp:Dom.video.element.currentTime})
 }
 
 const toggleMute = () => {
     mediaState.mute = !mediaState.mute;
-    Dom.video.muted = mediaState.mute;
+    Dom.video.element.muted = mediaState.mute;
     if(mediaState.mute){
-        Dom.ampArea.classList.add("mute")
+        Dom.ampArea.element.classList.add("mute")
     }else{
-        Dom.ampArea.classList.remove("mute")
+        Dom.ampArea.element.classList.remove("mute")
     }
 }
 
 const changeMaximizeIcon = () => {
     if(isMaximized){
-        Dom.resizeBtn.classList.remove("minbtn");
-        Dom.resizeBtn.classList.add("maxbtn");
+        Dom.resizeBtn.element.classList.remove("minbtn");
+        Dom.resizeBtn.element.classList.add("maxbtn");
     }else{
-        Dom.resizeBtn.classList.remove("maxbtn");
-        Dom.resizeBtn.classList.add("minbtn");
+        Dom.resizeBtn.element.classList.remove("maxbtn");
+        Dom.resizeBtn.element.classList.add("minbtn");
     }
 }
 
 const minimize = () => {
-    window.api.send("minimize", null)
+    window.api.send("minimize", {})
 }
 
 const toggleMaximize = () => {
-    window.api.send("toggle-maximize", null)
+    window.api.send("toggle-maximize", {})
     isMaximized = !isMaximized;
     changeMaximizeIcon();
 }
@@ -518,24 +523,32 @@ const onWindowSizeChanged = (e:Mp.ConfigChangeEvent) => {
     changeMaximizeIcon();
 }
 
-const toggleFullScreen = () => {
+const exitFullscreen = () => {
+    if(isFullScreen){
+        isFullScreen = false;
+        Dom.viewport.element.classList.add("full-screen")
+        window.api.send("toggle-fullscreen", {fullscreen:isFullScreen})
+    }
+}
+
+const enterFullscreen = () => {
 
     if(isFullScreen){
-        Dom.viewport.classList.remove("full-screen")
+        Dom.viewport.element.classList.remove("full-screen")
     }else{
-        Dom.viewport.classList.add("full-screen")
+        Dom.viewport.element.classList.add("full-screen")
     }
 
     isFullScreen = !isFullScreen;
 
-    window.api.send("toggle-fullscreen", null)
+    window.api.send("toggle-fullscreen", {fullscreen:isFullScreen})
 }
 
 const toggleConvert = () => {
-    if(Dom.viewport.classList.contains("converting")){
-        Dom.viewport.classList.remove("converting")
+    if(Dom.viewport.element.classList.contains("converting")){
+        Dom.viewport.element.classList.remove("converting")
     }else{
-        Dom.viewport.classList.add("converting")
+        Dom.viewport.element.classList.add("converting")
     }
 }
 
@@ -568,10 +581,8 @@ const prepare = (e:Mp.ReadyEvent) => {
 
 const load = (e:Mp.FileLoadEvent) => {
 
-    currentFile = e.currentFile;
-
-    if(currentFile.id){
-        loadMedia(e.autoPlay)
+    if(e.currentFile.id){
+        loadMedia(e)
     }else{
         initPlayer();
     }
@@ -591,33 +602,32 @@ window.api.receive("change-seek-speed", changeSeekSpeed);
 window.api.receive("log", data => console.log(data.log))
 
 window.addEventListener("load", () => {
-    Dom.title = document.getElementById("title");
-    Dom.resizeBtn = document.getElementById("resizeBtn")
-    Dom.viewport = document.getElementById("viewport");
-    Dom.video = document.getElementById("video") as HTMLVideoElement
-    Dom.container = document.getElementById("container");
-    Dom.buttons = document.getElementById("buttons")
-    Dom.currentTimeArea = document.getElementById("videoCurrentTime")
-    Dom.durationArea = document.getElementById("videoDuration")
-    Dom.ampArea = document.getElementById("ampArea")
-    Dom.setting = document.getElementById("setting")
-    Dom.convertState = document.getElementById("convertState")
+    Dom.title.fill();
+    Dom.resizeBtn.fill()
+    Dom.viewport.fill();
+    Dom.video.fill()
+    Dom.container.fill()
+    Dom.buttons.fill()
+    Dom.currentTimeArea .fill()
+    Dom.durationArea.fill()
+    Dom.ampArea.fill()
+    Dom.convertState.fill()
 
-    containerRect = Dom.container.getBoundingClientRect();
+    containerRect = Dom.container.element.getBoundingClientRect();
 
-    Dom.video.addEventListener("canplaythrough", onMediaLoaded)
+    Dom.video.element.addEventListener("canplaythrough", onMediaLoaded)
 
-    Dom.video.addEventListener("ended", () => changeFile(FORWARD))
+    Dom.video.element.addEventListener("ended", () => changeFile(FORWARD))
 
-    Dom.video.addEventListener("timeupdate", onTimeUpdate)
+    Dom.video.element.addEventListener("timeupdate", onTimeUpdate)
 
-    Dom.video.addEventListener("play", onPlayed)
+    Dom.video.element.addEventListener("play", onPlayed)
 
-    Dom.video.addEventListener("pause", onPaused);
+    Dom.video.element.addEventListener("pause", onPaused);
 
-    Dom.container.addEventListener("dragover", e => e.preventDefault())
+    Dom.container.element.addEventListener("dragover", e => e.preventDefault())
 
-    Dom.container.addEventListener("drop",  onFileDrop);
+    Dom.container.element.addEventListener("drop",  onFileDrop);
 
     prepareSliders();
 

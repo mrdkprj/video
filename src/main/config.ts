@@ -2,7 +2,7 @@ import fs from "fs"
 import path from "path";
 import Util from "./util";
 
-const CONFIG_FILE_NAME = "mediaplayer.config.json"
+const CONFIGfile_NAME = "mediaplayer.config.json"
 
 const defaultConfig :Mp.Config = {
     bounds: {width:1200, height:800, x:0, y:0},
@@ -30,35 +30,34 @@ export default class Config{
 
     data:Mp.Config;
 
-    private _file:string;
-    private _directory:string;
-    private _util = new Util();
+    private file:string;
+    private util = new Util();
 
     constructor(workingDirectory:string){
         this.data = defaultConfig;
-        this._directory = process.env.NODE_ENV === "development" ? path.join(__dirname, "..", "..", "temp") : path.join(workingDirectory, "temp");
-        this._file = path.join(this._directory, CONFIG_FILE_NAME)
+        const directory = process.env.NODE_ENV === "development" ? path.join(__dirname, "..", "..", "temp") : path.join(workingDirectory, "temp");
+        this.util.exists(directory, true);
+        this.file = path.join(directory, CONFIGfile_NAME)
+        this.init();
     }
 
-    init(){
+    private init(){
 
-        this._util.exists(this._directory, true);
-
-        const fileExists = this._util.exists(this._file, false);
+        const fileExists = this.util.exists(this.file, false);
 
         if(fileExists){
 
-            const rawData = fs.readFileSync(this._file, {encoding:"utf8"});
+            const rawData = fs.readFileSync(this.file, {encoding:"utf8"});
             this.data = this.createConfig(JSON.parse(rawData))
 
         }else{
 
-            fs.writeFileSync(this._file, JSON.stringify(this.data));
+            fs.writeFileSync(this.file, JSON.stringify(this.data));
 
         }
     }
 
-    createConfig(rawConfig:any):Mp.Config{
+    private createConfig(rawConfig:any):Mp.Config{
 
         const config = {...defaultConfig} as any;
 
@@ -83,13 +82,8 @@ export default class Config{
         return config;
     }
 
-    save(mediaState:Mp.MediaState){
-        this.data.audio.volume = mediaState.videoVolume;
-        this.data.audio.ampLevel = mediaState.ampLevel;
-        this.data.video.fitToWindow = mediaState.fitToWindow;
-        this.data.audio.mute = mediaState.mute;
-
-        fs.writeFileSync(this._file, JSON.stringify(this.data));
+    save(){
+        fs.writeFileSync(this.file, JSON.stringify(this.data));
     }
 
 }

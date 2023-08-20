@@ -1,19 +1,21 @@
+import { DomElement } from "../dom"
+
 const List_Item_Padding = 10;
 
 const Dom = {
-    playlist: null as HTMLElement,
-    playlistTitleBar:null as HTMLElement,
-    playlistFooter:null as HTMLElement,
-    fileList:null as HTMLElement,
-    fileListContainer:null as HTMLElement,
-    renameInput:null as HTMLInputElement,
+    playlist: new DomElement("playlist"),
+    playlistTitleBar:new DomElement("playlistTitleBar"),
+    playlistFooter:new DomElement("playlistFooter"),
+    fileList:new DomElement("fileList"),
+    fileListContainer:new DomElement("fileListContainer"),
+    renameInput:new DomElement<HTMLInputElement>("rename"),
 }
 
 const selectedFileIds:string[] = [];
 
 const dragState:Mp.PlaylistDragState = {
     dragging: false,
-    startElement:null,
+    startElement:undefined,
     startIndex: -1,
     working:false,
 }
@@ -30,8 +32,8 @@ const RenameState = {
 const undoStack:Mp.RenameData[] = []
 const redoStack:Mp.RenameData[] = []
 
-let currentElement:HTMLElement;
-let selectedElement:HTMLElement;
+let currentElement:HTMLElement | undefined;
+let selectedElement:HTMLElement | undefined;
 let fileListContainerRect:DOMRect;
 
 const onContextMenu = (e:MouseEvent) => {
@@ -46,7 +48,7 @@ const onKeydown = (e:KeyboardEvent) => {
     if(e.key === "Enter"){
 
         if(!RenameState.renaming){
-            window.api.send("toggle-play", null)
+            window.api.send("toggle-play", {})
         }
     }
 
@@ -117,7 +119,7 @@ const onMouseDown = (e:MouseEvent) => {
 }
 
 const onMouseUp = (_e:MouseEvent) => {
-    if(dragState.dragging){
+    if(dragState.dragging && dragState.startElement){
         const args = {start:dragState.startIndex, end:getChildIndex(dragState.startElement), currentIndex:getChildIndex(currentElement)}
         window.api.send("change-playlist-order", args);
     }
@@ -132,14 +134,14 @@ const onMouseEnter = (e:MouseEvent) => {
 }
 
 const onResize = () => {
-    fileListContainerRect = Dom.fileListContainer.getBoundingClientRect()
+    fileListContainerRect = Dom.fileListContainer.element.getBoundingClientRect()
 }
 
 const movePlaylistItem = (e:MouseEvent) => {
 
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
-    if(!dragState.dragging) return;
+    if(!dragState.dragging || !dragState.startElement) return;
 
     if(dragState.working){
         e.preventDefault();
@@ -152,9 +154,9 @@ const movePlaylistItem = (e:MouseEvent) => {
     const dropRect = e.target.getBoundingClientRect();
     const dropPosition = e.clientY - dropRect.top;
     if(dropPosition <= dropRect.height){
-        e.target.parentNode.insertBefore(dragState.startElement, e.target);
+        e.target.parentNode?.insertBefore(dragState.startElement, e.target);
     }else{
-        e.target.parentNode.insertBefore(e.target, dragState.startElement);
+        e.target.parentNode?.insertBefore(e.target, dragState.startElement);
     }
     selectedFileIds[currentIndex] = dragState.startElement.id;
 
@@ -163,7 +165,7 @@ const movePlaylistItem = (e:MouseEvent) => {
 }
 
 const clearPlaylist = () => {
-    Dom.fileList.innerHTML = "";
+    Dom.fileList.element.innerHTML = "";
 }
 
 const onFileDrop = (e:DragEvent) => {
@@ -173,12 +175,15 @@ const onFileDrop = (e:DragEvent) => {
 
     dragState.dragging = false;
 
-    const dropFiles = Array.from(e.dataTransfer.items).filter(item => {
+    const items = e.dataTransfer ? e.dataTransfer.items : []
+
+    const dropItems = Array.from(items).filter(item => {
         return item.kind === "file" && (item.type.includes("video") || item.type.includes("audio"));
     })
 
-    if(dropFiles.length > 0){
-        window.api.send("drop", {files:dropFiles.map(item => item.getAsFile().path), renderer:"Playlist"})
+    if(dropItems.length){
+        const files = dropItems.map(item => item.getAsFile()?.path ?? "")
+        window.api.send("drop", {files, renderer:"Playlist"})
     }
 }
 
@@ -187,7 +192,6 @@ const createListItem = (file:Mp.MediaFile) => {
     const item = document.createElement("li");
     item.title = file.name
     item.id = file.id;
-    //item.setAttribute("data-uuid", file.uuid)
     item.textContent = file.name
     item.classList.add("playlist-item")
     item.addEventListener("dblclick", onFileListItemClicked);
@@ -197,7 +201,11 @@ const createListItem = (file:Mp.MediaFile) => {
     return item
 }
 
-const addToPlaylist = (data:Mp.DropResult) => {
+const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
+
+    if(data.clearPlaylist){
+        clearPlaylist();
+    }
 
     if(!data.files.length) return;
 
@@ -209,23 +217,23 @@ const addToPlaylist = (data:Mp.DropResult) => {
 
     });
 
-    Dom.fileList.appendChild(fragment)
+    Dom.fileList.element.appendChild(fragment)
 
 }
 
 const removeFromPlaylist = (data:Mp.RemovePlaylistResult) => {
     clearSelection();
-    const targetNodes = data.removedFileIds.map(id => document.getElementById(id))
+    const targetNodes = data.removedFileIds.map(id => new DomElement(id).fill())
     targetNodes.forEach(node => {
         if(currentElement && node.id === currentElement.id){
-            currentElement = null;
+            currentElement = undefined;
         }
-        Dom.fileList.removeChild(node)
+        Dom.fileList.element.removeChild(node)
     })
 }
 
 const clearSelection = () => {
-    selectedFileIds.forEach(id => document.getElementById(id).classList.remove("selected"))
+    selectedFileIds.forEach(id => new DomElement(id).fill().classList.remove("selected"))
     selectedFileIds.length = 0;
 }
 
@@ -249,7 +257,7 @@ const select = (target:HTMLElement | string) => {
 
     clearSelection();
 
-    const targetElement = typeof target === "string" ? document.getElementById(target) : target;
+    const targetElement = typeof target === "string" ? new DomElement(target).fill() : target;
 
     selectedElement = targetElement;
 
@@ -280,8 +288,8 @@ const selectByShift = (e:MouseEvent) => {
     range.sort((a,b) => a - b);
 
     for(let i = range[0]; i <= range[1]; i++){
-        selectedFileIds.push(Dom.fileList.children[i].id);
-        Dom.fileList.children[i].classList.add("selected")
+        selectedFileIds.push(Dom.fileList.element.children[i].id);
+        Dom.fileList.element.children[i].classList.add("selected")
     }
 
 }
@@ -303,7 +311,7 @@ const selectAll = () => {
 
     clearSelection();
 
-    Array.from(Dom.fileList.children).forEach((node,_index) => {
+    Array.from(Dom.fileList.element.children).forEach((node,_index) => {
         node.classList.add("selected")
         selectedFileIds.push(node.id);
     })
@@ -315,10 +323,10 @@ const onFileListItemClicked = (e:MouseEvent) => {
     window.api.send("load-file", {index, isAbsolute:true});
 }
 
-function getChildIndex(node:HTMLElement) {
+function getChildIndex(node:HTMLElement | undefined) {
     if(!node) return -1;
 
-    return Array.prototype.indexOf.call(Dom.fileList.childNodes, node);
+    return Array.prototype.indexOf.call(Dom.fileList.element.childNodes, node);
 }
 
 const changeCurrent = (data:Mp.FileLoadEvent) => {
@@ -328,7 +336,7 @@ const changeCurrent = (data:Mp.FileLoadEvent) => {
     }
 
     if(data.currentFile.id){
-        currentElement = document.getElementById(data.currentFile.id);
+        currentElement = new DomElement(data.currentFile.id).fill();
         currentElement.classList.add("current");
 
         const rect = currentElement.getBoundingClientRect();
@@ -348,6 +356,8 @@ const requestRename = (id:string, name:string) => {
 }
 
 const onRename = (data:Mp.RenameResult) => {
+
+    if(!selectedElement) return;
 
     if(selectedElement.id !== data.file.id){
         select(data.file.id);
@@ -369,9 +379,11 @@ const onRename = (data:Mp.RenameResult) => {
 }
 
 const undoRename = () => {
-    if(!undoStack.length) return;
 
     const stack = undoStack.pop();
+
+    if(!stack) return;
+
     redoStack.push(stack);
 
     select(stack.fileId)
@@ -381,9 +393,11 @@ const undoRename = () => {
 }
 
 const redoRename = () => {
-    if(!redoStack.length) return;
 
     const stack = redoStack.pop();
+
+    if(!stack) return;
+
     undoStack.push(stack);
 
     select(stack.fileId)
@@ -396,45 +410,45 @@ const startEditFileName = () => {
 
     if(!selectedElement) return;
 
-    const fileName = selectedElement.textContent;
+    const fileName = selectedElement.textContent ?? "";
 
     RenameState.renaming = true;
     RenameState.data.fileId = selectedElement.id;
     RenameState.data.oldName = fileName;
 
     const rect = selectedElement.getBoundingClientRect();
-    Dom.renameInput.style.top = rect.top + "px"
-    Dom.renameInput.style.left = rect.left + "px"
-    Dom.renameInput.style.width = selectedElement.offsetWidth - List_Item_Padding + "px";
-    Dom.renameInput.style.height = selectedElement.offsetHeight - List_Item_Padding + "px";
-    Dom.renameInput.value = fileName;
-    Dom.renameInput.style.display = "block"
+    Dom.renameInput.element.style.top = rect.top + "px"
+    Dom.renameInput.element.style.left = rect.left + "px"
+    Dom.renameInput.element.style.width = selectedElement.offsetWidth - List_Item_Padding + "px";
+    Dom.renameInput.element.style.height = selectedElement.offsetHeight - List_Item_Padding + "px";
+    Dom.renameInput.element.value = fileName;
+    Dom.renameInput.element.style.display = "block"
     selectFileName(fileName);
 
     preventRenameBlur(false);
 }
 
 const selectFileName = (fileName:string) => {
-    Dom.renameInput.focus();
-    Dom.renameInput.setSelectionRange(0, fileName.lastIndexOf("."));
+    Dom.renameInput.element.focus();
+    Dom.renameInput.element.setSelectionRange(0, fileName.lastIndexOf("."));
 }
 
 const preventRenameBlur = (disable:boolean) => {
 
     if(disable){
-        Dom.renameInput.removeEventListener("blur", endEditFileName);
+        Dom.renameInput.element.removeEventListener("blur", endEditFileName);
     }else{
-        Dom.renameInput.addEventListener("blur", endEditFileName);
+        Dom.renameInput.element.addEventListener("blur", endEditFileName);
     }
 
 }
 
 const endEditFileName = () => {
 
-    if(RenameState.data.oldName === Dom.renameInput.value){
+    if(RenameState.data.oldName === Dom.renameInput.element.value){
         hideRenameField();
     }else{
-        RenameState.data.newName = Dom.renameInput.value;
+        RenameState.data.newName = Dom.renameInput.element.value;
         undoStack.push({...RenameState.data})
         requestRename(RenameState.data.fileId, RenameState.data.newName);
     }
@@ -443,68 +457,61 @@ const endEditFileName = () => {
 
 const hideRenameField = () => {
     RenameState.renaming = false;
-    Dom.renameInput.style.display = "none"
+    Dom.renameInput.element.style.display = "none"
 }
 
 const onReset = () => {
-    currentElement = null;
-    selectedElement = null;
+    currentElement = undefined;
+    selectedElement = undefined;
     selectedFileIds.length = 0;
     clearPlaylist();
 }
 
 const toggleShuffle = () => {
 
-    if(Dom.playlistFooter.classList.contains("shuffle")){
-        Dom.playlistFooter.classList.remove("shuffle")
+    if(Dom.playlistFooter.element.classList.contains("shuffle")){
+        Dom.playlistFooter.element.classList.remove("shuffle")
     }else{
-        Dom.playlistFooter.classList.add("shuffle")
+        Dom.playlistFooter.element.classList.add("shuffle")
     }
 
-    window.api.send("toggle-shuffle", null)
+    window.api.send("toggle-shuffle", {})
 }
 
 const onAfterSort = (data:Mp.SortResult) => {
 
-    const lists = Array.from(Dom.fileList.children)
+    const lists = Array.from(Dom.fileList.element.children)
 
     if(!lists.length) return;
 
     lists.sort((a,b) => data.fileIds.indexOf(a.id) - data.fileIds.indexOf(b.id))
 
-    Dom.fileList.innerHTML = "";
+    Dom.fileList.element.innerHTML = "";
 
-    lists.forEach(li => Dom.fileList.appendChild(li))
+    lists.forEach(li => Dom.fileList.element.appendChild(li))
 
 }
 
-window.api.receive("clear-playlist", clearPlaylist)
-
-window.api.receive("after-drop", addToPlaylist)
-
+window.api.receive("playlist-change", addToPlaylist)
 window.api.receive("after-file-load", changeCurrent)
-
 window.api.receive("after-remove-playlist", removeFromPlaylist)
-
 window.api.receive("after-sort", onAfterSort)
-
 window.api.receive("after-rename", onRename);
-
 window.api.receive("restart", onReset)
 
 window.addEventListener("load", () => {
 
-    Dom.playlist = document.getElementById("playlist")
-    Dom.playlistTitleBar = document.getElementById("playlistTitleBar")
-    Dom.playlistFooter = document.getElementById("playlistFooter")
-    Dom.fileList = document.getElementById("fileList")
-    Dom.fileListContainer = document.getElementById("fileListContainer")
-    fileListContainerRect = Dom.fileListContainer.getBoundingClientRect();
-    Dom.renameInput = document.getElementById("rename") as HTMLInputElement
-    Dom.renameInput.addEventListener("blur", endEditFileName)
-    Dom.renameInput.addEventListener("keydown", onRenameInputKeyDown)
+    Dom.playlist.fill()
+    Dom.playlistTitleBar.fill()
+    Dom.playlistFooter.fill()
+    Dom.fileList.fill()
+    Dom.fileListContainer.fill()
+    fileListContainerRect = Dom.fileListContainer.element.getBoundingClientRect();
+    Dom.renameInput.fill()
+    Dom.renameInput.element.addEventListener("blur", endEditFileName)
+    Dom.renameInput.element.addEventListener("keydown", onRenameInputKeyDown)
 
-    document.getElementById("closePlaylistBtn").addEventListener("click", () => window.api.send("close-playlist", null))
+    new DomElement("closePlaylistBtn").fill().addEventListener("click", () => window.api.send("close-playlist", {}))
 
     window.addEventListener("resize", onResize)
 

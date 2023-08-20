@@ -27,10 +27,9 @@ export default class Helper{
 
     }
 
-    createPlaylistWindow(parent:BrowserWindow, config:Mp.Config){
+    createPlaylistWindow(config:Mp.Config){
 
         const playlist = new BrowserWindow({
-            parent: parent,
             backgroundColor: "#272626",
             width: config.playlistBounds.width,
             height: config.playlistBounds.height,
@@ -53,10 +52,9 @@ export default class Helper{
         return playlist;
     }
 
-    createConvertWindow(parent:BrowserWindow){
+    createConvertWindow(){
 
         const convertDialog = new BrowserWindow({
-            parent: parent,
             backgroundColor: "#272626",
             width:640,
             height:700,
@@ -79,7 +77,7 @@ export default class Helper{
         return convertDialog;
     }
 
-    createMainContextMenu(onclick: (menu:Mp.MainContextMenuType, args?:any) => void){
+    createMainContextMenu(config:Mp.Config, onclick: (menu:Mp.MainContextMenuType, args?:any) => void){
         const mainContextTemplate:Electron.MenuItemConstructorOptions[] = [
             {
                 label: "Playback Rate",
@@ -102,7 +100,7 @@ export default class Helper{
             {
                 label: "Fit To Window Size",
                 type: "checkbox",
-                checked: false,
+                checked: config.video.fitToWindow,
                 click: () => onclick("FitToWindow"),
             },
         ]

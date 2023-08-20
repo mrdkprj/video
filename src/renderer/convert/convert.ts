@@ -1,12 +1,15 @@
+import { DomElement } from "../dom"
+
 const Dom = {
-    viewport:null as HTMLElement,
-    srcFileInput:null as HTMLInputElement,
-    srcFileSelectBtn:null as HTMLElement,
-    maxVolumeCheckbox:null as HTMLInputElement,
-    volumeInput:null as HTMLInputElement,
-    convertBtn:null as HTMLButtonElement,
-    cancelBtn:null as HTMLButtonElement,
-    message:null as HTMLElement,
+    viewport: new DomElement("viewport"),
+    srcFileInput: new DomElement<HTMLInputElement>("sourceFile"),
+    srcFileSelectBtn: new DomElement("sourceFileSelection"),
+    maxVolumeCheckbox: new DomElement<HTMLInputElement>("MaxVolume"),
+    volumeInput: new DomElement<HTMLInputElement>("volume"),
+    volumeLabel: new DomElement("volumeLabel"),
+    convertBtn: new DomElement<HTMLButtonElement>("convertBtn"),
+    cancelBtn: new DomElement<HTMLButtonElement>("cancelBtn"),
+    message: new DomElement("message"),
 }
 
 let convertType = "video";
@@ -20,38 +23,118 @@ let converting = false;
 const onMaxVolumeChange = (e:Event) => {
     maxVolume = (e.target as HTMLInputElement).checked;
     if(maxVolume){
-        Dom.volumeInput.disabled = true;
+        Dom.volumeInput.element.disabled = true;
     }else{
-        Dom.volumeInput.disabled = false;
+        Dom.volumeInput.element.disabled = false;
     }
 }
 
 const onVolumeChange = (e:Event) => {
     audioVolume = (e.target as HTMLInputElement).value
-    document.getElementById("volumeLabel").textContent = `${parseFloat(audioVolume) * 100}%`
+    Dom.volumeLabel.element.textContent = `${parseFloat(audioVolume) * 100}%`
 }
 
+const onOpen = (data:Mp.OpenConvertDialogEvent) => {
+
+    if(!converting){
+        Dom.srcFileInput.element.value = data.file.fullPath
+    }
+
+}
+
+const closeDialog = () => {
+    window.api.send("close-convert", {})
+}
+
+const changeType = () => {
+    if(convertType === "video"){
+        Dom.viewport.element.classList.add("video")
+    }else{
+        Dom.viewport.element.classList.remove("video")
+    }
+}
+
+const lock = () => {
+    converting = true;
+    document.querySelectorAll("input").forEach(element => element.disabled = true)
+    Dom.cancelBtn.element.disabled = false;
+    Dom.convertBtn.element.disabled = true;
+}
+
+const unlock = () => {
+    converting = false;
+    document.querySelectorAll("input").forEach(element => element.disabled = false)
+    Dom.cancelBtn.element.disabled = true;
+    Dom.convertBtn.element.disabled = false;
+}
+
+const requestConvert = () => {
+
+    lock();
+
+    Dom.message.element.textContent = ""
+
+    const args:Mp.ConvertRequest = {
+        sourcePath:Dom.srcFileInput.element.value,
+        video:convertType === "video",
+        options: {
+            frameSize,
+            audioBitrate,
+            rotation,
+            audioVolume,
+            maxAudioVolume:maxVolume
+        }
+    }
+
+    window.api.send("request-convert", args)
+}
+
+const requestCancelConvert = () => {
+    window.api.send("request-cancel-convert", {})
+}
+
+const onAfterConvert = (data:Mp.ConvertResult) => {
+
+    unlock();
+
+    if(data.success){
+        Dom.message.element.textContent = "Done"
+    }else{
+        Dom.message.element.textContent = `Error - ${data.message}`
+    }
+}
+
+const onSourceFileSelect = (data:Mp.FileSelectResult) => {
+    Dom.srcFileInput.element.value = data.fullPath
+}
+
+window.api.receive("open-convert", onOpen)
+window.api.receive("after-convert", onAfterConvert)
+window.api.receive("after-sourcefile-select", onSourceFileSelect)
+
+
 window.onload = () => {
-    Dom.viewport = document.getElementById("viewport");
-    Dom.srcFileInput = document.getElementById("sourceFile") as HTMLInputElement
-    Dom.srcFileSelectBtn = document.getElementById("sourceFileSelection")
-    Dom.maxVolumeCheckbox = document.getElementById("MaxVolume") as HTMLInputElement
-    Dom.volumeInput = document.getElementById("volume") as HTMLInputElement
-    Dom.convertBtn = document.getElementById("convertBtn") as HTMLButtonElement
-    Dom.cancelBtn = document.getElementById("cancelBtn") as HTMLButtonElement
-    Dom.message = document.getElementById("message")
+    Dom.viewport.fill();
+    Dom.srcFileInput.fill();
+    Dom.srcFileSelectBtn.fill();
+    Dom.maxVolumeCheckbox.fill();
+    Dom.volumeInput.fill();
+    Dom.volumeLabel.fill();
+    Dom.convertBtn.fill();
+    Dom.cancelBtn.fill();
+    Dom.message.fill();
 
-    Dom.maxVolumeCheckbox.addEventListener("change", onMaxVolumeChange)
-    Dom.volumeInput.addEventListener("input", onVolumeChange)
+    Dom.maxVolumeCheckbox.element.addEventListener("change", onMaxVolumeChange)
+    Dom.volumeInput.element.addEventListener("input", onVolumeChange)
 
-    Dom.cancelBtn.disabled = true;
-    Dom.convertBtn.disabled = false;
+    Dom.cancelBtn.element.disabled = true;
+    Dom.convertBtn.element.disabled = false;
 }
 
 window.addEventListener("keydown", e => {
 
     if(e.key === "Escape"){
-        window.api.send("close-convert", null)
+        window.api.send("close-convert", {})
     }
 
 })
@@ -61,7 +144,7 @@ document.addEventListener("click", e => {
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
     if(e.target.id === "sourceFileSelection"){
-        window.api.send("open-convert-sourcefile-dialog", null)
+        window.api.send("open-convert-sourcefile-dialog", {})
     }
 
     if(e.target.id === "closeConvertBtn"){
@@ -99,83 +182,4 @@ document.addEventListener("change", e => {
         rotation = e.target.id as Mp.VideoRotation
     }
 })
-
-const onOpen = (data:Mp.OpenConvertDialogEvent) => {
-
-    if(!converting){
-        Dom.srcFileInput.value = data.file.fullPath
-    }
-
-}
-
-const closeDialog = () => {
-    window.api.send("close-convert", null)
-}
-
-const changeType = () => {
-    if(convertType === "video"){
-        Dom.viewport.classList.add("video")
-    }else{
-        Dom.viewport.classList.remove("video")
-    }
-}
-
-const lock = () => {
-    converting = true;
-    document.querySelectorAll("input").forEach(element => element.disabled = true)
-    Dom.cancelBtn.disabled = false;
-    Dom.convertBtn.disabled = true;
-}
-
-const unlock = () => {
-    converting = false;
-    document.querySelectorAll("input").forEach(element => element.disabled = false)
-    Dom.cancelBtn.disabled = true;
-    Dom.convertBtn.disabled = false;
-}
-
-const requestConvert = () => {
-
-    lock();
-
-    Dom.message.textContent = ""
-
-    const args:Mp.ConvertRequest = {
-        sourcePath:Dom.srcFileInput.value,
-        video:convertType === "video",
-        options: {
-            frameSize,
-            audioBitrate,
-            rotation,
-            audioVolume,
-            maxAudioVolume:maxVolume
-        }
-    }
-
-    window.api.send("request-convert", args)
-}
-
-const requestCancelConvert = () => {
-    window.api.send("request-cancel-convert", null)
-}
-
-const onAfterConvert = (data:Mp.ConvertResult) => {
-
-    unlock();
-
-    if(data.success){
-        Dom.message.textContent = "Done"
-    }else{
-        Dom.message.textContent = `Error - ${data.message}`
-    }
-}
-
-const onSourceFileSelect = (data:Mp.FileSelectResult) => {
-    Dom.srcFileInput.value = data.fullPath
-}
-
-window.api.receive("open-convert", onOpen)
-window.api.receive("after-convert", onAfterConvert)
-window.api.receive("after-sourcefile-select", onSourceFileSelect)
-
 export {}

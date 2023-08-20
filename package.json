@@ -21,6 +21,7 @@
   "devDependencies": {
     "@electron-forge/cli": "^6.0.4",
     "@electron-forge/plugin-webpack": "^6.0.4",
+    "@types/fluent-ffmpeg": "^2.1.21",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
     "copy-webpack-plugin": "^11.0.0",
@@ -35,7 +36,6 @@
     "typescript": "~4.5.4"
   },
   "dependencies": {
-    "@types/fluent-ffmpeg": "^2.1.21",
     "fluent-ffmpeg": "^2.1.2"
   }
 }
