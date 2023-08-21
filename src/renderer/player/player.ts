@@ -300,7 +300,7 @@ const onFileDrop = (e:DragEvent) => {
 
     if(dropItems.length){
         const files = dropItems.map(item => item.getAsFile()?.path ?? "")
-        window.api.send("drop", {files, renderer:"Main"})
+        window.api.send("drop", {files, renderer:"Player"})
     }
 }
 

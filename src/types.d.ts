@@ -4,7 +4,7 @@ declare global {
         api: Api;
     }
 
-    type RendererName = "Main" | "Playlist" | "Convert"
+    type RendererName = "Player" | "Playlist" | "Convert"
     type Renderer = {[key in RendererName] : Electron.BrowserWindow | undefined}
 
     type MainChannelEventMap = {
@@ -20,8 +20,8 @@ declare global {
         "save-image": Mp.SaveImageRequet;
         "close-playlist": Mp.Event;
         "file-released": Mp.Event;
-        "remove-playlist-item": Mp.RemovePlaylistItemRequest;
-        "open-playlist-context": Mp.OpenPlaylistContextRequest;
+        "remove-playlist-item": Mp.Event;
+        "open-playlist-context": Mp.Event;
         "change-playlist-order": Mp.ChangePlaylistOrderRequet;
         "toggle-play": Mp.Event;
         "toggle-shuffle": Mp.Event;
@@ -31,6 +31,7 @@ declare global {
         "open-convert-sourcefile-dialog": Mp.Event;
         "request-cancel-convert": Mp.Event;
         "rename-file": Mp.RenameRequest;
+        "playlist-item-selection-change": Mp.PlaylistItemSelectionChange;
     }
 
     type RendererChannelEventMap = {
@@ -59,8 +60,8 @@ declare global {
         receive: <K extends keyof RendererChannelEventMap>(channel:K, listener: (data: RendererChannelEventMap[K]) => void) => () => void;
     }
 
-    const MAIN_WINDOW_WEBPACK_ENTRY: string;
-    const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
+    const PLAYER_WINDOW_WEBPACK_ENTRY: string;
+    const PLAYER_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
     const PLAYLIST_WINDOW_WEBPACK_ENTRY: string;
     const PLAYLIST_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
     const CONVERT_WINDOW_WEBPACK_ENTRY: string;
@@ -141,12 +142,15 @@ declare global {
             handler: (progress:number) => void;
         }
 
-        type Elements = {[key:string]:HTMLElement & HTMLInputElement & HTMLVideoElement |null}
-
         type SliderState = {
             sliding:boolean;
             startX:number;
             slider:Slider | undefined;
+        }
+
+        type PlaylistItemSelection = {
+            selectedId:string;
+            selectedIds:string[];
         }
 
         type PlaylistDragState = {
@@ -225,6 +229,10 @@ declare global {
 
         type CloseRequest = {
             mediaState:MediaState
+        }
+
+        type PlaylistItemSelectionChange = {
+            selection:PlaylistItemSelection
         }
 
         type OpenPlaylistContextRequest = {

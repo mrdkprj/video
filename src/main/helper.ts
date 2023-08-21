@@ -17,11 +17,11 @@ export default class Helper{
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
-                preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+                preload: PLAYER_WINDOW_PRELOAD_WEBPACK_ENTRY,
             },
         });
 
-        mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+        mainWindow.loadURL(PLAYER_WINDOW_WEBPACK_ENTRY);
 
         return mainWindow
 

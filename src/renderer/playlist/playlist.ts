@@ -11,7 +11,10 @@ const Dom = {
     renameInput:new DomElement<HTMLInputElement>("rename"),
 }
 
-const selectedFileIds:string[] = [];
+const selection:Mp.PlaylistItemSelection ={
+    selectedId:"",
+    selectedIds:[]
+}
 
 const dragState:Mp.PlaylistDragState = {
     dragging: false,
@@ -38,7 +41,7 @@ let fileListContainerRect:DOMRect;
 
 const onContextMenu = (e:MouseEvent) => {
     e.preventDefault()
-    window.api.send("open-playlist-context", {fileIds:selectedFileIds})
+    window.api.send("open-playlist-context", {})
 }
 
 const onKeydown = (e:KeyboardEvent) => {
@@ -52,10 +55,10 @@ const onKeydown = (e:KeyboardEvent) => {
         }
     }
 
-    if(selectedFileIds.length > 0){
+    if(selection.selectedIds.length > 0){
 
         if(e.key === "Delete"){
-            window.api.send("remove-playlist-item", {fileIds:selectedFileIds})
+            window.api.send("remove-playlist-item", {})
         }
     }
 
@@ -99,15 +102,15 @@ const onMouseDown = (e:MouseEvent) => {
 
         e.stopPropagation();
 
-        if(e.button === 2 && selectedFileIds.length > 1){
-            if(selectedFileIds.includes(e.target.id)){
+        if(e.button === 2 && selection.selectedIds.length > 1){
+            if(selection.selectedIds.includes(e.target.id)){
                 return;
             }
         }
 
         toggleSelect(e)
 
-        if(selectedFileIds.length > 1) return;
+        if(selection.selectedIds.length > 1) return;
 
         dragState.dragging = true;
         dragState.startElement = e.target;
@@ -120,8 +123,13 @@ const onMouseDown = (e:MouseEvent) => {
 
 const onMouseUp = (_e:MouseEvent) => {
     if(dragState.dragging && dragState.startElement){
-        const args = {start:dragState.startIndex, end:getChildIndex(dragState.startElement), currentIndex:getChildIndex(currentElement)}
+        const args = {
+            start:dragState.startIndex,
+            end:getChildIndex(dragState.startElement),
+            currentIndex:getChildIndex(currentElement)
+        }
         window.api.send("change-playlist-order", args);
+        window.api.send("playlist-item-selection-change", {selection})
     }
     dragState.dragging = false;
 }
@@ -150,7 +158,7 @@ const movePlaylistItem = (e:MouseEvent) => {
 
     dragState.working = true;
 
-    const currentIndex = selectedFileIds.indexOf(dragState.startElement.id);
+    const currentIndex = selection.selectedIds.indexOf(dragState.startElement.id);
     const dropRect = e.target.getBoundingClientRect();
     const dropPosition = e.clientY - dropRect.top;
     if(dropPosition <= dropRect.height){
@@ -158,7 +166,7 @@ const movePlaylistItem = (e:MouseEvent) => {
     }else{
         e.target.parentNode?.insertBefore(e.target, dragState.startElement);
     }
-    selectedFileIds[currentIndex] = dragState.startElement.id;
+    selection.selectedIds[currentIndex] = dragState.startElement.id;
 
     dragState.working = false;
 
@@ -233,8 +241,9 @@ const removeFromPlaylist = (data:Mp.RemovePlaylistResult) => {
 }
 
 const clearSelection = () => {
-    selectedFileIds.forEach(id => new DomElement(id).fill().classList.remove("selected"))
-    selectedFileIds.length = 0;
+    selection.selectedIds.forEach(id => new DomElement(id).fill().classList.remove("selected"))
+    selection.selectedIds.length = 0;
+    window.api.send("playlist-item-selection-change", {selection})
 }
 
 const toggleSelect = (e:MouseEvent) => {
@@ -261,10 +270,12 @@ const select = (target:HTMLElement | string) => {
 
     selectedElement = targetElement;
 
-    selectedFileIds.push(selectedElement.id)
+    selection.selectedIds.push(selectedElement.id)
+    selection.selectedId = selectedElement.id;
 
     selectedElement.classList.add("selected")
 
+    window.api.send("playlist-item-selection-change", {selection})
 }
 
 const selectByClick = (e:MouseEvent) => {
@@ -288,10 +299,11 @@ const selectByShift = (e:MouseEvent) => {
     range.sort((a,b) => a - b);
 
     for(let i = range[0]; i <= range[1]; i++){
-        selectedFileIds.push(Dom.fileList.element.children[i].id);
+        selection.selectedIds.push(Dom.fileList.element.children[i].id);
         Dom.fileList.element.children[i].classList.add("selected")
     }
 
+    window.api.send("playlist-item-selection-change", {selection})
 }
 
 const selectByCtrl = (e:MouseEvent) => {
@@ -302,9 +314,11 @@ const selectByCtrl = (e:MouseEvent) => {
     }
 
     const target = (e.target as HTMLElement);
-    selectedFileIds.push(target.id)
+    selection.selectedIds.push(target.id)
 
     target.classList.add("selected")
+
+    window.api.send("playlist-item-selection-change", {selection})
 }
 
 const selectAll = () => {
@@ -313,8 +327,10 @@ const selectAll = () => {
 
     Array.from(Dom.fileList.element.children).forEach((node,_index) => {
         node.classList.add("selected")
-        selectedFileIds.push(node.id);
+        selection.selectedIds.push(node.id);
     })
+
+    window.api.send("playlist-item-selection-change", {selection})
 
 }
 
@@ -463,7 +479,7 @@ const hideRenameField = () => {
 const onReset = () => {
     currentElement = undefined;
     selectedElement = undefined;
-    selectedFileIds.length = 0;
+    clearSelection()
     clearPlaylist();
 }
 
