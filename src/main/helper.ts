@@ -1,6 +1,6 @@
 import { BrowserWindow, Menu, nativeImage } from "electron"
 import path from "path"
-
+//./ffmpeg.exe -i input.mp4 -metadata comment="The video titile" -c copy output.mp4
 export default class Helper{
 
     createMainWindow(config:Mp.Config){

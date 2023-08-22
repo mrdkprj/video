@@ -759,14 +759,14 @@ const onToggleShuffle = () => {
     shuffleList();
 }
 
-const onToggleFullscreen = () => {
+const onToggleFullscreen = (e:Mp.FullscreenChange) => {
 
-    if(Renderers.Player?.isFullScreen()){
+    if(e.fullscreen){
+        Renderers.Player?.setFullScreen(true)
+        Renderers.Playlist?.hide();
+    }else{
         Renderers.Player?.setFullScreen(false)
         if(config.data.playlistVisible) Renderers.Playlist?.show();
         Renderers.Player?.focus();
-    }else{
-        Renderers.Player?.setFullScreen(true)
-        Renderers.Playlist?.hide();
     }
 }

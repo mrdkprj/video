@@ -149,6 +149,7 @@ const onKeydown = (e:KeyboardEvent) => {
     }
 
     if(e.key === "F11"){
+        e.preventDefault();
         enterFullscreen();
     }
 
@@ -524,22 +525,20 @@ const onWindowSizeChanged = (e:Mp.ConfigChangeEvent) => {
 }
 
 const exitFullscreen = () => {
-    if(isFullScreen){
-        isFullScreen = false;
-        Dom.viewport.element.classList.add("full-screen")
-        window.api.send("toggle-fullscreen", {fullscreen:isFullScreen})
-    }
+    isFullScreen = false;
+    Dom.viewport.element.classList.remove("full-screen")
+    window.api.send("toggle-fullscreen", {fullscreen:isFullScreen})
 }
 
 const enterFullscreen = () => {
 
-    if(isFullScreen){
-        Dom.viewport.element.classList.remove("full-screen")
-    }else{
-        Dom.viewport.element.classList.add("full-screen")
-    }
-
     isFullScreen = !isFullScreen;
+
+    if(isFullScreen){
+        Dom.viewport.element.classList.add("full-screen")
+    }else{
+        Dom.viewport.element.classList.remove("full-screen")
+    }
 
     window.api.send("toggle-fullscreen", {fullscreen:isFullScreen})
 }
