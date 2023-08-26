@@ -25,7 +25,6 @@ const Renderers:Renderer = {
 const additionalFiles:string[] = [];
 const playlistFiles:Mp.MediaFile[] = []
 
-let isReady = false;
 let mediaPlayStatus:Mp.PlayStatus;
 let doShuffle = false;
 let currentIndex = 0;
@@ -116,25 +115,23 @@ if(!locked) {
     app.quit()
 }
 
-const onSecondInstanceReady = () => {
-    const file = additionalFiles.shift()
-    const files = file ? [file] : []
-    initPlaylist(files)
+const afterSecondInstance = () => {
+    if(app.isReady()){
+        initPlaylist(additionalFiles)
+    }else{
+        addToPlaylist(additionalFiles)
+        additionalFiles.length = 0;
+    }
     Renderers.Player?.show();
 }
 
 app.on("second-instance", (_event:Event, _argv:string[], _workingDirectory:string, additionalData:string[]) => {
 
-    if(!isReady){
-        additionalFiles.push(...util.extractFilesFromArgv(additionalData))
-        return;
-    }
-
     if(!additionalFiles.length){
 
         additionalFiles.push(...util.extractFilesFromArgv(additionalData))
         setTimeout(() => {
-            onSecondInstanceReady();
+            afterSecondInstance()
         }, 1000);
 
     }else{
@@ -169,7 +166,7 @@ app.on("ready", () => {
         Renderers.Player?.setBounds(config.data.bounds)
         Renderers.Player?.setThumbarButtons(thumButtons[0])
 
-        onReady();
+        onPlayerReady();
 
     })
 
@@ -229,9 +226,7 @@ const showErrorMessage = async (ex:any) => {
     await dialog.showMessageBox({type:"error", message:ex.message})
 }
 
-const onReady = () => {
-
-    isReady = true;
+const onPlayerReady = () => {
 
     Renderers.Player?.show();
 
