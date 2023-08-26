@@ -89,11 +89,6 @@ export default class Helper{
             },
             { type: 'separator' },
             {
-                label: "Convert",
-                click: () => onclick("Convert")
-            },
-            { type: 'separator' },
-            {
                 label: "Open Playlist",
                 click: () => onclick("OpenPlaylist")
             },
@@ -248,6 +243,15 @@ export default class Helper{
             {
                 label: "Sort by",
                 submenu: this.createPlaylistSortContextMenu(config, onclick)
+            },
+            { type: "separator" },
+            {
+                label: "View Metadata",
+                click: () => onclick("Metadata")
+            },
+            {
+                label: "Convert",
+                click: () => onclick("Convert")
             },
             { type: "separator" },
             {

@@ -59,9 +59,6 @@ const mainContextMenuCallback = (menu:Mp.MainContextMenuType, args?:any) => {
         case "SeekSpeed":
             changeSeekSpeed(args);
             break;
-        case "Convert":
-            openConvertDialog();
-            break;
         case "OpenPlaylist":
             openPlaylist();
             break;
@@ -89,6 +86,12 @@ const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType) => {
             break;
         case "Reveal":
             reveal();
+            break;
+        case "Metadata":
+            displayMetadata();
+            break;
+        case "Convert":
+            openConvertDialog();
             break;
         case "NameAsc":
             sortPlayList(menu);
@@ -458,7 +461,7 @@ const removeFromPlaylist = () => {
     playlistFiles.length = 0;
     playlistFiles.push(...newFiles)
 
-    respond("Playlist", "after-remove-playlist", {removedFileIds:playlistSelection})
+    respond("Playlist", "after-remove-playlist", {removedFileIds:playlistSelection.selectedIds})
 
     currentIndex = getIndexAfterRemove(removeIndices)
 
@@ -561,23 +564,37 @@ const sortPlayList = (sortType:Mp.SortType) => {
 
 }
 
+const displayMetadata = async () => {
+
+    const file = playlistFiles.find(file => file.id = playlistSelection.selectedId)
+    if(!file || !Renderers.Player) return;
+
+    const metadata = await util.getMediaMetadata(file.fullPath)
+    const metadataString = JSON.stringify(metadata, undefined, 2);
+    const result = await dialog.showMessageBox(Renderers.Player, {type:"info", message:metadataString,  buttons:["Copy", "OK"], noLink:true})
+    if(result.response === 0){
+        clipboard.writeText(metadataString);
+    }
+}
+
 const openPlaylist = () => {
     config.data.playlistVisible = true;
     Renderers.Playlist?.show();
 }
 
 const openConvertDialog = () => {
-    respond("Convert", "open-convert", {file:getCurrentFile()})
+    const file = playlistFiles.find(file => file.id == playlistSelection.selectedId) ?? EmptyFile
+    respond("Convert", "open-convert", {file})
     Renderers.Convert?.show();
 }
 
-const openConvertSourceFileDialog = () => {
+const openConvertSourceFileDialog = (e:Mp.OpenFileDialogRequest) => {
 
     if(!Renderers.Convert) return;
 
     const files = dialog.showOpenDialogSync(Renderers.Convert, {
         title: "Select file to convert",
-        defaultPath: getCurrentFile().fullPath,
+        defaultPath: e.fullPath,
         filters: [
             { name: "Media File", extensions: videoFormats.concat(audioFormats) },
         ],
@@ -585,7 +602,7 @@ const openConvertSourceFileDialog = () => {
     })
 
     if(files){
-        respond("Convert", "after-sourcefile-select", {fullPath:files[0]})
+        respond("Convert", "after-sourcefile-select", {file:util.toFile(files[0])})
     }
 }
 
@@ -623,22 +640,22 @@ const saveImage = (data:Mp.SaveImageRequet) => {
 
 const startConvert = async (data:Mp.ConvertRequest) => {
 
-    if(!Renderers.Convert) return;
-
-    const fileExists = util.exists(data.sourcePath)
-
-    if(!fileExists) return endConvert();
-
-    const extension = data.video ? "mp4" : "mp3"
-    const name = data.video ? "Video" : "Audio"
+    if(!Renderers.Convert) return endConvert();
 
     const file = util.toFile(data.sourcePath);
+
+    if(!util.exists(file.fullPath)) return endConvert();
+
+    const extension = data.convertFormat.toLocaleLowerCase();
     const fileName =  file.name.replace(path.extname(file.name), "")
 
     const selectedPath = dialog.showSaveDialogSync(Renderers.Convert, {
         defaultPath: path.join(config.data.path.convertDestDir, `${fileName}.${extension}`),
         filters: [
-            { name: name, extensions: [extension] },
+            {
+                name:data.convertFormat === "MP4" ? "Video" : "Audio",
+                extensions: [extension]
+            },
         ],
     })
 
@@ -657,10 +674,10 @@ const startConvert = async (data:Mp.ConvertRequest) => {
 
     try{
 
-        if(data.video){
+        if(data.convertFormat === "MP4"){
             await util.convertVideo(data.sourcePath, savePath, data.options)
         }else{
-            await util.extractAudio(data.sourcePath, savePath, data.options)
+            await util.convertAudio(data.sourcePath, savePath, data.options)
         }
 
         if(shouldReplace){

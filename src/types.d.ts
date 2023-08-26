@@ -1,3 +1,5 @@
+import ffmpeg from "fluent-ffmpeg"
+
 declare global {
 
     interface Window {
@@ -28,7 +30,7 @@ declare global {
         "toggle-fullscreen": Mp.FullscreenChange;
         "close-convert": Mp.Event;
         "request-convert": Mp.ConvertRequest;
-        "open-convert-sourcefile-dialog": Mp.Event;
+        "open-convert-sourcefile-dialog": Mp.OpenFileDialogRequest;
         "request-cancel-convert": Mp.Event;
         "rename-file": Mp.RenameRequest;
         "playlist-item-selection-change": Mp.PlaylistItemSelectionChange;
@@ -69,9 +71,10 @@ declare global {
 
     namespace Mp {
 
+        type ConvertFormat = "MP4" | "MP3"
         type ThumbButtonType = "Play" | "Pause" | "Previous" | "Next"
-        type MainContextMenuType = "PlaybackRate" | "SeekSpeed" | "OpenPlaylist" | "FitToWindow" | "Convert"
-        type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "Reveal" | SortType
+        type MainContextMenuType = "PlaybackRate" | "SeekSpeed" | "OpenPlaylist" | "FitToWindow"
+        type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "Reveal" | "Metadata" | "Convert" | SortType
         type SortType = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
 
         type VideoFrameSize = "SizeNone" | "360p" | "480p" | "720p" | "1080p";
@@ -120,6 +123,7 @@ declare global {
             src:string;
             name:string;
             date:number;
+            extension:string;
         }
 
         type MediaState = {
@@ -131,6 +135,16 @@ declare global {
             gainNode: GainNode | undefined;
             playbackRate:number;
             seekSpeed:number;
+        }
+
+        interface FfprobeData extends ffmpeg.FfprobeData {
+            volume?:MediaVolume
+        }
+
+        type MediaVolume = {
+            n_samples:string;
+            mean_volume:string;
+            max_volume:string;
         }
 
         type Slider = {
@@ -249,7 +263,7 @@ declare global {
             fileIds:string[]
         }
 
-        type RemovePlaylistResult = {
+        type RemovePlaylistItemResult = {
             removedFileIds:string[]
         }
 
@@ -277,7 +291,7 @@ declare global {
 
         type ConvertRequest = {
             sourcePath:string;
-            video:boolean;
+            convertFormat:ConvertFormat;
             options:ConvertOptions;
         }
 
@@ -287,11 +301,15 @@ declare global {
         }
 
         type FileSelectResult = {
-            fullPath:string;
+            file:MediaFile;
         }
 
         type ConfigChangeEvent = {
             config:Config;
+        }
+
+        type OpenFileDialogRequest = {
+            fullPath:string;
         }
 
         type Event = {

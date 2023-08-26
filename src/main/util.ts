@@ -9,7 +9,8 @@ export const EmptyFile:Mp.MediaFile = {
     fullPath:"",
     src:"",
     name:"",
-    date: 0
+    date: 0,
+    extension:""
 }
 
 export default class Util{
@@ -66,7 +67,8 @@ export default class Util{
             fullPath,
             src: this.isDev ? `app://${encodedPath}` : encodedPath,
             name:decodeURIComponent(encodeURIComponent(path.basename(fullPath))),
-            date:statInfo.mtimeMs
+            date:statInfo.mtimeMs,
+            extension:path.extname(fullPath),
         }
     }
 
@@ -80,6 +82,7 @@ export default class Util{
             src: this.isDev ? `app://${encodedPath}` : encodedPath,
             name:decodeURIComponent(encodeURIComponent(path.basename(fullPath))),
             date:currentFile.date,
+            extension:currentFile.extension,
         }
     }
 
@@ -125,27 +128,28 @@ export default class Util{
 
     }
 
-    getMediaDetail(fullPath:string):Promise<ffmpeg.FfprobeData>{
+    getMediaMetadata(fullPath:string):Promise<Mp.FfprobeData>{
 
         return new Promise((resolve,reject)=>{
-            ffmpeg.ffprobe(fullPath, (error:any, metadata:ffmpeg.FfprobeData) => {
+            ffmpeg.ffprobe(fullPath, async (error:any, FfprobeData:ffmpeg.FfprobeData) => {
 
                 if(error){
                     reject(new Error("Read media metadata failed"))
                 }
 
+                const metadata = FfprobeData as Mp.FfprobeData
+                metadata.volume = await this.getVolume(fullPath)
                 resolve(metadata);
             })
         })
     }
 
-    cancelConvert(){
-        if(this.command){
-            this.command.kill("SIGKILL");
-        }
+    async getMaxVolume(sourcePath:string):Promise<string>{
+        const volume =await this.getVolume(sourcePath)
+        return volume.max_volume;
     }
 
-    async getMaxVolume(sourcePath:string):Promise<string>{
+    async getVolume(sourcePath:string):Promise<Mp.MediaVolume>{
         return new Promise((resolve,reject)=>{
 
             this.command = ffmpeg({source:sourcePath})
@@ -158,26 +162,39 @@ export default class Util{
             ]).on("error", async (err:any) => {
                 reject(new Error(err.message))
             })
-            .on("end", (stdout, stderr) => {
+            .on("end", (_stdout, stderr) => {
                 this.finishConvert();
-                const data = stderr.match(/max_volume:\s?([^ ]*)\s?dB/)
-                if(data && data.length > 1){
-                    resolve(data[1])
-                }
-                reject(new Error("Cannot get volume"))
+                resolve(this.extractVolumeInfo(stderr))
             })
             .saveToFile('-');
 
         })
     }
 
-    async extractAudio(sourcePath:string, destPath:string, options:Mp.ConvertOptions){
+    private extractVolumeInfo(std:string):Mp.MediaVolume{
+        const n_samples = std.match(/n_samples:\s?([0-9]*)\s?/)?.at(1) ?? ""
+        const mean_volume = std.match(/mean_volume:\s?([^ ]*)\s?dB/)?.at(1) ?? ""
+        const max_volume = std.match(/max_volume:\s?([^ ]*)\s?dB/)?.at(1) ?? ""
+        return {
+            n_samples,
+            mean_volume,
+            max_volume
+        }
+    }
+
+    cancelConvert(){
+        if(this.command){
+            this.command.kill("SIGKILL");
+        }
+    }
+
+    async convertAudio(sourcePath:string, destPath:string, options:Mp.ConvertOptions){
 
         if(this.command) throw new Error("Process busy")
 
         this.convertDestFile = destPath;
 
-        const metadata = await this.getMediaDetail(sourcePath);
+        const metadata = await this.getMediaMetadata(sourcePath);
 
         const bit_rate = metadata.streams[1].bit_rate;
         if(!bit_rate) throw new Error("No audio bitrate detected")
@@ -215,7 +232,7 @@ export default class Util{
 
         this.convertDestFile = destPath;
 
-        const metadata = await this.getMediaDetail(sourcePath);
+        const metadata = await this.getMediaMetadata(sourcePath);
 
         const size = resolutions[options.frameSize] ? resolutions[options.frameSize] : await this.getSize(metadata)
         const rotation = rotations[options.rotation] ? `transpose=${rotations[options.rotation]}` : "";

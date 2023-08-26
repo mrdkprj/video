@@ -67,6 +67,7 @@ const onKeydown = (e:KeyboardEvent) => {
     }
 
     if(e.key == "F2"){
+        alert('this is data'.repeat(300))
         startEditFileName()
     }
 
@@ -173,6 +174,8 @@ const movePlaylistItem = (e:MouseEvent) => {
 }
 
 const clearPlaylist = () => {
+    selection.selectedId = "";
+    selection.selectedIds = []
     Dom.fileList.element.innerHTML = "";
 }
 
@@ -229,7 +232,7 @@ const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
 
 }
 
-const removeFromPlaylist = (data:Mp.RemovePlaylistResult) => {
+const removeFromPlaylist = (data:Mp.RemovePlaylistItemResult) => {
     clearSelection();
     const targetNodes = data.removedFileIds.map(id => new DomElement(id).fill())
     targetNodes.forEach(node => {
@@ -479,7 +482,6 @@ const hideRenameField = () => {
 const onReset = () => {
     currentElement = undefined;
     selectedElement = undefined;
-    clearSelection()
     clearPlaylist();
 }
 

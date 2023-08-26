@@ -1,9 +1,12 @@
 import { DomElement } from "../dom"
+import { audioExtentions } from "../../constants";
 
 const Dom = {
     viewport: new DomElement("viewport"),
     srcFileInput: new DomElement<HTMLInputElement>("sourceFile"),
     srcFileSelectBtn: new DomElement("sourceFileSelection"),
+    videoRadio: new DomElement<HTMLInputElement>("video"),
+    audioRadio: new DomElement<HTMLInputElement>("audio"),
     maxVolumeCheckbox: new DomElement<HTMLInputElement>("MaxVolume"),
     volumeInput: new DomElement<HTMLInputElement>("volume"),
     volumeLabel: new DomElement("volumeLabel"),
@@ -12,7 +15,7 @@ const Dom = {
     message: new DomElement("message"),
 }
 
-let convertType = "video";
+let convertFormat:Mp.ConvertFormat = "MP4";
 let frameSize:Mp.VideoFrameSize = "SizeNone";
 let audioBitrate:Mp.AudioBitrate = "BitrateNone"
 let rotation:Mp.VideoRotation = "RotationNone"
@@ -35,22 +38,43 @@ const onVolumeChange = (e:Event) => {
 }
 
 const onOpen = (data:Mp.OpenConvertDialogEvent) => {
-
     if(!converting){
-        Dom.srcFileInput.element.value = data.file.fullPath
+        setFile(data.file)
     }
-
 }
 
 const closeDialog = () => {
     window.api.send("close-convert", {})
 }
 
-const changeType = () => {
-    if(convertType === "video"){
-        Dom.viewport.element.classList.add("video")
+const setFile = (file:Mp.MediaFile) => {
+    Dom.srcFileInput.element.value = file.fullPath
+    changeFormat(audioExtentions.includes(file.extension) ? "MP3" : "MP4")
+    toggleFormatOption(file);
+}
+
+const changeFormat = (format:Mp.ConvertFormat) => {
+
+    Dom.viewport.element.classList.remove("audio", "video")
+
+    convertFormat = format;
+
+    if(convertFormat === "MP3"){
+        Dom.viewport.element.classList.add("audio")
+        Dom.audioRadio.element.checked = true;
+        Dom.videoRadio.element.checked = false;
     }else{
-        Dom.viewport.element.classList.remove("video")
+        Dom.viewport.element.classList.add("video")
+        Dom.audioRadio.element.checked = false;
+        Dom.videoRadio.element.checked = true;
+    }
+}
+
+const toggleFormatOption = (file:Mp.MediaFile) => {
+    if(audioExtentions.includes(file.extension)){
+        Dom.videoRadio.element.disabled = true;
+    }else{
+        Dom.videoRadio.element.disabled = false;
     }
 }
 
@@ -76,7 +100,7 @@ const requestConvert = () => {
 
     const args:Mp.ConvertRequest = {
         sourcePath:Dom.srcFileInput.element.value,
-        video:convertType === "video",
+        convertFormat,
         options: {
             frameSize,
             audioBitrate,
@@ -105,18 +129,19 @@ const onAfterConvert = (data:Mp.ConvertResult) => {
 }
 
 const onSourceFileSelect = (data:Mp.FileSelectResult) => {
-    Dom.srcFileInput.element.value = data.fullPath
+    setFile(data.file)
 }
 
 window.api.receive("open-convert", onOpen)
 window.api.receive("after-convert", onAfterConvert)
 window.api.receive("after-sourcefile-select", onSourceFileSelect)
 
-
 window.onload = () => {
     Dom.viewport.fill();
     Dom.srcFileInput.fill();
     Dom.srcFileSelectBtn.fill();
+    Dom.videoRadio.fill();
+    Dom.audioRadio.fill();
     Dom.maxVolumeCheckbox.fill();
     Dom.volumeInput.fill();
     Dom.volumeLabel.fill();
@@ -144,10 +169,10 @@ document.addEventListener("click", e => {
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
     if(e.target.id === "sourceFileSelection"){
-        window.api.send("open-convert-sourcefile-dialog", {})
+        window.api.send("open-convert-sourcefile-dialog", {fullPath:Dom.srcFileInput.element.value})
     }
 
-    if(e.target.id === "closeConvertBtn"){
+    if(e.target.id === "closeConvertBtn" || e.target.id == "closeBtn"){
         closeDialog();
     }
 
@@ -165,9 +190,8 @@ document.addEventListener("change", e => {
 
     if(!e.target || !(e.target instanceof HTMLInputElement)) return;
 
-    if(e.target.name === "type"){
-        convertType = e.target.id;
-        changeType();
+    if(e.target.name === "format"){
+        changeFormat(e.target.getAttribute("data-format") as Mp.ConvertFormat);
     }
 
     if(e.target.name === "spec"){
@@ -182,4 +206,5 @@ document.addEventListener("change", e => {
         rotation = e.target.id as Mp.VideoRotation
     }
 })
+
 export {}

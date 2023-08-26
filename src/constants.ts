@@ -8,10 +8,25 @@ export const videoFormats = [
     "flv"
 ]
 
+export const videoExtentions = [
+    ".mp4",
+    ".mov",
+    ".avi",
+    ".wmv",
+    ".webm",
+    ".flv"
+]
+
 export const audioFormats = [
     "wav",
     "mp3",
     "webm",
+]
+
+export const audioExtentions = [
+    ".wav",
+    ".mp3",
+    ".webm",
 ]
 
 export const resolutions = {
