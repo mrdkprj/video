@@ -67,7 +67,6 @@ const onKeydown = (e:KeyboardEvent) => {
     }
 
     if(e.key == "F2"){
-        alert('this is data'.repeat(300))
         startEditFileName()
     }
 
