@@ -81,7 +81,10 @@ const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType) => {
             requestReleaseFile();
             break;
         case "CopyFileName":
-            copyFileNameToClipboard();
+            copyFileNameToClipboard(false);
+            break;
+        case "CopyFullpath":
+            copyFileNameToClipboard(true);
             break;
         case "Reveal":
             reveal();
@@ -527,7 +530,7 @@ const reveal = () => {
     proc.exec(`explorer /e,/select,${file.fullPath}`);
 }
 
-const copyFileNameToClipboard = () => {
+const copyFileNameToClipboard = (fullPath:boolean) => {
 
     if(!playlistSelection.selectedId) return;
 
@@ -535,7 +538,7 @@ const copyFileNameToClipboard = () => {
 
     if(!file) return;
 
-    clipboard.writeText(file.name);
+    clipboard.writeText(fullPath ? file.fullPath : file.name);
 
 }
 

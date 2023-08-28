@@ -74,7 +74,7 @@ declare global {
         type ConvertFormat = "MP4" | "MP3"
         type ThumbButtonType = "Play" | "Pause" | "Previous" | "Next"
         type MainContextMenuType = "PlaybackRate" | "SeekSpeed" | "OpenPlaylist" | "FitToWindow"
-        type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "Reveal" | "Metadata" | "Convert" | SortType
+        type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "CopyFullpath" | "Reveal" | "Metadata" | "Convert" | SortType
         type SortType = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
 
         type VideoFrameSize = "SizeNone" | "360p" | "480p" | "720p" | "1080p";

@@ -48,11 +48,10 @@ const onKeydown = (e:KeyboardEvent) => {
 
     if(e.ctrlKey && e.key === "r") e.preventDefault();
 
-    if(e.key === "Enter"){
+    if(RenameState.renaming) return;
 
-        if(!RenameState.renaming){
-            window.api.send("toggle-play", {})
-        }
+    if(e.key === "Enter"){
+        window.api.send("toggle-play", {})
     }
 
     if(selection.selectedIds.length > 0){

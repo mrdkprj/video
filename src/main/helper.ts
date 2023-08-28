@@ -236,6 +236,10 @@ export default class Helper{
                 click: () => onclick("CopyFileName")
             },
             {
+                label: "Copy Fullpath",
+                click: () => onclick("CopyFullpath")
+            },
+            {
                 label: "Reveal in File Explorer",
                 click: () => onclick("Reveal")
             },
