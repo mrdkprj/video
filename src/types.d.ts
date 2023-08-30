@@ -40,6 +40,7 @@ declare global {
         "ready": Mp.ReadyEvent;
         "after-file-load": Mp.FileLoadEvent;
         "toggle-play": Mp.Event;
+        "toggle-fullscreen": Mp.Event;
         "change-display-mode": Mp.ConfigChangeEvent;
         "restart": Mp.Event;
         "release-file": Mp.ReleaseFileRequest;
@@ -73,7 +74,7 @@ declare global {
 
         type ConvertFormat = "MP4" | "MP3"
         type ThumbButtonType = "Play" | "Pause" | "Previous" | "Next"
-        type MainContextMenuType = "PlaybackRate" | "SeekSpeed" | "OpenPlaylist" | "FitToWindow"
+        type MainContextMenuType = "PlaybackRate" | "SeekSpeed" | "TogglePlaylistWindow" | "FitToWindow" | "ToggleFullscreen"
         type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "CopyFullpath" | "Reveal" | "Metadata" | "Convert" | SortType
         type SortType = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
 

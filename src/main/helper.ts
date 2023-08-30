@@ -87,17 +87,21 @@ export default class Helper{
                 label: "Seek Speed",
                 submenu: this.seekSpeedMenu(onclick)
             },
-            { type: 'separator' },
-            {
-                label: "Open Playlist",
-                click: () => onclick("OpenPlaylist")
-            },
             {
                 label: "Fit To Window Size",
                 type: "checkbox",
                 checked: config.video.fitToWindow,
                 click: () => onclick("FitToWindow"),
             },
+            { type: 'separator' },
+            {
+                label: "Toggle Playlist",
+                click: () => onclick("TogglePlaylistWindow")
+            },
+            {
+                label: "Toggle Fullscreen",
+                click: () => onclick("ToggleFullscreen"),
+            }
         ]
 
         return Menu.buildFromTemplate(mainContextTemplate)

@@ -58,12 +58,14 @@ const mainContextMenuCallback = (menu:Mp.MainContextMenuType, args?:any) => {
         case "SeekSpeed":
             changeSeekSpeed(args);
             break;
-        case "OpenPlaylist":
-            openPlaylist();
+        case "TogglePlaylistWindow":
+            togglePlaylistWindow();
             break;
         case "FitToWindow":
             changeSizeMode();
             break;
+        case "ToggleFullscreen":
+            respond("Player", "toggle-fullscreen", {})
     }
 }
 
@@ -119,12 +121,14 @@ if(!locked) {
 }
 
 const afterSecondInstance = () => {
+
     if(app.isReady()){
         initPlaylist(additionalFiles)
     }else{
         addToPlaylist(additionalFiles)
         additionalFiles.length = 0;
     }
+
     Renderers.Player?.show();
 }
 
@@ -575,9 +579,13 @@ const displayMetadata = async () => {
     }
 }
 
-const openPlaylist = () => {
-    config.data.playlistVisible = true;
-    Renderers.Playlist?.show();
+const togglePlaylistWindow = () => {
+    config.data.playlistVisible = !config.data.playlistVisible;
+    if(config.data.playlistVisible){
+        Renderers.Playlist?.show();
+    }else{
+        Renderers.Playlist?.hide();
+    }
 }
 
 const openConvertDialog = () => {

@@ -113,6 +113,16 @@ const onMousedown = (e:MouseEvent) =>{
     }
 }
 
+const onMousemove = (e:MouseEvent) => {
+    if(isFullScreen){
+        Dom.viewport.element.classList.remove("autohide")
+        window.clearTimeout(hideCursorTimeout)
+        hideCursor();
+    }
+
+    moveSlider(e);
+}
+
 const onMouseup = (e:MouseEvent) => {
     endSlide(e);
 }
@@ -150,7 +160,7 @@ const onKeydown = (e:KeyboardEvent) => {
 
     if(e.key === "F11"){
         e.preventDefault();
-        enterFullscreen();
+        toggleFullscreen();
     }
 
     if(e.key === "Escape"){
@@ -158,7 +168,7 @@ const onKeydown = (e:KeyboardEvent) => {
     }
 
     if(e.key === "p"){
-        saveImage();
+        captureScreen();
     }
 
     if(e.ctrlKey && e.key === "m"){
@@ -473,7 +483,7 @@ const changeSeekSpeed = (data:Mp.ChangeSeekSpeedRequest) => {
     mediaState.seekSpeed = data.seekSpeed;
 }
 
-const saveImage = () => {
+const captureScreen = () => {
     const canvas = document.createElement("canvas");
     const width = parseInt(Dom.video.element.style.width.replace("px", ""));
     const height = parseInt(Dom.video.element.style.height.replace("px", ""));
@@ -524,23 +534,35 @@ const onWindowSizeChanged = (e:Mp.ConfigChangeEvent) => {
     changeMaximizeIcon();
 }
 
+const toggleFullscreen = () => {
+
+    if(isFullScreen){
+        exitFullscreen()
+    }else{
+        enterFullscreen()
+    }
+}
+
 const exitFullscreen = () => {
     isFullScreen = false;
     Dom.viewport.element.classList.remove("full-screen")
+    Dom.viewport.element.classList.remove("autohide")
     window.api.send("toggle-fullscreen", {fullscreen:isFullScreen})
 }
 
 const enterFullscreen = () => {
-
-    isFullScreen = !isFullScreen;
-
-    if(isFullScreen){
-        Dom.viewport.element.classList.add("full-screen")
-    }else{
-        Dom.viewport.element.classList.remove("full-screen")
-    }
-
+    isFullScreen = true;
+    Dom.viewport.element.classList.add("full-screen")
+    hideCursor()
     window.api.send("toggle-fullscreen", {fullscreen:isFullScreen})
+}
+
+let hideCursorTimeout:number;
+
+const hideCursor = () => {
+    hideCursorTimeout = window.setTimeout(() => {
+        Dom.viewport.element.classList.add("autohide")
+    },3000)
 }
 
 const toggleConvert = () => {
@@ -598,6 +620,7 @@ window.api.receive("after-toggle-maximize", onWindowSizeChanged)
 window.api.receive("toggle-convert", toggleConvert)
 window.api.receive("change-playback-rate", changePlaybackRate)
 window.api.receive("change-seek-speed", changeSeekSpeed);
+window.api.receive("toggle-fullscreen", toggleFullscreen)
 window.api.receive("log", data => console.log(data.log))
 
 window.addEventListener("load", () => {
@@ -639,7 +662,7 @@ window.addEventListener("contextmenu", onContextMenu)
 document.addEventListener("click", onClick)
 document.addEventListener("dblclick", onDblClick)
 document.addEventListener("mousedown", onMousedown)
-document.addEventListener("mousemove", moveSlider)
+document.addEventListener("mousemove", onMousemove)
 document.addEventListener("mouseup", onMouseup)
 
 export {};
