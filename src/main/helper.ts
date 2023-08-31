@@ -101,7 +101,12 @@ export default class Helper{
             {
                 label: "Toggle Fullscreen",
                 click: () => onclick("ToggleFullscreen"),
-            }
+            },
+            { type: 'separator' },
+            {
+                label: "Toggle Fullscreen",
+                click: () => onclick("ToggleFullscreen"),
+            },
         ]
 
         return Menu.buildFromTemplate(mainContextTemplate)
@@ -240,7 +245,7 @@ export default class Helper{
                 click: () => onclick("CopyFileName")
             },
             {
-                label: "Copy Fullpath",
+                label: "Copy Full Path",
                 click: () => onclick("CopyFullpath")
             },
             {

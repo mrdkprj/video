@@ -57,7 +57,7 @@ const onKeydown = (e:KeyboardEvent) => {
     if(selection.selectedIds.length > 0){
 
         if(e.key === "Delete"){
-            window.api.send("remove-playlist-item", {})
+            window.api.send("remove-playlist-item", {selectedIds:selection.selectedIds})
         }
     }
 

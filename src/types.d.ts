@@ -21,8 +21,8 @@ declare global {
         "reload": Mp.Event;
         "save-image": Mp.SaveImageRequet;
         "close-playlist": Mp.Event;
-        "file-released": Mp.Event;
-        "remove-playlist-item": Mp.Event;
+        "file-released": Mp.ReleaseFileRequest;
+        "remove-playlist-item": Mp.RemovePlaylistItemRequest;
         "open-playlist-context": Mp.Event;
         "change-playlist-order": Mp.ChangePlaylistOrderRequet;
         "toggle-play": Mp.Event;
@@ -261,7 +261,7 @@ declare global {
         }
 
         type RemovePlaylistItemRequest = {
-            fileIds:string[]
+            selectedIds:string[]
         }
 
         type RemovePlaylistItemResult = {

@@ -74,13 +74,13 @@ const mainContext = helper.createMainContextMenu(config.data, mainContextMenuCal
 const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType) => {
     switch(menu){
         case "Remove":
-            removeFromPlaylist();
+            removeFromPlaylist(playlistSelection.selectedIds);
             break;
         case "RemoveAll":
             clearPlaylist();
             break;
         case "Trash":
-            requestReleaseFile();
+            requestReleaseFile(playlistSelection.selectedIds);
             break;
         case "CopyFileName":
             copyFileNameToClipboard(false);
@@ -126,8 +126,9 @@ const afterSecondInstance = () => {
         initPlaylist(additionalFiles)
     }else{
         addToPlaylist(additionalFiles)
-        additionalFiles.length = 0;
     }
+
+    additionalFiles.length = 0;
 
     Renderers.Player?.show();
 }
@@ -258,11 +259,9 @@ const initPlaylist = (fullPaths:string[]) => {
 
     reset();
 
-    fullPaths.concat(additionalFiles).map(fullPath => util.toFile(fullPath)).forEach(file => playlistFiles.push(file))
+    fullPaths.map(fullPath => util.toFile(fullPath)).forEach(file => playlistFiles.push(file))
 
     currentIndex = 0;
-
-    additionalFiles.length = 0;
 
     respond("Playlist", "playlist-change", {files:playlistFiles, clearPlaylist:true})
 
@@ -278,7 +277,7 @@ const addToPlaylist = (fullPaths:string[]) => {
 
     const newFiles = fullPaths.filter(fullPath => playlistFiles.findIndex(file => file.fullPath == fullPath) < 0).map(fullPath => util.toFile(fullPath));
 
-    newFiles.forEach(file => playlistFiles.push(file))
+    playlistFiles.push(...newFiles)
 
     respond("Playlist", "playlist-change", {files:newFiles, clearPlaylist:false})
 
@@ -452,18 +451,18 @@ const clearPlaylist = () => {
 
 }
 
-const removeFromPlaylist = () => {
+const removeFromPlaylist = (selectedIds:string[]) => {
 
-    if(!playlistSelection.selectedIds.length) return;
+    if(!selectedIds.length) return;
 
-    const removeIndices = playlistFiles.filter(file => playlistSelection.selectedIds.includes(file.id)).map(file => playlistFiles.indexOf(file))
+    const removeIndices = playlistFiles.filter(file => selectedIds.includes(file.id)).map(file => playlistFiles.indexOf(file))
     const isCurrentFileRemoved = removeIndices.includes(currentIndex);
 
     const newFiles = playlistFiles.filter((_,index) => !removeIndices.includes(index));
     playlistFiles.length = 0;
     playlistFiles.push(...newFiles)
 
-    respond("Playlist", "after-remove-playlist", {removedFileIds:playlistSelection.selectedIds})
+    respond("Playlist", "after-remove-playlist", {removedFileIds:selectedIds})
 
     currentIndex = getIndexAfterRemove(removeIndices)
 
@@ -496,27 +495,27 @@ const getIndexAfterRemove = (removeIndices:number[]) => {
 
 }
 
-const requestReleaseFile = () => {
+const requestReleaseFile = (selectedIds:string[]) => {
 
-    if(!playlistSelection.selectedIds.length) return;
+    if(!selectedIds.length) return;
 
-    respond("Player", "release-file", {fileIds:playlistSelection.selectedIds})
+    respond("Player", "release-file", {fileIds:selectedIds})
 
 }
 
-const deleteFile = async () => {
+const deleteFile = async (data:Mp.ReleaseFileRequest) => {
 
-    if(!playlistSelection.selectedIds.length) return;
+    if(!data.fileIds.length) return;
 
     try{
 
-        const targetFilePaths = playlistFiles.filter(file => playlistSelection.selectedIds.includes(file.id)).map(file => file.fullPath);
+        const targetFilePaths = playlistFiles.filter(file => data.fileIds.includes(file.id)).map(file => file.fullPath);
 
         if(!targetFilePaths.length) return;
 
         await Promise.all(targetFilePaths.map(async item => await shell.trashItem(item)))
 
-        removeFromPlaylist();
+        removeFromPlaylist(data.fileIds);
 
     }catch(ex){
         showErrorMessage(ex);
@@ -769,8 +768,8 @@ const onPlaylistItemSelectionChange = (data:Mp.PlaylistItemSelectionChange) => {
     playlistSelection = data.selection;
 }
 
-const onRemovePlaylistItem = () => {
-    removeFromPlaylist();
+const onRemovePlaylistItem = (data:Mp.RemovePlaylistItemRequest) => {
+    removeFromPlaylist(data.selectedIds);
 }
 
 const onOpenPlaylistContext = () => {

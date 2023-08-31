@@ -344,7 +344,7 @@ const beforeDelete = (data:Mp.ReleaseFileRequest) => {
     if(data.fileIds.includes(currentFile.id)){
         releaseFile();
     }
-    window.api.send("file-released", {})
+    window.api.send("file-released", {fileIds:data.fileIds})
 }
 
 const loadMedia = (e:Mp.FileLoadEvent) => {
