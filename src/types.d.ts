@@ -51,6 +51,7 @@ declare global {
         "change-seek-speed": Mp.ChangeSeekSpeedRequest;
         "playlist-change": Mp.PlaylistChangeEvent;
         "after-remove-playlist": Mp.RemovePlaylistItemResult;
+        "clear-playlist": Mp.Event;
         "after-sort": Mp.SortResult;
         "after-rename": Mp.RenameResult;
         "after-sourcefile-select": Mp.FileSelectResult;

@@ -40,6 +40,7 @@ let containerRect:DOMRect;
 let isMaximized:boolean;
 let isFullScreen = false;
 let currentFile:Mp.MediaFile;
+let hideCursorTimeout:number;
 
 const onClick = (e:MouseEvent) => {
 
@@ -195,38 +196,6 @@ const onContextMenu = (e:MouseEvent) => {
     }
 }
 
-const prepareSliders = () => {
-    const timeSlider:Mp.Slider = {
-        slider: new DomElement("time").fill(),
-        track: new DomElement("timeTrack").fill(),
-        thumb: new DomElement("timeThumb").fill(),
-        rect: new DomElement("time").fill().getBoundingClientRect(),
-        handler: updateTime,
-    }
-
-    const volumeSlider:Mp.Slider = {
-        slider:new DomElement("volume").fill(),
-        track:new DomElement("volumeTrack").fill(),
-        thumb:new DomElement("volumeThumb").fill(),
-        rect: new DomElement("volume").fill().getBoundingClientRect(),
-        trackValue:new DomElement("volumeValue").fill(),
-        handler:updateVolume
-    }
-
-    const ampSlider:Mp.Slider = {
-        slider:new DomElement("amp").fill(),
-        track:new DomElement("ampTrack").fill(),
-        thumb:new DomElement("ampThumb").fill(),
-        rect: new DomElement("amp").fill().getBoundingClientRect(),
-        trackValue:new DomElement("ampValue").fill(),
-        handler:updateAmpLevel
-    }
-
-    sliders.Time = timeSlider;
-    sliders.Volume = volumeSlider;
-    sliders.Amp = ampSlider;
-}
-
 const startSlide = (e:MouseEvent) => {
 
     slideState.sliding = true;
@@ -324,6 +293,7 @@ const formatTime = (secondValue:number) => {
 }
 
 const initPlayer = () => {
+    clearTimeTrackTitle()
     Dom.video.element.src = "";
     Dom.title.element.textContent = "";
     document.title = "MediaPlayer";
@@ -348,6 +318,7 @@ const beforeDelete = (data:Mp.ReleaseFileRequest) => {
 }
 
 const loadMedia = (e:Mp.FileLoadEvent) => {
+    clearTimeTrackTitle()
     currentFile = e.currentFile;
     Dom.video.element.src = currentFile.src ? `${currentFile.src}?${new Date().getTime()}` : ""
     Dom.video.element.autoplay = e.autoPlay ? e.autoPlay : Dom.buttons.element.classList.contains("playing");
@@ -546,6 +517,9 @@ const toggleFullscreen = () => {
 const exitFullscreen = () => {
     isFullScreen = false;
     Dom.viewport.element.classList.remove("full-screen")
+    if(hideCursorTimeout){
+        window.clearTimeout(hideCursorTimeout)
+    }
     Dom.viewport.element.classList.remove("autohide")
     window.api.send("toggle-fullscreen", {fullscreen:isFullScreen})
 }
@@ -557,12 +531,10 @@ const enterFullscreen = () => {
     window.api.send("toggle-fullscreen", {fullscreen:isFullScreen})
 }
 
-let hideCursorTimeout:number;
-
 const hideCursor = () => {
     hideCursorTimeout = window.setTimeout(() => {
         Dom.viewport.element.classList.add("autohide")
-    },3000)
+    },2000)
 }
 
 const toggleConvert = () => {
@@ -610,6 +582,53 @@ const load = (e:Mp.FileLoadEvent) => {
 
 }
 
+const setTimeTrackTitle = (e:MouseEvent) => {
+
+    if(!Dom.video.element.duration) return;
+
+    const progress = (e.offsetX) / sliders.Time.rect.width;
+    const time = formatTime(Dom.video.element.duration * progress)
+    sliders.Time.slider.title = time;
+
+}
+
+const clearTimeTrackTitle = () => {
+    sliders.Time.slider.title = ""
+}
+
+const prepareSliders = () => {
+    sliders.Time = {
+        slider: new DomElement("time").fill(),
+        track: new DomElement("timeTrack").fill(),
+        thumb: new DomElement("timeThumb").fill(),
+        rect: new DomElement("time").fill().getBoundingClientRect(),
+        handler: updateTime,
+    }
+
+    sliders.Volume = {
+        slider:new DomElement("volume").fill(),
+        track:new DomElement("volumeTrack").fill(),
+        thumb:new DomElement("volumeThumb").fill(),
+        rect: new DomElement("volume").fill().getBoundingClientRect(),
+        trackValue:new DomElement("volumeValue").fill(),
+        handler:updateVolume
+    }
+
+    sliders.Amp = {
+        slider:new DomElement("amp").fill(),
+        track:new DomElement("ampTrack").fill(),
+        thumb:new DomElement("ampThumb").fill(),
+        rect: new DomElement("amp").fill().getBoundingClientRect(),
+        trackValue:new DomElement("ampValue").fill(),
+        handler:updateAmpLevel
+    }
+
+
+    sliders.Time.slider.addEventListener("mouseenter", setTimeTrackTitle)
+    sliders.Time.slider.addEventListener("mouseleave", clearTimeTrackTitle)
+    sliders.Time.slider.addEventListener("mousemove", setTimeTrackTitle)
+}
+
 window.api.receive("ready", prepare)
 window.api.receive("after-file-load", load)
 window.api.receive("toggle-play", togglePlay)
@@ -638,17 +657,12 @@ window.addEventListener("load", () => {
     containerRect = Dom.container.element.getBoundingClientRect();
 
     Dom.video.element.addEventListener("canplaythrough", onMediaLoaded)
-
     Dom.video.element.addEventListener("ended", () => changeFile(FORWARD))
-
     Dom.video.element.addEventListener("timeupdate", onTimeUpdate)
-
     Dom.video.element.addEventListener("play", onPlayed)
-
     Dom.video.element.addEventListener("pause", onPaused);
 
     Dom.container.element.addEventListener("dragover", e => e.preventDefault())
-
     Dom.container.element.addEventListener("drop",  onFileDrop);
 
     prepareSliders();

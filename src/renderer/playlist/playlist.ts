@@ -514,6 +514,7 @@ window.api.receive("after-remove-playlist", removeFromPlaylist)
 window.api.receive("after-sort", onAfterSort)
 window.api.receive("after-rename", onRename);
 window.api.receive("restart", onReset)
+window.api.receive("clear-playlist", clearPlaylist)
 
 window.addEventListener("load", () => {
 

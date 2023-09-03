@@ -1,12 +1,7 @@
-body{
-    margin:0;
-    font-family: Segoe UI,sans-serif;
-}
-
 .convert{
-    background-color: #272626;
-    color:#c3bebe;
-    height:auto;
+    background-color: var(--third-bgcolor);
+    color:var(--secondary-color);
+    height:100%;
     width: 100%;
     cursor: default;
 }
@@ -17,9 +12,8 @@ body{
     align-items: center;
     height: 30px;
     width: 100%;
-    color: #c3bebe;
-    border-bottom: 1px solid #3c3939;
-    background-color: #272626;
+    color: var(--secondary-color);
+    border-bottom: 1px solid var(--primary-border-color);
     position: fixed;
     top: 0px;
     left: 0px;
@@ -87,7 +81,7 @@ body{
     display: flex;
     border-radius: 3px;
     overflow: hidden;
-    border: 1px solid #423f3f;
+    border: 1px solid var(--third-border-color);
     box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.16), 0 2px 5px 0 rgba(0, 0, 0, 0.26);
 }
 
@@ -115,8 +109,8 @@ body{
     line-height: 25px;
     text-indent: 5px;
     width: 100%;
-    background-color: #423f3f;
-    color: #fff;
+    background-color: var(--input-bgcolor);
+    color: var(--input-color);
     font-family: Segoe UI,sans-serif;
     flex: 1 1 auto;
 }
@@ -150,7 +144,7 @@ body{
     height: 25px;
     padding: 0 7px;
     pointer-events: none;
-    color: #e1dede;
+    color: var(--primary-color);
 }
 
 .option-area input[type=radio] {
@@ -162,14 +156,13 @@ body{
 .option-area label {
     position: absolute;
     top: 0; left: 0;
-    color: #fff;
+    color: var(--primary-highlight-color);
     width: 100%;
     height: 100%;
-    background: #272626;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-left: 1px solid #423f3f;
+    border-left: 1px solid var(--third-border-color);
     pointer-events: none;
     cursor: pointer;
 }
@@ -179,9 +172,9 @@ body{
 }
 
 .option-area input:checked + label {
-    background: #d81b60;
+    background-color: var(--btn-secondary-hover-bgcolor);
     font-weight: 500;
-    color: #fff;
+    color: var(--btn-secondary-hover-color);
 }
 
 .button{
@@ -194,25 +187,25 @@ body{
 button{
     line-height: 2.5rem;
     font-size: 2em;
-    border: 1px solid #c19292;
+    border: 1px solid var(--third-color);
     border-radius: 5px;
-    background: #272626;
-    color: #fff;
+    background-color: var(--third-bgcolor);
+    color: var(--primary-highlight-color);
     cursor: pointer;
     padding: 5px 30px;
 }
 
 button:hover{
-    background: #d81b60;
+    background-color: var(--btn-secondary-hover-bgcolor);
 }
 
 input[type=radio]:disabled + label{
-    color: #5c5656;
+    color: var(--btn-disabled);
     cursor: auto;
 }
 
 button:disabled{
-    background-color: #272626;
+    background-color: var(--third-bgcolor);
     opacity: 0.5;
     cursor: auto;
 }

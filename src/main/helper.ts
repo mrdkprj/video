@@ -30,7 +30,6 @@ export default class Helper{
     createPlaylistWindow(config:Mp.Config){
 
         const playlist = new BrowserWindow({
-            backgroundColor: "#272626",
             width: config.playlistBounds.width,
             height: config.playlistBounds.height,
             x:config.playlistBounds.x,
@@ -55,7 +54,6 @@ export default class Helper{
     createConvertWindow(){
 
         const convertDialog = new BrowserWindow({
-            backgroundColor: "#272626",
             width:640,
             height:700,
             resizable: true,
@@ -95,14 +93,9 @@ export default class Helper{
             },
             { type: 'separator' },
             {
-                label: "Toggle Playlist",
+                label: "Open/Hide Playlist",
                 click: () => onclick("TogglePlaylistWindow")
             },
-            {
-                label: "Toggle Fullscreen",
-                click: () => onclick("ToggleFullscreen"),
-            },
-            { type: 'separator' },
             {
                 label: "Toggle Fullscreen",
                 click: () => onclick("ToggleFullscreen"),

@@ -305,8 +305,7 @@ const reset = () => {
     playlistFiles.length = 0;
     randomIndices.length = 0;
     currentIndex = -1;
-    Renderers.Player?.webContents.send("reset")
-    Renderers.Playlist?.webContents.send("reset")
+    respond("Playlist", "clear-playlist", {})
 }
 
 const changeSizeMode = () => {

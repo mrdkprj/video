@@ -2,7 +2,7 @@ import fs from "fs"
 import path from "path";
 import Util from "./util";
 
-const CONFIGfile_NAME = "mediaplayer.config.json"
+const CONFIG_FILE_NAME = "mediaplayer.config.json"
 
 const defaultConfig :Mp.Config = {
     bounds: {width:1200, height:800, x:0, y:0},
@@ -37,7 +37,7 @@ export default class Config{
         this.data = defaultConfig;
         const directory = process.env.NODE_ENV === "development" ? path.join(__dirname, "..", "..", "temp") : path.join(workingDirectory, "temp");
         this.util.exists(directory, true);
-        this.file = path.join(directory, CONFIGfile_NAME)
+        this.file = path.join(directory, CONFIG_FILE_NAME)
         this.init();
     }
 
