@@ -15,7 +15,7 @@
 }
 
 .playlist{
-    background-color: var(--third-bgcolor);
+    background-color: var(--main-bgcolor);
     height:100%;
     width: 100%;
     cursor: default;
@@ -27,8 +27,9 @@
     align-items: center;
     height: 30px;
     width: 100%;
-    color: var(--secondary-color);
-    border-bottom: 1px solid var(--primary-border-color);
+    color: var(--menu-color);
+    background-color: var(--menu-bgcolor);
+    border-bottom: 1px solid var(--menu-border-color);
     position: fixed;
     top: 0px;
     left: 0px;
@@ -73,13 +74,13 @@
 .rename{
     display: none;
     position: fixed;
-    background-color: var(--rename-bg-color);
+    background-color: var(--input-bgcolor);
     outline: 1px solid var(--input-focus-outline);
     border: 0;
     padding: 5px;
-    font-family: Segoe UI,sans-serif;
+    font-family: var(--font);
     font-size: 14px;
-    color: var(--primary-highlight-color);
+    color: var(--primary-forecolor);
     z-index: 900;
 }
 
@@ -94,7 +95,7 @@
     text-overflow: ellipsis;
     white-space: pre;
     overflow: hidden;
-    color: var(--third-color);
+    color: var(--playlist-item-color);
     font-size: 14px;
 }
 
@@ -107,15 +108,15 @@
 }
 
 .file-list .current{
-    color: var(--primary-highlight-bgcolor)
+    color: var(--primary-highlight-color)
 }
 
 .file-list .selected:not(.current){
-    color: var(--primary-color);
+    color: var(--secondary-highlight-color);
 }
 
 .file-list .selected{
-    outline: 1px dotted var(--secondary-color);
+    outline: 1px dotted var(--playlist-item-border-color);
 }
 
 .playlist-footer{
@@ -125,8 +126,8 @@
     height: 30px;
     width: 100%;
     z-index: 900;
-    border-top: 1px solid var(--primary-border-color);
-    background-color: var(--third-bgcolor);
+    border-top: 1px solid var(--menu-border-color);
+    background-color: var(--menu-bgcolor);
     display: flex;
     justify-content: flex-start;
     align-items: center;
@@ -144,10 +145,10 @@
     height: 17px;
     padding: 0 7px;
     pointer-events: none;
-    color: var(--primary-color);
+    color: var(--secondary-highlight-color);
 }
 
 .btn:hover svg{
-    color: var(--primary-highlight-bgcolor);
+    color: var(--primary-highlight-color);
 }
 

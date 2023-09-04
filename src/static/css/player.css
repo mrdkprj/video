@@ -4,8 +4,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: var(--primary-bgcolor);
-    color: var(--secondary-color);
+    background-color: var(--menu-bgcolor);
+    color: var(--menu-color);
     cursor: default;
     user-select: none;
     -webkit-app-region: drag;
@@ -65,11 +65,11 @@
 
 .minimize:hover,
 .maximize:hover{
-    background-color: var(--btn-primary-hover-bgcolor);
+    background-color: var(--menu-hover-color);
 }
 
 .maximize:hover .maxbtn{
-    background-color: var(--btn-primary-hover-bgcolor);
+    background-color: var(--menu-hover-color);
 }
 
 .minbtn,
@@ -77,8 +77,8 @@
     position: relative;
     width: 7px;
     height: 7px;
-    border: 1px solid var(--secondary-color);
-    background-color: var(--third-bgcolor);
+    border: 1px solid var(--menu-color);
+    background-color: var(--menu-bgcolor);
     pointer-events: none;
 }
 
@@ -90,12 +90,12 @@
     top: -3px;
     left: 1px;
     z-index: -1;
-    border: 1px solid var(--forth-border-color);
+    border: 1px solid var(--menu-color);
 }
 
 .close:hover{
-    background-color: var(--btn-third-hover-bgcolor);
-    color: var(--btn-third-hover-color);
+    background-color: var(--close-hover-bgcolor);
+    color: var(--close-hover-color);
 }
 
 .viewport{
@@ -105,7 +105,6 @@
     overflow: hidden;
     width: 100%;
     height: 100%;
-    background-color: var(--secondary-bgcolor);
 }
 
 .video-container{
@@ -115,7 +114,7 @@
     position: relative;
     flex: 1 1 auto;
     overflow: hidden;
-    background-color: var(--secondary-bgcolor);
+    background-color: var(--media-bgcolor);
     justify-content: center;
     align-items: center;
 }
@@ -130,9 +129,9 @@
 .footer-menu{
     height: 55px;
     user-select: none;
-    border-top: 1px solid var(--primary-border-color);
-    color: var(--secondary-color);
-    background-color: var(--primary-bgcolor);
+    border-top: 1px solid var(--menu-border-color);
+    color: var(--menu-color);
+    background-color: var(--menu-bgcolor);
 }
 
 .full-screen .footer-menu{
@@ -142,7 +141,7 @@
     bottom: 0px;
     width: 100%;
     border-top-color: transparent;
-    background-color: var(--full-footer-bgcolor);
+    background-color: var(--fullscreen-menu-bgcolor);
     opacity: 0;
     transition: opacity 0.5s;
     padding: 20px 0px 10px 0px;
@@ -195,7 +194,7 @@
     height: 30px;
     pointer-events: none;
     margin-left: 7px;
-    color: var(--primary-color);
+    color: var(--secondary-highlight-color);
 }
 
 .btn svg{
@@ -203,12 +202,12 @@
     height: 30px;
     padding: 0 7px;
     pointer-events: none;
-    color: var(--primary-color);
+    color: var(--secondary-highlight-color);
 }
 
 .btn:hover svg,
 .btn-large:hover svg{
-    color: var(--primary-highlight-bgcolor);
+    color: var(--primary-highlight-color);
 }
 
 .play{
@@ -251,14 +250,14 @@
 
 .loaded .current-time,
 .loaded .duration{
-    color: var(--primary-highlight-bgcolor);
+    color: var(--primary-highlight-color);
 }
-
+/*
 .loaded.full-screen .current-time,
 .loaded.full-screen .duration{
-    color: var(--primary-highlight-color)
+    color: var(--primary-forecolor)
 }
-
+*/
 .current-time{
     margin-right: 5px;
 }
@@ -278,7 +277,7 @@
 }
 
 .time-area .slider{
-    background-color: var(--primary-highlight-bgcolor);
+    background-color: var(--primary-highlight-color);
 }
 
 .track{
@@ -289,7 +288,7 @@
 }
 
 .time-area .track{
-    background-color: var(--primary-highlight-bgcolor);
+    background-color: var(--primary-highlight-color);
 }
 
 .thumb{
@@ -309,7 +308,7 @@
     width: 4px;
     height: 4px;
     border-radius: 4px;
-    background-color: var(--primary-highlight-bgcolor);
+    background-color: var(--primary-highlight-color);
     position: absolute;
     top: 2px;
     left: 2px;
@@ -393,7 +392,7 @@
 }
 
 .full-screen .track-value{
-    color: var(--full-slider-track-value-color);
+    color: var(--fullscreen-primary-color);
 }
 
 .canvas{
@@ -406,7 +405,7 @@
 }
 
 .mute .sound:hover::after{
-    background-color: var(--primary-highlight-bgcolor);
+    background-color: var(--primary-highlight-color);
 }
 
 .mute .sound::after{
@@ -416,7 +415,7 @@
     width: 20px;
     height: 1px;
     z-index: 9999;
-    background-color: var(--primary-highlight-color);
+    background-color: var(--primary-forecolor);
 }
 
 #convertState{
@@ -450,8 +449,8 @@
     height: 10px;
     margin: 8px 0 3px 0;
     border-radius: 50%;
-    border: 3px solid var(--forth-border-color);
-    border-color: var(--forth-border-color) transparent var(--forth-border-color) transparent;
+    border: 3px solid var(--menu-color);
+    border-color: var(--menu-color) transparent var(--menu-color) transparent;
     animation: lds-dual-ring 1.8s linear infinite;
 }
 

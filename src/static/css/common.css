@@ -1,41 +1,43 @@
+:root{
+    --font:Segoe UI,sans-serif;
+}
+
 html[dark] {
-    --font-family:Segoe UI,sans-serif;
 
-    --primary-bgcolor:#202020;
-    --secondary-bgcolor:#000;
-    --third-bgcolor:#272626;
-    --primary-highlight-bgcolor:#d57f1a;
-    --secondary-highlight-bgcolor:#da0707c4;
+    --main-bgcolor:#272626;
+    --media-bgcolor:#000;
 
-    --primary-color:#e1dede;
-    --secondary-color:#c3bebe;
-    --third-color:#959292;
-    --forth-color:#817b7b;
-    --primary-highlight-color:#fff;
+    --menu-bgcolor:#202020;
+    --menu-color:#c3bebe;
+    --menu-border-color:#3c393999;
+    --menu-hover-color:#5f5b5b;
 
-    --primary-border-color:#3c3939;
-    --secondary-border-color:#64798f1f;
-    --third-border-color:#423f3f;
-    --forth-border-color:#c3bebe;
+    --primary-highlight-color:#d57f1a;
+    --secondary-highlight-color:#e1dede;
+
+    --primary-forecolor:#fff;
+
+    --playlist-item-color:#959292;
+    --playlist-item-border-color:#c3bebe;
+
+    --radio-border-color:#423f3f;
+    --radio-checked-color:#d81b60;
+
+    --button-border-color:#959292;
+    --button-bgcolor:#272626;
+    --button-color:#fff;
+    --button-hover-color:#d81b60;
+    --button-disabled:#5c5656;
 
     --input-bgcolor:#423f3f;
     --input-color:#fff;
     --input-focus-outline:#6161c1;
 
-    --btn-primary-hover-bgcolor:#5f5b5b;
-    --btn-primary-hover-color:#c3bebe;
-    --btn-secondary-hover-bgcolor:#d81b60;
-    --btn-secondary-hover-color:#fff;
-    --btn-third-hover-bgcolor:#da0707c4;
-    --btn-third-hover-color:#fff;
-    --btn-disabled:#5c5656;
+    --close-hover-bgcolor:#da0707c4;
+    --close-hover-color:#fff;
 
-    --mute-bgcolor:#fff;
-    --rename-bg-color:#3c3a3a;
-
-    --full-thumb-color:#fff;
-    --full-footer-bgcolor:#14131338;
-    --full-slider-track-value-color:#e3e0e0;
+    --fullscreen-menu-bgcolor:#14131338;
+    --fullscreen-primary-color:#e1dede;
 
     --slider-bgcolor:#ffffff26;
     --slider-track-bgcolor:#ffffffcc;
@@ -56,6 +58,6 @@ html, body{
 
 body{
     margin:0;
-    font-family: Segoe UI,sans-serif;
+    font-family: var(--font);
 }
 

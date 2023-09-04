@@ -785,6 +785,7 @@ const onToggleFullscreen = (e:Mp.FullscreenChange) => {
     if(e.fullscreen){
         Renderers.Player?.setFullScreen(true)
         Renderers.Playlist?.hide();
+        Renderers.Convert?.hide();
     }else{
         Renderers.Player?.setFullScreen(false)
         if(config.data.playlistVisible) Renderers.Playlist?.show();

@@ -14,6 +14,7 @@ export default class Helper{
             show: false,
             icon: path.join(__dirname, "..", "static", "img", "icon.ico"),
             frame: false,
+            fullscreenable:true,
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
@@ -39,6 +40,7 @@ export default class Helper{
             frame:false,
             minimizable: false,
             maximizable: false,
+            fullscreenable:false,
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
@@ -63,6 +65,7 @@ export default class Helper{
             modal:true,
             minimizable: false,
             maximizable: false,
+            fullscreenable:false,
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
