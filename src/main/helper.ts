@@ -81,8 +81,8 @@ export default class Helper{
     createMainContextMenu(config:Mp.Config, onclick: (menu:Mp.MainContextMenuType, args?:any) => void){
         const mainContextTemplate:Electron.MenuItemConstructorOptions[] = [
             {
-                label: "Playback Rate",
-                submenu: this.playbackRateMenu(onclick)
+                label: "Playback Speed",
+                submenu: this.playbackSpeedMenu(onclick)
             },
             {
                 label: "Seek Speed",
@@ -108,9 +108,9 @@ export default class Helper{
         return Menu.buildFromTemplate(mainContextTemplate)
     }
 
-    private playbackRateMenu(onclick: (menu:Mp.MainContextMenuType, args?:any) => void){
+    private playbackSpeedMenu(onclick: (menu:Mp.MainContextMenuType, args?:any) => void){
 
-        const type = "PlaybackRate"
+        const type = "PlaybackSpeed"
         const contextTemplate:Electron.MenuItemConstructorOptions[] = [
             {
                 id: "playbackrate0",
@@ -132,7 +132,7 @@ export default class Helper{
             },
             {
                 id: "playbackrate3",
-                label:"Default",
+                label:"1 - Default",
                 type:"checkbox",
                 checked:true,
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 1))
@@ -172,50 +172,50 @@ export default class Helper{
         const contextTemplate:Electron.MenuItemConstructorOptions[] = [
             {
                 id: "seekspeed0",
-                label:"0.03",
+                label:"0.03sec",
                 type:"checkbox",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 0.03))
             },
             {
                 id: "seekspeed1",
-                label:"0.05",
+                label:"0.05sec",
                 type:"checkbox",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 0.05))
             },
             {
                 id: "seekspeed2",
-                label:"0.1",
+                label:"0.1sec",
                 type:"checkbox",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 0.1))
             },
             {
                 id: "seekspeed3",
-                label:"0.5",
+                label:"0.5sec",
                 type:"checkbox",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 0.5))
             },
             {
                 id: "seekspeed4",
-                label:"1",
+                label:"1sec",
                 type:"checkbox",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 1))
             },
             {
                 id: "seekspeed5",
-                label:"5",
+                label:"5sec",
                 type:"checkbox",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 5))
             },
             {
                 id: "seekspeed6",
-                label:"10",
+                label:"10sec - Default",
                 type:"checkbox",
                 checked:true,
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 10))
             },
             {
                 id: "seekspeed7",
-                label:"20",
+                label:"20sec",
                 type:"checkbox",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 20))
             },
@@ -237,7 +237,7 @@ export default class Helper{
             },
             { type: "separator" },
             {
-                label: "Copy File Name",
+                label: "Copy Name",
                 click: () => onclick("CopyFileName")
             },
             {
@@ -250,7 +250,7 @@ export default class Helper{
             },
             { type: "separator" },
             {
-                label: "Sort by",
+                label: "Sort By",
                 submenu: this.createPlaylistSortContextMenu(config, onclick)
             },
             { type: "separator" },
@@ -264,7 +264,7 @@ export default class Helper{
             },
             { type: "separator" },
             {
-                label: "Remove all",
+                label: "Clear Playlist",
                 click: () => onclick("RemoveAll")
             },
         ]

@@ -19,6 +19,7 @@ const selection:Mp.PlaylistItemSelection ={
 const dragState:Mp.PlaylistDragState = {
     dragging: false,
     startElement:undefined,
+    targetElement:undefined,
     startIndex: -1,
     working:false,
 }
@@ -77,6 +78,11 @@ const onKeydown = (e:KeyboardEvent) => {
         redoRename();
     }
 
+    if(e.key === "ArrowUp" || e.key === "ArrowDown"){
+        e.preventDefault();
+        moveSelection(e.key);
+    }
+
 }
 
 const onRenameInputKeyDown = (e:KeyboardEvent) => {
@@ -99,8 +105,6 @@ const onMouseDown = (e:MouseEvent) => {
 
     if(e.target.classList.contains("playlist-item")){
 
-        e.stopPropagation();
-
         if(e.button === 2 && selection.selectedIds.length > 1){
             if(selection.selectedIds.includes(e.target.id)){
                 return;
@@ -109,80 +113,44 @@ const onMouseDown = (e:MouseEvent) => {
 
         toggleSelect(e)
 
-        if(selection.selectedIds.length > 1) return;
-
-        dragState.dragging = true;
-        dragState.startElement = e.target;
-        dragState.startIndex = getChildIndex(e.target)
-
     }else{
         clearSelection();
     }
 }
 
-const onMouseUp = (_e:MouseEvent) => {
-    if(dragState.dragging && dragState.startElement){
-        const args = {
-            start:dragState.startIndex,
-            end:getChildIndex(dragState.startElement),
-            currentIndex:getChildIndex(currentElement)
-        }
-        window.api.send("change-playlist-order", args);
-        window.api.send("playlist-item-selection-change", {selection})
-    }
-    dragState.dragging = false;
-}
-
-const onMouseEnter = (e:MouseEvent) => {
+const onDragStart = (e:DragEvent) => {
 
     if(!e.target || !(e.target instanceof HTMLElement)) return;
 
-    movePlaylistItem(e);
+    e.stopPropagation();
+    dragState.dragging = true;
+    dragState.startElement = e.target;
+    dragState.startIndex = getChildIndex(e.target)
+
+}
+
+const onDragEnter = (e:DragEvent) => {
+    if(dragState.dragging){
+        toggleHighlightDropTarget(e);
+    }
+}
+
+const onDragEnd = (e:DragEvent) => {
+    if(dragState.dragging){
+        endDragPlaylistItem(e)
+    }
 }
 
 const onResize = () => {
     fileListContainerRect = Dom.fileListContainer.element.getBoundingClientRect()
 }
 
-const movePlaylistItem = (e:MouseEvent) => {
-
-    if(!e.target || !(e.target instanceof HTMLElement)) return;
-
-    if(!dragState.dragging || !dragState.startElement) return;
-
-    if(dragState.working){
-        e.preventDefault();
-        return
-    }
-
-    dragState.working = true;
-
-    const currentIndex = selection.selectedIds.indexOf(dragState.startElement.id);
-    const dropRect = e.target.getBoundingClientRect();
-    const dropPosition = e.clientY - dropRect.top;
-    if(dropPosition <= dropRect.height){
-        e.target.parentNode?.insertBefore(dragState.startElement, e.target);
-    }else{
-        e.target.parentNode?.insertBefore(e.target, dragState.startElement);
-    }
-    selection.selectedIds[currentIndex] = dragState.startElement.id;
-
-    dragState.working = false;
-
-}
-
-const clearPlaylist = () => {
-    selection.selectedId = "";
-    selection.selectedIds = []
-    Dom.fileList.element.innerHTML = "";
-}
-
 const onFileDrop = (e:DragEvent) => {
+
+    if(dragState.dragging) return;
 
     e.preventDefault();
     e.stopPropagation();
-
-    dragState.dragging = false;
 
     const items = e.dataTransfer ? e.dataTransfer.items : []
 
@@ -198,15 +166,16 @@ const onFileDrop = (e:DragEvent) => {
 
 const createListItem = (file:Mp.MediaFile) => {
 
-    const item = document.createElement("li");
+    const item = document.createElement("div");
     item.title = file.name
     item.id = file.id;
     item.textContent = file.name
+    item.draggable = true;
     item.classList.add("playlist-item")
     item.addEventListener("dblclick", onFileListItemClicked);
-    item.addEventListener("mouseenter", onMouseEnter)
-    item.addEventListener("mouseleave", movePlaylistItem)
-
+    item.addEventListener("dragstart", onDragStart)
+    item.addEventListener("dragenter", onDragEnter)
+    item.addEventListener("dragend", onDragEnd)
     return item
 }
 
@@ -239,6 +208,65 @@ const removeFromPlaylist = (data:Mp.RemovePlaylistItemResult) => {
         }
         Dom.fileList.element.removeChild(node)
     })
+}
+
+const toggleHighlightDropTarget = (e:DragEvent) => {
+
+    if(!e.target || !(e.target instanceof HTMLElement)) return;
+
+    if(!dragState.dragging) return;
+
+    dragState.targetElement?.classList.remove("draghover");
+
+    dragState.targetElement = e.target;
+
+    if(dragState.targetElement.id === dragState.startElement?.id) return;
+
+    dragState.targetElement.classList.add("draghover")
+
+}
+
+const endDragPlaylistItem = (e:DragEvent) => {
+
+    dropPlaylistItem();
+    toggleHighlightDropTarget(e)
+
+    const args = {
+        start:dragState.startIndex,
+        end:getChildIndex(dragState.startElement),
+        currentIndex:getChildIndex(currentElement)
+    }
+
+    window.api.send("change-playlist-order", args);
+    window.api.send("playlist-item-selection-change", {selection})
+
+    dragState.dragging = false;
+    dragState.startElement = undefined;
+    dragState.startIndex = -1;
+    dragState.targetElement = undefined;
+}
+
+const dropPlaylistItem = () => {
+
+    if(!dragState.dragging || !dragState.startElement || !dragState.targetElement) return;
+
+    const currentIndex = selection.selectedIds.indexOf(dragState.startElement.id);
+    const dropTargetIndex = getChildIndex(dragState.targetElement)
+    if(dropTargetIndex > dragState.startIndex){
+        dragState.targetElement.parentNode?.insertBefore(dragState.startElement, dragState.targetElement.nextElementSibling);
+    }else{
+        dragState.targetElement.parentNode?.insertBefore(dragState.startElement, dragState.targetElement);
+    }
+    selection.selectedIds[currentIndex] = dragState.startElement.id;
+
+    scrollToElement(dragState.startElement)
+
+}
+
+const clearPlaylist = () => {
+    selection.selectedId = "";
+    selection.selectedIds = []
+    Dom.fileList.element.innerHTML = "";
 }
 
 const clearSelection = () => {
@@ -275,6 +303,8 @@ const select = (target:HTMLElement | string) => {
     selection.selectedId = selectedElement.id;
 
     selectedElement.classList.add("selected")
+
+    scrollToElement(selectedElement)
 
     window.api.send("playlist-item-selection-change", {selection})
 }
@@ -335,6 +365,25 @@ const selectAll = () => {
 
 }
 
+const moveSelection = (key:string) => {
+
+    if(!Dom.fileList.element.children.length) return;
+
+    const currentId = selection.selectedId ? selection.selectedId : Dom.fileList.element.children[0].id
+
+    let nextId;
+    if(key === "ArrowDown"){
+        nextId = new DomElement(currentId).fill().nextElementSibling?.id
+    }else{
+        nextId = new DomElement(currentId).fill().previousElementSibling?.id
+    }
+
+    if(!nextId) return;
+
+    clearSelection();
+    select(nextId)
+}
+
 const onFileListItemClicked = (e:MouseEvent) => {
     const index = getChildIndex(e.target as HTMLElement);
     window.api.send("load-file", {index, isAbsolute:true});
@@ -346,6 +395,21 @@ function getChildIndex(node:HTMLElement | undefined) {
     return Array.prototype.indexOf.call(Dom.fileList.element.childNodes, node);
 }
 
+const scrollToElement = (element:HTMLElement | undefined) => {
+
+    if(!element) return;
+
+    const rect = element.getBoundingClientRect();
+    if(rect.top <= fileListContainerRect.top){
+        element.scrollIntoView(true)
+    }
+
+    if(rect.bottom > fileListContainerRect.height + fileListContainerRect.top + 5){
+        element.scrollIntoView(false)
+    }
+
+}
+
 const changeCurrent = (data:Mp.FileLoadEvent) => {
 
     if(currentElement){
@@ -355,15 +419,7 @@ const changeCurrent = (data:Mp.FileLoadEvent) => {
     if(data.currentFile.id){
         currentElement = new DomElement(data.currentFile.id).fill();
         currentElement.classList.add("current");
-
-        const rect = currentElement.getBoundingClientRect();
-        if(rect.top < 0){
-            currentElement.scrollIntoView(true)
-        }
-
-        if(rect.bottom > fileListContainerRect.height){
-            currentElement.scrollIntoView(false)
-        }
+        select(data.currentFile.id)
     }
 }
 
@@ -506,6 +562,8 @@ const onAfterSort = (data:Mp.SortResult) => {
 
     lists.forEach(li => Dom.fileList.element.appendChild(li))
 
+    scrollToElement(currentElement);
+
 }
 
 window.api.receive("playlist-change", addToPlaylist)
@@ -540,7 +598,6 @@ window.addEventListener("keydown",onKeydown)
 document.addEventListener("click", onClick)
 document.addEventListener("mousedown", onMouseDown);
 document.addEventListener("dragover", e => e.preventDefault())
-document.addEventListener("mouseup", onMouseUp);
 document.addEventListener("drop", onFileDrop)
 
 export {}

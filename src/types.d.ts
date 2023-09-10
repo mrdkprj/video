@@ -47,7 +47,7 @@ declare global {
         "log": Mp.Logging;
         "after-toggle-maximize": Mp.ConfigChangeEvent;
         "toggle-convert": Mp.Event;
-        "change-playback-rate": Mp.ChangePlaybackRateRequest;
+        "change-playback-speed": Mp.ChangePlaybackSpeedRequest;
         "change-seek-speed": Mp.ChangeSeekSpeedRequest;
         "playlist-change": Mp.PlaylistChangeEvent;
         "after-remove-playlist": Mp.RemovePlaylistItemResult;
@@ -75,7 +75,7 @@ declare global {
 
         type ConvertFormat = "MP4" | "MP3"
         type ThumbButtonType = "Play" | "Pause" | "Previous" | "Next"
-        type MainContextMenuType = "PlaybackRate" | "SeekSpeed" | "TogglePlaylistWindow" | "FitToWindow" | "ToggleFullscreen"
+        type MainContextMenuType = "PlaybackSpeed" | "SeekSpeed" | "TogglePlaylistWindow" | "FitToWindow" | "ToggleFullscreen"
         type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "CopyFullpath" | "Reveal" | "Metadata" | "Convert" | SortType
         type SortType = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
 
@@ -84,6 +84,11 @@ declare global {
         type AudioBitrate = "BitrateNone" | "128" | "160" | "192" | "320"
 
         type PlayStatus = "playing" | "paused" | "stopped"
+
+        type SecondInstanceState = {
+            timeout:NodeJS.Timeout | undefined;
+            requireInitPlaylist:boolean;
+        }
 
         type Bounds = {
             width:number;
@@ -105,7 +110,7 @@ declare global {
             sortType:SortType;
             video:{
                 fitToWindow:boolean;
-                playbackRate:number;
+                playbackSpeed:number;
                 seekSpeed:number;
             };
             audio:{
@@ -135,7 +140,7 @@ declare global {
             videoVolume: number;
             ampLevel: number;
             gainNode: GainNode | undefined;
-            playbackRate:number;
+            playbackSpeed:number;
             seekSpeed:number;
         }
 
@@ -170,10 +175,11 @@ declare global {
         }
 
         type PlaylistDragState = {
-            dragging: boolean,
-            startElement:HTMLElement | undefined,
-            startIndex: number,
-            working:boolean,
+            dragging: boolean;
+            startElement:HTMLElement | undefined;
+            targetElement:HTMLElement | undefined;
+            startIndex: number;
+            working:boolean;
         }
 
         type RenameData = {
@@ -198,8 +204,8 @@ declare global {
             fullscreen:boolean;
         }
 
-        type ChangePlaybackRateRequest = {
-            playbackRate:number;
+        type ChangePlaybackSpeedRequest = {
+            playbackSpeed:number;
         }
 
         type ChangeSeekSpeedRequest = {

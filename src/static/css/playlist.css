@@ -19,20 +19,20 @@
     height:100%;
     width: 100%;
     cursor: default;
+    display: flex;
+    flex-direction: column;
 }
 
 .playlist-title-bar{
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    height: 30px;
+    min-height: 29px;
     width: 100%;
+    margin-bottom: 5px;
     color: var(--menu-color);
     background-color: var(--menu-bgcolor);
     border-bottom: 1px solid var(--menu-border-color);
-    position: fixed;
-    top: 0px;
-    left: 0px;
     z-index: 900;
     -webkit-app-region: drag;
 }
@@ -49,22 +49,17 @@
 }
 
 .playlist-viewport{
-    position:fixed;
-    top: 30px;
-    left: 0px;
     overflow: auto;
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: calc(100% - 60px);
-    border-bottom-left-radius:15px;
-    border-bottom-right-radius:15px;
+    height: 100%;
     z-index: 800;
+    flex: 1 1 auto;
 }
 
 .file-list{
-    list-style: none;
-    margin: 5px;
+    margin: 0px 5px;
     padding: 0;
     font-size: 14px;
     user-select: none;
@@ -99,6 +94,11 @@
     font-size: 14px;
 }
 
+.draghover{
+    background-color: var(--playlist-item-drag-bgcolor);
+
+}
+
 .playlist-item span{
     pointer-events: none;
 }
@@ -117,14 +117,13 @@
 
 .file-list .selected{
     outline: 1px dotted var(--playlist-item-border-color);
+    outline-offset: -1px;
 }
 
 .playlist-footer{
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    height: 30px;
+    min-height: 30px;
     width: 100%;
+    margin-top: 5px;
     z-index: 900;
     border-top: 1px solid var(--menu-border-color);
     background-color: var(--menu-bgcolor);

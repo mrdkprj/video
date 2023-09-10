@@ -8,6 +8,12 @@ import Util, {EmptyFile} from "./util";
 import Config from "./config";
 import { FORWARD, BACKWARD, videoFormats, audioFormats } from "../constants";
 
+const locked = app.requestSingleInstanceLock(process.argv);
+
+if(!locked) {
+    app.exit()
+}
+
 protocol.registerSchemesAsPrivileged([
     { scheme: "app", privileges: { bypassCSP: true } },
 ])
@@ -24,6 +30,10 @@ const Renderers:Renderer = {
 
 const additionalFiles:string[] = [];
 const playlistFiles:Mp.MediaFile[] = []
+const secondInstanceState:Mp.SecondInstanceState = {
+    timeout:undefined,
+    requireInitPlaylist:false,
+}
 
 let mediaPlayStatus:Mp.PlayStatus;
 let doShuffle = false;
@@ -52,8 +62,8 @@ const thumButtons = helper.createThumButtons(thumbButtonCallback)
 
 const mainContextMenuCallback = (menu:Mp.MainContextMenuType, args?:any) => {
     switch(menu){
-        case "PlaybackRate":
-            changePlaybackRate(args);
+        case "PlaybackSpeed":
+            changePlaybackSpeed(args);
             break;
         case "SeekSpeed":
             changeSeekSpeed(args);
@@ -114,15 +124,15 @@ const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType) => {
 
 const playlistContext = helper.createPlaylistContextMenu(config.data, playlistContextMenuCallback)
 
-const locked = app.requestSingleInstanceLock(process.argv);
-
-if(!locked) {
-    app.quit()
+const setSecondInstanceTimeout = () => {
+    secondInstanceState.timeout = setTimeout(() => {
+        afterSecondInstance()
+    }, 1000);
 }
 
 const afterSecondInstance = () => {
 
-    if(app.isReady()){
+    if(secondInstanceState.requireInitPlaylist){
         initPlaylist(additionalFiles)
     }else{
         addToPlaylist(additionalFiles)
@@ -130,25 +140,25 @@ const afterSecondInstance = () => {
 
     additionalFiles.length = 0;
 
+    secondInstanceState.timeout = undefined;
+    secondInstanceState.requireInitPlaylist = true;
+
     Renderers.Player?.show();
 }
 
 app.on("second-instance", (_event:Event, _argv:string[], _workingDirectory:string, additionalData:string[]) => {
 
-    if(!additionalFiles.length){
-
-        additionalFiles.push(...util.extractFilesFromArgv(additionalData))
-        setTimeout(() => {
-            afterSecondInstance()
-        }, 1000);
-
-    }else{
-        additionalFiles.push(...util.extractFilesFromArgv(additionalData))
+    if(!secondInstanceState.timeout){
+        setSecondInstanceTimeout();
     }
+
+    additionalFiles.push(...util.extractFilesFromArgv(additionalData))
 
 })
 
 app.on("ready", () => {
+
+    setSecondInstanceTimeout();
 
     registerIpcChannels();
 
@@ -185,8 +195,7 @@ app.on("ready", () => {
         Renderers.Player = undefined;
     });
 
-    Renderers.Playlist?.setParentWindow(Renderers.Player)
-
+    Renderers.Playlist.setParentWindow(Renderers.Player)
     Renderers.Convert.setParentWindow(Renderers.Player)
 
 });
@@ -249,7 +258,7 @@ const onPlayerReady = () => {
     initPlaylist(util.extractFilesFromArgv())
 }
 
-const sendCurrentFile = (autoPlay:boolean) => {
+const loadMediaFile = (autoPlay:boolean) => {
     const currentFile = getCurrentFile();
     respond("Playlist", "after-file-load", {currentFile, autoPlay})
     respond("Player", "after-file-load", {currentFile, autoPlay})
@@ -269,7 +278,7 @@ const initPlaylist = (fullPaths:string[]) => {
 
     shuffleList();
 
-    sendCurrentFile(true);
+    loadMediaFile(true);
 
 }
 
@@ -286,7 +295,7 @@ const addToPlaylist = (fullPaths:string[]) => {
     shuffleList();
 
     if(currentIndex < 0){
-        sendCurrentFile(false);
+        loadMediaFile(false);
     }
 
 }
@@ -395,12 +404,12 @@ const changeIndex = (index:number) => {
 
     currentIndex = nextIndex;
 
-    sendCurrentFile(false);
+    loadMediaFile(false);
 }
 
 const selectFile = (index:number) => {
     currentIndex = index;
-    sendCurrentFile(true);
+    loadMediaFile(true);
 }
 
 const changePlayStatus = (data:Mp.ChangePlayStatusRequest) => {
@@ -446,7 +455,7 @@ const changePlaylistItemOrder = (data:Mp.ChangePlaylistOrderRequet) => {
 const clearPlaylist = () => {
 
     reset();
-    sendCurrentFile(false);
+    loadMediaFile(false);
 
 }
 
@@ -466,7 +475,7 @@ const removeFromPlaylist = (selectedIds:string[]) => {
     currentIndex = getIndexAfterRemove(removeIndices)
 
     if(isCurrentFileRemoved){
-        sendCurrentFile(false);
+        loadMediaFile(false);
     }
 
 }
@@ -610,8 +619,8 @@ const openConvertSourceFileDialog = (e:Mp.OpenFileDialogRequest) => {
     }
 }
 
-const changePlaybackRate = (playbackRate:number) => {
-    respond("Player", "change-playback-rate", {playbackRate})
+const changePlaybackSpeed = (playbackSpeed:number) => {
+    respond("Player", "change-playback-speed", {playbackSpeed})
 }
 
 const changeSeekSpeed = (seekSpeed:number) => {

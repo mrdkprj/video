@@ -11,7 +11,7 @@ const defaultConfig :Mp.Config = {
     playlistVisible:true,
     sortType: "NameAsc",
     video:{
-        playbackRate:1,
+        playbackSpeed:1,
         seekSpeed:10,
         fitToWindow: true,
     },

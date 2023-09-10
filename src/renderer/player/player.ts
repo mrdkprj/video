@@ -24,7 +24,7 @@ const mediaState:Mp.MediaState = {
     videoVolume:0,
     ampLevel:0,
     gainNode:undefined,
-    playbackRate:0,
+    playbackSpeed:0,
     seekSpeed:0
 }
 
@@ -115,12 +115,7 @@ const onMousedown = (e:MouseEvent) =>{
 }
 
 const onMousemove = (e:MouseEvent) => {
-    if(isFullScreen){
-        Dom.viewport.element.classList.remove("autohide")
-        window.clearTimeout(hideCursorTimeout)
-        hideCursor();
-    }
-
+    showCursor();
     moveSlider(e);
 }
 
@@ -136,6 +131,8 @@ const onKeydown = (e:KeyboardEvent) => {
 
     if(e.key === "ArrowRight"){
 
+        showCursor();
+
         if(e.shiftKey){
             changeCurrentTime(0.5)
         }else{
@@ -144,6 +141,9 @@ const onKeydown = (e:KeyboardEvent) => {
     }
 
     if(e.key === "ArrowLeft"){
+
+        showCursor();
+
         if(e.shiftKey){
             changeCurrentTime(-0.5)
         }else{
@@ -151,11 +151,14 @@ const onKeydown = (e:KeyboardEvent) => {
         }
     }
 
-    if(e.ctrlKey && e.key === "ArrowUp"){
+    if(e.key === "ArrowUp"){
+
+        showCursor();
         updateVolume(mediaState.videoVolume + 0.01)
     }
 
-    if(e.ctrlKey && e.key === "ArrowDown"){
+    if(e.key === "ArrowDown"){
+        showCursor();
         updateVolume(mediaState.videoVolume - 0.01)
     }
 
@@ -323,7 +326,7 @@ const loadMedia = (e:Mp.FileLoadEvent) => {
     Dom.video.element.src = currentFile.src ? `${currentFile.src}?${new Date().getTime()}` : ""
     Dom.video.element.autoplay = e.autoPlay ? e.autoPlay : Dom.buttons.element.classList.contains("playing");
     Dom.video.element.muted = mediaState.mute;
-    Dom.video.element.playbackRate = mediaState.playbackRate
+    Dom.video.element.playbackRate = mediaState.playbackSpeed
     Dom.video.element.load();
 }
 
@@ -445,9 +448,9 @@ const stop = () => {
     Dom.video.element.load();
 }
 
-const changePlaybackRate = (data:Mp.ChangePlaybackRateRequest) => {
-    mediaState.playbackRate = data.playbackRate
-    Dom.video.element.playbackRate = mediaState.playbackRate
+const changePlaybackSpeed = (data:Mp.ChangePlaybackSpeedRequest) => {
+    mediaState.playbackSpeed = data.playbackSpeed
+    Dom.video.element.playbackRate = mediaState.playbackSpeed
 }
 
 const changeSeekSpeed = (data:Mp.ChangeSeekSpeedRequest) => {
@@ -531,6 +534,14 @@ const enterFullscreen = () => {
     window.api.send("toggle-fullscreen", {fullscreen:isFullScreen})
 }
 
+const showCursor = () => {
+    if(isFullScreen){
+        Dom.viewport.element.classList.remove("autohide")
+        window.clearTimeout(hideCursorTimeout)
+        hideCursor();
+    }
+}
+
 const hideCursor = () => {
     hideCursorTimeout = window.setTimeout(() => {
         Dom.viewport.element.classList.add("autohide")
@@ -568,18 +579,16 @@ const prepare = (e:Mp.ReadyEvent) => {
     toggleMute();
 
     mediaState.fitToWindow = e.config.video.fitToWindow;
-    mediaState.playbackRate = e.config.video.playbackRate;
+    mediaState.playbackSpeed = e.config.video.playbackSpeed;
     mediaState.seekSpeed = e.config.video.seekSpeed;
 }
 
 const load = (e:Mp.FileLoadEvent) => {
-
     if(e.currentFile.id){
         loadMedia(e)
     }else{
         initPlayer();
     }
-
 }
 
 const setTimeTrackTitle = (e:MouseEvent) => {
@@ -637,7 +646,7 @@ window.api.receive("restart", initPlayer)
 window.api.receive("release-file", beforeDelete)
 window.api.receive("after-toggle-maximize", onWindowSizeChanged)
 window.api.receive("toggle-convert", toggleConvert)
-window.api.receive("change-playback-rate", changePlaybackRate)
+window.api.receive("change-playback-speed", changePlaybackSpeed)
 window.api.receive("change-seek-speed", changeSeekSpeed);
 window.api.receive("toggle-fullscreen", toggleFullscreen)
 window.api.receive("log", data => console.log(data.log))

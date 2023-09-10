@@ -19,6 +19,7 @@ html[dark] {
 
     --playlist-item-color:#959292;
     --playlist-item-border-color:#c3bebe;
+    --playlist-item-drag-bgcolor:#423f3f;
 
     --radio-border-color:#423f3f;
     --radio-checked-color:#d81b60;

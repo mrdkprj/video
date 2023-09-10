@@ -68,10 +68,6 @@
     background-color: var(--menu-hover-color);
 }
 
-.maximize:hover .maxbtn{
-    background-color: var(--menu-hover-color);
-}
-
 .minbtn,
 .maxbtn{
     position: relative;
@@ -91,6 +87,12 @@
     left: 1px;
     z-index: -1;
     border: 1px solid var(--menu-color);
+}
+
+.maximize:hover .minbtn,
+.maximize:hover .maxbtn,
+.maximize:hover .maxbtn::after{
+    background-color: var(--menu-hover-color);
 }
 
 .close:hover{
@@ -142,7 +144,7 @@
     width: 100%;
     border-top-color: transparent;
     background-color: var(--fullscreen-menu-bgcolor);
-    opacity: 0;
+    opacity: 1;
     transition: opacity 0.5s;
     padding: 20px 0px 10px 0px;
 }
@@ -252,12 +254,7 @@
 .loaded .duration{
     color: var(--primary-highlight-color);
 }
-/*
-.loaded.full-screen .current-time,
-.loaded.full-screen .duration{
-    color: var(--primary-forecolor)
-}
-*/
+
 .current-time{
     margin-right: 5px;
 }
@@ -465,4 +462,8 @@
 
 .autohide{
     cursor: none;
+}
+
+.autohide .footer-menu{
+    opacity: 0;
 }
