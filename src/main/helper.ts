@@ -1,4 +1,5 @@
 import { BrowserWindow, Menu, nativeImage } from "electron"
+//import { BrowserWindow, nativeImage } from "electron"
 import path from "path"
 //./ffmpeg.exe -i input.mp4 -metadata comment="The video titile" -c copy output.mp4
 export default class Helper{
@@ -103,12 +104,38 @@ export default class Helper{
                 label: "Toggle Fullscreen",
                 click: () => onclick("ToggleFullscreen"),
             },
+            {
+                label: "Theme",
+                submenu:this.themeMenu(config, onclick)
+            },
         ]
 
         return Menu.buildFromTemplate(mainContextTemplate)
     }
 
-    private playbackSpeedMenu(onclick: (menu:Mp.MainContextMenuType, args?:any) => void){
+    private themeMenu(config:Mp.Config, onclick: (menu:Mp.MainContextMenuType, args?:Mp.ContextMenuSubType) => void){
+        const type = "Theme"
+        const contextTemplate:Electron.MenuItemConstructorOptions[] = [
+            {
+                id: "themeLight",
+                label:"Light",
+                type:"checkbox",
+                checked: config.theme === "light",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "light"))
+            },
+            {
+                id: "themeDark",
+                label:"Dark",
+                type:"checkbox",
+                checked: config.theme === "dark",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "dark"))
+            },
+        ]
+
+        return Menu.buildFromTemplate(contextTemplate);
+    }
+
+    private playbackSpeedMenu(onclick: (menu:Mp.MainContextMenuType, args?:Mp.ContextMenuSubType) => void){
 
         const type = "PlaybackSpeed"
         const contextTemplate:Electron.MenuItemConstructorOptions[] = [
@@ -166,7 +193,7 @@ export default class Helper{
         return Menu.buildFromTemplate(contextTemplate);
     }
 
-    private seekSpeedMenu(onclick: (menu:Mp.MainContextMenuType, args?:any) => void){
+    private seekSpeedMenu(onclick: (menu:Mp.MainContextMenuType, args?:Mp.ContextMenuSubType) => void){
 
         const type = "SeekSpeed"
         const contextTemplate:Electron.MenuItemConstructorOptions[] = [
@@ -224,7 +251,7 @@ export default class Helper{
         return Menu.buildFromTemplate(contextTemplate);
     }
 
-    createPlaylistContextMenu(config:Mp.Config, onclick: (menu:Mp.PlaylistContextMenuType) => void){
+    createPlaylistContextMenu(config:Mp.Config, onclick: (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => void){
 
         const playlistContextTemplate:Electron.MenuItemConstructorOptions[] = [
             {
@@ -272,36 +299,37 @@ export default class Helper{
         return Menu.buildFromTemplate(playlistContextTemplate);
     }
 
-    private createPlaylistSortContextMenu(config:Mp.Config, onclick: (menu:Mp.PlaylistContextMenuType) => void){
+    private createPlaylistSortContextMenu(config:Mp.Config, onclick: (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => void){
 
+        const type = "Sort"
         const playlistSortMenuTemplate:Electron.MenuItemConstructorOptions[] = [
             {
                 id: "NameAsc",
                 label: "Name(Asc)",
                 type: "checkbox",
                 checked: config.sortType === "NameAsc",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("NameAsc"))
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "NameAsc"))
             },
             {
                 id: "NameDesc",
                 label: "Name(Desc)",
                 type: "checkbox",
                 checked: config.sortType === "NameDesc",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("NameDesc"))
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type,"NameDesc"))
             },
             {
                 id: "DateAsc",
                 label: "Date(Asc)",
                 type: "checkbox",
                 checked: config.sortType === "DateAsc",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("DateAsc"))
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type,"DateAsc"))
             },
             {
                 id: "DateDesc",
                 label: "Date(Desc)",
                 type: "checkbox",
                 checked: config.sortType === "DateDesc",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick("DateDesc"))
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type,"DateDesc"))
             },
         ]
 
@@ -363,4 +391,5 @@ export default class Helper{
 
         onclick()
     }
+
 }

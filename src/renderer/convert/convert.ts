@@ -132,6 +132,27 @@ const onSourceFileSelect = (data:Mp.FileSelectResult) => {
     setFile(data.file)
 }
 
+const applyTheme = (theme:Mp.Theme) => {
+    if(theme === "light"){
+        document.documentElement.removeAttribute("dark")
+        document.documentElement.setAttribute("light", "");
+    }else{
+        document.documentElement.removeAttribute("light")
+        document.documentElement.setAttribute("dark", "");
+    }
+}
+
+const onThemeChange = (e:Mp.ConfigChangeEvent) => {
+    applyTheme(e.config.theme)
+}
+
+const prepare = (e:Mp.ReadyEvent) => {
+    console.log("sdf")
+    applyTheme(e.config.theme)
+}
+
+window.api.receive("ready", prepare);
+window.api.receive("change-theme", onThemeChange)
 window.api.receive("open-convert", onOpen)
 window.api.receive("after-convert", onAfterConvert)
 window.api.receive("after-sourcefile-select", onSourceFileSelect)

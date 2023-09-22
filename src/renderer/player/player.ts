@@ -556,6 +556,20 @@ const toggleConvert = () => {
     }
 }
 
+const applyTheme = (theme:Mp.Theme) => {
+    if(theme === "light"){
+        document.documentElement.removeAttribute("dark")
+        document.documentElement.setAttribute("light", "");
+    }else{
+        document.documentElement.removeAttribute("light")
+        document.documentElement.setAttribute("dark", "");
+    }
+}
+
+const onThemeChange = (e:Mp.ConfigChangeEvent) => {
+    applyTheme(e.config.theme)
+}
+
 const onChangeDisplayMode = (e:Mp.ConfigChangeEvent) => {
     mediaState.fitToWindow = e.config.video.fitToWindow;
     changeVideoSize();
@@ -566,6 +580,9 @@ const close = () => {
 }
 
 const prepare = (e:Mp.ReadyEvent) => {
+
+    applyTheme(e.config.theme)
+
     isMaximized = e.config.isMaximized;
     changeMaximizeIcon();
 
@@ -581,6 +598,7 @@ const prepare = (e:Mp.ReadyEvent) => {
     mediaState.fitToWindow = e.config.video.fitToWindow;
     mediaState.playbackSpeed = e.config.video.playbackSpeed;
     mediaState.seekSpeed = e.config.video.seekSpeed;
+
 }
 
 const load = (e:Mp.FileLoadEvent) => {
@@ -641,6 +659,7 @@ const prepareSliders = () => {
 window.api.receive("ready", prepare)
 window.api.receive("after-file-load", load)
 window.api.receive("toggle-play", togglePlay)
+window.api.receive("change-theme", onThemeChange)
 window.api.receive("change-display-mode", onChangeDisplayMode)
 window.api.receive("restart", initPlayer)
 window.api.receive("release-file", beforeDelete)

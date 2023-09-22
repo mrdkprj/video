@@ -97,6 +97,7 @@ const onClick = (e:MouseEvent) => {
     if(e.target.id === "shuffleBtn"){
         toggleShuffle();
     }
+
 }
 
 const onMouseDown = (e:MouseEvent) => {
@@ -566,6 +567,26 @@ const onAfterSort = (data:Mp.SortResult) => {
 
 }
 
+const applyTheme = (theme:Mp.Theme) => {
+    if(theme === "light"){
+        document.documentElement.removeAttribute("dark")
+        document.documentElement.setAttribute("light", "");
+    }else{
+        document.documentElement.removeAttribute("light")
+        document.documentElement.setAttribute("dark", "");
+    }
+}
+
+const onThemeChange = (e:Mp.ConfigChangeEvent) => {
+    applyTheme(e.config.theme)
+}
+
+const prepare = (e:Mp.ReadyEvent) => {
+    applyTheme(e.config.theme)
+}
+
+window.api.receive("ready", prepare);
+window.api.receive("change-theme", onThemeChange)
 window.api.receive("playlist-change", addToPlaylist)
 window.api.receive("after-file-load", changeCurrent)
 window.api.receive("after-remove-playlist", removeFromPlaylist)
@@ -581,6 +602,7 @@ window.addEventListener("load", () => {
     Dom.playlistFooter.fill()
     Dom.fileList.fill()
     Dom.fileListContainer.fill()
+    Dom.fileListContainer.element.addEventListener("mousedown", onMouseDown)
     fileListContainerRect = Dom.fileListContainer.element.getBoundingClientRect();
     Dom.renameInput.fill()
     Dom.renameInput.element.addEventListener("blur", endEditFileName)
@@ -596,7 +618,7 @@ window.addEventListener("contextmenu", onContextMenu)
 
 window.addEventListener("keydown",onKeydown)
 document.addEventListener("click", onClick)
-document.addEventListener("mousedown", onMouseDown);
+//document.addEventListener("mousedown", onMouseDown);
 document.addEventListener("dragover", e => e.preventDefault())
 document.addEventListener("drop", onFileDrop)
 

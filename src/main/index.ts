@@ -1,4 +1,5 @@
-import {app, ipcMain, clipboard, dialog, shell, protocol} from "electron";
+import {app, ipcMain, clipboard, dialog, shell, protocol, nativeTheme} from "electron";
+
 import fs from "fs";
 import path from "path";
 import proc from "child_process";
@@ -60,13 +61,13 @@ const thumbButtonCallback = (button:Mp.ThumbButtonType) => {
 
 const thumButtons = helper.createThumButtons(thumbButtonCallback)
 
-const mainContextMenuCallback = (menu:Mp.MainContextMenuType, args?:any) => {
+const mainContextMenuCallback = (menu:Mp.MainContextMenuType, args?:Mp.ContextMenuSubType) => {
     switch(menu){
         case "PlaybackSpeed":
-            changePlaybackSpeed(args);
+            changePlaybackSpeed(Number(args));
             break;
         case "SeekSpeed":
-            changeSeekSpeed(args);
+            changeSeekSpeed(Number(args));
             break;
         case "TogglePlaylistWindow":
             togglePlaylistWindow();
@@ -76,12 +77,16 @@ const mainContextMenuCallback = (menu:Mp.MainContextMenuType, args?:any) => {
             break;
         case "ToggleFullscreen":
             respond("Player", "toggle-fullscreen", {})
+            break;
+        case "Theme":
+            changeTheme(args as Mp.Theme);
+            break;
     }
 }
 
-const mainContext = helper.createMainContextMenu(config.data, mainContextMenuCallback)
+ const mainContext = helper.createMainContextMenu(config.data, mainContextMenuCallback)
 
-const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType) => {
+const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => {
     switch(menu){
         case "Remove":
             removeFromPlaylist(playlistSelection.selectedIds);
@@ -107,17 +112,8 @@ const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType) => {
         case "Convert":
             openConvertDialog();
             break;
-        case "NameAsc":
-            sortPlayList(menu);
-            break;
-        case "NameDesc":
-            sortPlayList(menu);
-            break;
-        case "DateAsc":
-            sortPlayList(menu);
-            break;
-        case "DateDesc":
-            sortPlayList(menu);
+        case "Sort":
+            sortPlayList(args as Mp.SortType);
             break;
     }
 }
@@ -143,7 +139,12 @@ const afterSecondInstance = () => {
     secondInstanceState.timeout = undefined;
     secondInstanceState.requireInitPlaylist = true;
 
-    Renderers.Player?.show();
+    if(!Renderers.Player) return;
+
+    if(Renderers.Player.isFullScreen()){
+        respond("Player", "toggle-fullscreen", {})
+    }
+    Renderers.Player.show();
 }
 
 app.on("second-instance", (_event:Event, _argv:string[], _workingDirectory:string, additionalData:string[]) => {
@@ -157,6 +158,8 @@ app.on("second-instance", (_event:Event, _argv:string[], _workingDirectory:strin
 })
 
 app.on("ready", () => {
+
+    nativeTheme.themeSource = config.data.theme
 
     setSecondInstanceTimeout();
 
@@ -252,6 +255,8 @@ const onPlayerReady = () => {
     }
 
     respond("Player", "ready", {config:config.data});
+    respond("Playlist", "ready", {config:config.data});
+    respond("Convert", "ready", {config:config.data});
 
     togglePlay();
 
@@ -320,6 +325,14 @@ const reset = () => {
 const changeSizeMode = () => {
     config.data.video.fitToWindow = !config.data.video.fitToWindow
     respond("Player", "change-display-mode", {config:config.data})
+}
+
+const changeTheme = (theme:Mp.Theme) => {
+    nativeTheme.themeSource = theme
+    config.data.theme = theme;
+    respond("Player", "change-theme", {config:config.data})
+    respond("Playlist", "change-theme", {config:config.data})
+    respond("Convert", "change-theme", {config:config.data})
 }
 
 const onUnmaximize = () => {
@@ -575,7 +588,7 @@ const sortPlayList = (sortType:Mp.SortType) => {
 
 const displayMetadata = async () => {
 
-    const file = playlistFiles.find(file => file.id = playlistSelection.selectedId)
+    const file = playlistFiles.find(file => file.id == playlistSelection.selectedId)
     if(!file || !Renderers.Player) return;
 
     const metadata = await util.getMediaMetadata(file.fullPath)

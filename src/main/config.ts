@@ -9,6 +9,7 @@ const defaultConfig :Mp.Config = {
     playlistBounds: {width:400, height:700, x:0, y:0},
     isMaximized: false,
     playlistVisible:true,
+    theme:"dark",
     sortType: "NameAsc",
     video:{
         playbackSpeed:1,
