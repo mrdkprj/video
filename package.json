@@ -1,6 +1,6 @@
 {
-  "name": "mediaplayer2",
-  "productName": "MediaPlayer2",
+  "name": "mediaplayer",
+  "productName": "MediaPlayer",
   "version": "1.0.0",
   "description": "MediaPlayer",
   "main": ".webpack/main",
