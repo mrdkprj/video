@@ -8,11 +8,13 @@ const Dom = {
     loader: new DomElement("loader"),
     viewport: new DomElement("viewport"),
     container: new DomElement("container"),
+    footer: new DomElement("footer"),
     currentTimeArea: new DomElement("videoCurrentTime"),
     durationArea: new DomElement("videoDuration"),
     buttons: new DomElement("buttons"),
     ampArea: new DomElement("ampArea"),
     convertState: new DomElement("convertState"),
+    tooltip: new DomElement("tooltip"),
 }
 
 const sliders:{[key:string]:Mp.Slider} = {}
@@ -40,7 +42,7 @@ let containerRect:DOMRect;
 let isMaximized:boolean;
 let isFullScreen = false;
 let currentFile:Mp.MediaFile;
-let hideCursorTimeout:number;
+let hideControlTimeout:number;
 
 const onClick = (e:MouseEvent) => {
 
@@ -115,12 +117,16 @@ const onMousedown = (e:MouseEvent) =>{
 }
 
 const onMousemove = (e:MouseEvent) => {
-    showCursor();
+    showControl();
     moveSlider(e);
 }
 
 const onMouseup = (e:MouseEvent) => {
     endSlide(e);
+}
+
+const onFooterMouseEnter = (_e:MouseEvent) => {
+    showControl();
 }
 
 const onKeydown = (e:KeyboardEvent) => {
@@ -131,7 +137,7 @@ const onKeydown = (e:KeyboardEvent) => {
 
     if(e.key === "ArrowRight"){
 
-        showCursor();
+        showControl();
 
         if(e.shiftKey){
             changeCurrentTime(0.5)
@@ -142,7 +148,7 @@ const onKeydown = (e:KeyboardEvent) => {
 
     if(e.key === "ArrowLeft"){
 
-        showCursor();
+        showControl();
 
         if(e.shiftKey){
             changeCurrentTime(-0.5)
@@ -153,12 +159,12 @@ const onKeydown = (e:KeyboardEvent) => {
 
     if(e.key === "ArrowUp"){
 
-        showCursor();
+        showControl();
         updateVolume(mediaState.videoVolume + 0.01)
     }
 
     if(e.key === "ArrowDown"){
-        showCursor();
+        showControl();
         updateVolume(mediaState.videoVolume - 0.01)
     }
 
@@ -296,7 +302,7 @@ const formatTime = (secondValue:number) => {
 }
 
 const initPlayer = () => {
-    clearTimeTrackTitle()
+    clearTimeTrackTooltip()
     Dom.video.element.src = "";
     Dom.title.element.textContent = "";
     document.title = "MediaPlayer";
@@ -321,7 +327,7 @@ const beforeDelete = (data:Mp.ReleaseFileRequest) => {
 }
 
 const loadMedia = (e:Mp.FileLoadEvent) => {
-    clearTimeTrackTitle()
+    clearTimeTrackTooltip()
     currentFile = e.currentFile;
     Dom.video.element.src = currentFile.src ? `${currentFile.src}?${new Date().getTime()}` : ""
     Dom.video.element.autoplay = e.autoPlay ? e.autoPlay : Dom.buttons.element.classList.contains("playing");
@@ -520,8 +526,8 @@ const toggleFullscreen = () => {
 const exitFullscreen = () => {
     isFullScreen = false;
     Dom.viewport.element.classList.remove("full-screen")
-    if(hideCursorTimeout){
-        window.clearTimeout(hideCursorTimeout)
+    if(hideControlTimeout){
+        window.clearTimeout(hideControlTimeout)
     }
     Dom.viewport.element.classList.remove("autohide")
     window.api.send("toggle-fullscreen", {fullscreen:isFullScreen})
@@ -530,20 +536,20 @@ const exitFullscreen = () => {
 const enterFullscreen = () => {
     isFullScreen = true;
     Dom.viewport.element.classList.add("full-screen")
-    hideCursor()
+    hideControl()
     window.api.send("toggle-fullscreen", {fullscreen:isFullScreen})
 }
 
-const showCursor = () => {
+const showControl = () => {
     if(isFullScreen){
         Dom.viewport.element.classList.remove("autohide")
-        window.clearTimeout(hideCursorTimeout)
-        hideCursor();
+        window.clearTimeout(hideControlTimeout)
+        hideControl();
     }
 }
 
-const hideCursor = () => {
-    hideCursorTimeout = window.setTimeout(() => {
+const hideControl = () => {
+    hideControlTimeout = window.setTimeout(() => {
         Dom.viewport.element.classList.add("autohide")
     },2000)
 }
@@ -609,18 +615,33 @@ const load = (e:Mp.FileLoadEvent) => {
     }
 }
 
-const setTimeTrackTitle = (e:MouseEvent) => {
+const getTimeTrackHoverTime = (e:MouseEvent) => {
+    const progress = (e.clientX - sliders.Time.rect.left) / sliders.Time.rect.width;
+    return formatTime(Dom.video.element.duration * progress)
+}
+
+const showTimeTrackTooltip = (e:MouseEvent) => {
 
     if(!Dom.video.element.duration) return;
 
-    const progress = (e.offsetX) / sliders.Time.rect.width;
-    const time = formatTime(Dom.video.element.duration * progress)
-    sliders.Time.slider.title = time;
+    updateTimeTrackTooltip(e);
+    Dom.tooltip.element.style.display = "block"
 
 }
 
-const clearTimeTrackTitle = () => {
-    sliders.Time.slider.title = ""
+const updateTimeTrackTooltip = (e:MouseEvent) => {
+
+    if(!Dom.video.element.duration) return;
+
+    const time = getTimeTrackHoverTime(e);
+    Dom.tooltip.element.textContent = time;
+    Dom.tooltip.element.style.top = sliders.Time.rect.bottom + 10 + "px"
+    Dom.tooltip.element.style.left = e.clientX + 15 + "px"
+}
+
+const clearTimeTrackTooltip = () => {
+    Dom.tooltip.element.style.display = "none"
+    Dom.tooltip.element.textContent = "";
 }
 
 const prepareSliders = () => {
@@ -651,9 +672,9 @@ const prepareSliders = () => {
     }
 
 
-    sliders.Time.slider.addEventListener("mouseenter", setTimeTrackTitle)
-    sliders.Time.slider.addEventListener("mouseleave", clearTimeTrackTitle)
-    sliders.Time.slider.addEventListener("mousemove", setTimeTrackTitle)
+    sliders.Time.slider.addEventListener("mouseenter", showTimeTrackTooltip)
+    sliders.Time.slider.addEventListener("mouseleave", clearTimeTrackTooltip)
+    sliders.Time.slider.addEventListener("mousemove", showTimeTrackTooltip)
 }
 
 window.api.receive("ready", prepare)
@@ -671,16 +692,6 @@ window.api.receive("toggle-fullscreen", toggleFullscreen)
 window.api.receive("log", data => console.log(data.log))
 
 window.addEventListener("load", () => {
-    Dom.title.fill();
-    Dom.resizeBtn.fill()
-    Dom.viewport.fill();
-    Dom.video.fill()
-    Dom.container.fill()
-    Dom.buttons.fill()
-    Dom.currentTimeArea .fill()
-    Dom.durationArea.fill()
-    Dom.ampArea.fill()
-    Dom.convertState.fill()
 
     containerRect = Dom.container.element.getBoundingClientRect();
 
@@ -692,6 +703,8 @@ window.addEventListener("load", () => {
 
     Dom.container.element.addEventListener("dragover", e => e.preventDefault())
     Dom.container.element.addEventListener("drop",  onFileDrop);
+
+    Dom.footer.element.addEventListener("mouseenter", onFooterMouseEnter)
 
     prepareSliders();
 

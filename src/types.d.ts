@@ -38,6 +38,7 @@ declare global {
         "request-cancel-convert": Mp.Event;
         "rename-file": Mp.RenameRequest;
         "playlist-item-selection-change": Mp.PlaylistItemSelectionChange;
+        "open-sort-context": Mp.Position;
     }
 
     type RendererChannelEventMap = {
@@ -57,6 +58,7 @@ declare global {
         "playlist-change": Mp.PlaylistChangeEvent;
         "after-remove-playlist": Mp.RemovePlaylistItemResult;
         "clear-playlist": Mp.Event;
+        "sort-type-change": Mp.SortType;
         "after-sort": Mp.SortResult;
         "after-rename": Mp.RenameResult;
         "after-sourcefile-select": Mp.FileSelectResult;
@@ -75,6 +77,7 @@ declare global {
     const PLAYLIST_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
     const CONVERT_WINDOW_WEBPACK_ENTRY: string;
     const CONVERT_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
+    const TEST_WINDOW_WEBPACK_ENTRY: string;
 
     namespace Mp {
 
@@ -297,7 +300,7 @@ declare global {
         }
 
         type SortResult = {
-            fileIds:string[]
+            fileIds:string[];
         }
 
         type OpenConvertDialogEvent = {

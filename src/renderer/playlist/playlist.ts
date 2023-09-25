@@ -9,6 +9,7 @@ const Dom = {
     fileList:new DomElement("fileList"),
     fileListContainer:new DomElement("fileListContainer"),
     renameInput:new DomElement<HTMLInputElement>("rename"),
+    sortBtn: new DomElement("sort"),
 }
 
 const selection:Mp.PlaylistItemSelection ={
@@ -96,6 +97,10 @@ const onClick = (e:MouseEvent) => {
 
     if(e.target.id === "shuffleBtn"){
         toggleShuffle();
+    }
+
+    if(e.target.id === "sort"){
+        window.api.send("open-sort-context", {x:e.clientX, y:e.clientY})
     }
 
 }
@@ -577,16 +582,22 @@ const applyTheme = (theme:Mp.Theme) => {
     }
 }
 
+const applySortType = (sortType:Mp.SortType) => {
+    Dom.sortBtn.element.setAttribute("data-sort", sortType)
+}
+
 const onThemeChange = (e:Mp.ConfigChangeEvent) => {
     applyTheme(e.config.theme)
 }
 
 const prepare = (e:Mp.ReadyEvent) => {
     applyTheme(e.config.theme)
+    applySortType(e.config.sortType)
 }
 
 window.api.receive("ready", prepare);
 window.api.receive("change-theme", onThemeChange)
+window.api.receive("sort-type-change", applySortType)
 window.api.receive("playlist-change", addToPlaylist)
 window.api.receive("after-file-load", changeCurrent)
 window.api.receive("after-remove-playlist", removeFromPlaylist)
@@ -607,6 +618,7 @@ window.addEventListener("load", () => {
     Dom.renameInput.fill()
     Dom.renameInput.element.addEventListener("blur", endEditFileName)
     Dom.renameInput.element.addEventListener("keydown", onRenameInputKeyDown)
+    Dom.sortBtn.fill();
 
     new DomElement("closePlaylistBtn").fill().addEventListener("click", () => window.api.send("close-playlist", {}))
 
@@ -618,7 +630,6 @@ window.addEventListener("contextmenu", onContextMenu)
 
 window.addEventListener("keydown",onKeydown)
 document.addEventListener("click", onClick)
-//document.addEventListener("mousedown", onMouseDown);
 document.addEventListener("dragover", e => e.preventDefault())
 document.addEventListener("drop", onFileDrop)
 

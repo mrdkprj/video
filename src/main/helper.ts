@@ -29,9 +29,10 @@ export default class Helper{
 
     }
 
-    createPlaylistWindow(config:Mp.Config){
+    createPlaylistWindow(parent:BrowserWindow, config:Mp.Config){
 
         const playlist = new BrowserWindow({
+            parent,
             width: config.playlistBounds.width,
             height: config.playlistBounds.height,
             x:config.playlistBounds.x,
@@ -39,6 +40,7 @@ export default class Helper{
             autoHideMenuBar: true,
             show: false,
             frame:false,
+            transparent:true,
             minimizable: false,
             maximizable: false,
             fullscreenable:false,
@@ -54,9 +56,10 @@ export default class Helper{
         return playlist;
     }
 
-    createConvertWindow(){
+    createConvertWindow(parent:BrowserWindow){
 
         const convertDialog = new BrowserWindow({
+            parent,
             width:640,
             height:700,
             resizable: true,
@@ -277,11 +280,6 @@ export default class Helper{
             },
             { type: "separator" },
             {
-                label: "Sort By",
-                submenu: this.createPlaylistSortContextMenu(config, onclick)
-            },
-            { type: "separator" },
-            {
                 label: "View Metadata",
                 click: () => onclick("Metadata")
             },
@@ -299,7 +297,7 @@ export default class Helper{
         return Menu.buildFromTemplate(playlistContextTemplate);
     }
 
-    private createPlaylistSortContextMenu(config:Mp.Config, onclick: (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => void){
+    createPlaylistSortContextMenu(config:Mp.Config, onclick: (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => void){
 
         const type = "Sort"
         const playlistSortMenuTemplate:Electron.MenuItemConstructorOptions[] = [

@@ -39,7 +39,7 @@ const secondInstanceState:Mp.SecondInstanceState = {
 let mediaPlayStatus:Mp.PlayStatus;
 let doShuffle = false;
 let currentIndex = 0;
-let playlistSelection:Mp.PlaylistItemSelection;
+const playlistSelection:Mp.PlaylistItemSelection = {selectedId:"", selectedIds:[]};
 let randomIndices:number[] = [];
 
 const thumbButtonCallback = (button:Mp.ThumbButtonType) => {
@@ -119,6 +119,7 @@ const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType, args?:Mp.C
 }
 
 const playlistContext = helper.createPlaylistContextMenu(config.data, playlistContextMenuCallback)
+const sortContext = helper.createPlaylistSortContextMenu(config.data, playlistContextMenuCallback)
 
 const setSecondInstanceTimeout = () => {
     secondInstanceState.timeout = setTimeout(() => {
@@ -175,8 +176,8 @@ app.on("ready", () => {
     });
 
     Renderers.Player = helper.createMainWindow(config.data);
-    Renderers.Playlist = helper.createPlaylistWindow(config.data),
-    Renderers.Convert = helper.createConvertWindow(),
+    Renderers.Playlist = helper.createPlaylistWindow(Renderers.Player, config.data)
+    Renderers.Convert = helper.createConvertWindow(Renderers.Player)
 
     Renderers.Player.on("ready-to-show", () => {
 
@@ -197,9 +198,6 @@ app.on("ready", () => {
     Renderers.Player.on("closed", () => {
         Renderers.Player = undefined;
     });
-
-    Renderers.Playlist.setParentWindow(Renderers.Player)
-    Renderers.Convert.setParentWindow(Renderers.Player)
 
 });
 
@@ -225,6 +223,7 @@ const registerIpcChannels = () => {
     addEventHandler("close-playlist", onClosePlaylist)
     addEventHandler("playlist-item-selection-change", onPlaylistItemSelectionChange)
     addEventHandler("remove-playlist-item", onRemovePlaylistItem)
+    addEventHandler("open-sort-context", openSortContextMenu)
     addEventHandler("file-released", deleteFile)
     addEventHandler("open-playlist-context", onOpenPlaylistContext)
     addEventHandler("change-playlist-order", changePlaylistItemOrder)
@@ -568,6 +567,8 @@ const copyFileNameToClipboard = (fullPath:boolean) => {
 
 const sortPlayList = (sortType:Mp.SortType) => {
 
+    respond("Playlist", "sort-type-change", sortType)
+
     const currentFileId = getCurrentFile().id;
 
     config.data.sortType = sortType;
@@ -600,12 +601,14 @@ const displayMetadata = async () => {
 }
 
 const togglePlaylistWindow = () => {
+
     config.data.playlistVisible = !config.data.playlistVisible;
     if(config.data.playlistVisible){
         Renderers.Playlist?.show();
     }else{
         Renderers.Playlist?.hide();
     }
+
 }
 
 const openConvertDialog = () => {
@@ -643,6 +646,8 @@ const changeSeekSpeed = (seekSpeed:number) => {
 const changeProgressBar = (data:Mp.ProgressEvent) => Renderers.Player?.setProgressBar(data.progress);
 
 const openMainContextMenu = () => mainContext.popup({window:Renderers.Player});
+
+const openSortContextMenu = (e:Mp.Position) => sortContext.popup({window:Renderers.Playlist, x:e.x, y:e.y - 110})
 
 const hideConvertDialog = () => Renderers.Convert?.hide();
 
@@ -786,7 +791,8 @@ const onClosePlaylist = () => {
 }
 
 const onPlaylistItemSelectionChange = (data:Mp.PlaylistItemSelectionChange) => {
-    playlistSelection = data.selection;
+    playlistSelection.selectedId = data.selection.selectedId;
+    playlistSelection.selectedIds = data.selection.selectedIds
 }
 
 const onRemovePlaylistItem = (data:Mp.RemovePlaylistItemRequest) => {

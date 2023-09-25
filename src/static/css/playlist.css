@@ -151,3 +151,22 @@
     color: var(--primary-highlight-color);
 }
 
+.shuffle .shuffle-btn svg{
+    color: var(--primary-highlight-color);
+}
+
+#nameAsc,
+#nameDesc,
+#dateAsc,
+#dateDesc{
+    display: none;
+}
+
+#sort[data-sort=NameAsc] #nameAsc,
+#sort[data-sort=NameDesc] #nameDesc,
+#sort[data-sort=DateAsc] #dateAsc,
+#sort[data-sort=DateDesc] #dateDesc{
+    display: block;
+}
+
+
