@@ -21,6 +21,10 @@
     cursor: default;
     display: flex;
     flex-direction: column;
+    outline-width: 1px;
+    outline-style: solid;
+    outline-color: var(--menu-border-color);
+    outline-offset: -1px;
 }
 
 .playlist-title-bar{
@@ -33,7 +37,6 @@
     color: var(--menu-color);
     background-color: var(--menu-bgcolor);
     border-bottom: 1px solid var(--menu-border-color);
-    z-index: 900;
     -webkit-app-region: drag;
 }
 
@@ -96,7 +99,6 @@
 
 .draghover{
     background-color: var(--playlist-item-drag-bgcolor);
-
 }
 
 .playlist-item span{
@@ -124,7 +126,6 @@
     min-height: 30px;
     width: 100%;
     margin-top: 5px;
-    z-index: 900;
     border-top: 1px solid var(--menu-border-color);
     background-color: var(--menu-bgcolor);
     display: flex;

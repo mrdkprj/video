@@ -4,6 +4,12 @@
     height:100%;
     width: 100%;
     cursor: default;
+    outline-width: 1px;
+    outline-style: solid;
+    outline-color: var(--menu-border-color);
+    outline-offset: -1px;
+    display: flex;
+    flex-direction: column;
 }
 
 .convert-title-bar{
@@ -15,10 +21,6 @@
     color: var(--menu-color);
     background-color: var(--menu-bgcolor);
     border-bottom: 1px solid var(--menu-border-color);
-    position: fixed;
-    top: 0px;
-    left: 0px;
-    z-index: 900;
     -webkit-app-region: drag;
 }
 
@@ -40,11 +42,8 @@
 }
 
 .convert-viewport{
-    position:fixed;
-    top: 30px;
-    left: 0px;
     overflow: auto;
-    height: calc(100% - 60px);
+    flex: 1 1 auto;
     width: 100%;
     border-bottom-left-radius:15px;
     border-bottom-right-radius:15px;

@@ -7,7 +7,7 @@ import url from "url"
 import Helper from "./helper";
 import Util, {EmptyFile} from "./util";
 import Config from "./config";
-import { FORWARD, BACKWARD, videoFormats, audioFormats } from "../constants";
+import { FORWARD, BACKWARD, VideoFormats, AudioExtentions, AudioFormats } from "../constants";
 
 const locked = app.requestSingleInstanceLock(process.argv);
 
@@ -61,7 +61,7 @@ const thumbButtonCallback = (button:Mp.ThumbButtonType) => {
 
 const thumButtons = helper.createThumButtons(thumbButtonCallback)
 
-const mainContextMenuCallback = (menu:Mp.MainContextMenuType, args?:Mp.ContextMenuSubType) => {
+const playerContextMenuCallback = (menu:Mp.PlayerContextMenuType, args?:Mp.ContextMenuSubType) => {
     switch(menu){
         case "PlaybackSpeed":
             changePlaybackSpeed(Number(args));
@@ -81,10 +81,13 @@ const mainContextMenuCallback = (menu:Mp.MainContextMenuType, args?:Mp.ContextMe
         case "Theme":
             changeTheme(args as Mp.Theme);
             break;
+        case "Capture":
+            respond("Player", "capture-media", {});
+            break;
     }
 }
 
- const mainContext = helper.createMainContextMenu(config.data, mainContextMenuCallback)
+ const playerMenu = helper.createPlayerContextMenu(config.data, playerContextMenuCallback)
 
 const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => {
     switch(menu){
@@ -115,10 +118,12 @@ const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType, args?:Mp.C
         case "Sort":
             sortPlayList(args as Mp.SortType);
             break;
+        case "Rename":
+            respond("Playlist", "start-rename", {})
     }
 }
 
-const playlistContext = helper.createPlaylistContextMenu(config.data, playlistContextMenuCallback)
+const playlistMenu = helper.createPlaylistContextMenu(config.data, playlistContextMenuCallback)
 const sortContext = helper.createPlaylistSortContextMenu(config.data, playlistContextMenuCallback)
 
 const setSecondInstanceTimeout = () => {
@@ -175,7 +180,7 @@ app.on("ready", () => {
         callback(filePath);
     });
 
-    Renderers.Player = helper.createMainWindow(config.data);
+    Renderers.Player = helper.createPlayerWindow(config.data);
     Renderers.Playlist = helper.createPlaylistWindow(Renderers.Player, config.data)
     Renderers.Convert = helper.createConvertWindow(Renderers.Player)
 
@@ -216,15 +221,15 @@ const registerIpcChannels = () => {
     addEventHandler("drop", dropFiles)
     addEventHandler("load-file", onLoadRequest)
     addEventHandler("progress", changeProgressBar)
-    addEventHandler("open-main-context", openMainContextMenu)
+    addEventHandler("open-player-context", openPlayerContextMenu)
     addEventHandler("play-status-change", changePlayStatus)
     addEventHandler("reload", onReload)
-    addEventHandler("save-image", saveImage)
+    addEventHandler("save-capture", saveCapture)
     addEventHandler("close-playlist", onClosePlaylist)
     addEventHandler("playlist-item-selection-change", onPlaylistItemSelectionChange)
-    addEventHandler("remove-playlist-item", onRemovePlaylistItem)
     addEventHandler("open-sort-context", openSortContextMenu)
     addEventHandler("file-released", deleteFile)
+    addEventHandler("rename-file", renameFile);
     addEventHandler("open-playlist-context", onOpenPlaylistContext)
     addEventHandler("change-playlist-order", changePlaylistItemOrder)
     addEventHandler("toggle-play", togglePlay)
@@ -234,7 +239,7 @@ const registerIpcChannels = () => {
     addEventHandler("request-convert", startConvert)
     addEventHandler("request-cancel-convert", util.cancelConvert)
     addEventHandler("open-convert-sourcefile-dialog", openConvertSourceFileDialog)
-    addEventHandler("rename-file", renameFile)
+    addEventHandler("shortcut", onShortcut)
 }
 
 const respond = <K extends keyof RendererChannelEventMap>(rendererName:RendererName, channel:K, data:RendererChannelEventMap[K]) => {
@@ -625,7 +630,7 @@ const openConvertSourceFileDialog = (e:Mp.OpenFileDialogRequest) => {
         title: "Select file to convert",
         defaultPath: e.fullPath,
         filters: [
-            { name: "Media File", extensions: videoFormats.concat(audioFormats) },
+            { name: "Media File", extensions: VideoFormats.concat(AudioFormats) },
         ],
         properties: ["openFile", "multiSelections"]
     })
@@ -645,13 +650,17 @@ const changeSeekSpeed = (seekSpeed:number) => {
 
 const changeProgressBar = (data:Mp.ProgressEvent) => Renderers.Player?.setProgressBar(data.progress);
 
-const openMainContextMenu = () => mainContext.popup({window:Renderers.Player});
+const openPlayerContextMenu = () => playerMenu.popup({window:Renderers.Player});
 
 const openSortContextMenu = (e:Mp.Position) => sortContext.popup({window:Renderers.Playlist, x:e.x, y:e.y - 110})
 
 const hideConvertDialog = () => Renderers.Convert?.hide();
 
-const saveImage = (data:Mp.SaveImageRequet) => {
+const saveCapture = async (data:Mp.CaptureEvent) => {
+
+    const file = getCurrentFile();
+
+    if(!file.id || AudioExtentions.includes(file.extension)) return;
 
     if(!Renderers.Player) return;
 
@@ -795,13 +804,7 @@ const onPlaylistItemSelectionChange = (data:Mp.PlaylistItemSelectionChange) => {
     playlistSelection.selectedIds = data.selection.selectedIds
 }
 
-const onRemovePlaylistItem = (data:Mp.RemovePlaylistItemRequest) => {
-    removeFromPlaylist(data.selectedIds);
-}
-
-const onOpenPlaylistContext = () => {
-    playlistContext.popup({window:Renderers.Playlist})
-}
+const onOpenPlaylistContext = () => playlistMenu.popup({window:Renderers.Playlist})
 
 const onToggleShuffle = () => {
     doShuffle = !doShuffle;
@@ -818,5 +821,15 @@ const onToggleFullscreen = (e:Mp.FullscreenChange) => {
         Renderers.Player?.setFullScreen(false)
         if(config.data.playlistVisible) Renderers.Playlist?.show();
         Renderers.Player?.focus();
+    }
+}
+
+const onShortcut = (e:Mp.ShortcutEvent) => {
+    if(e.renderer === "Player"){
+        playerContextMenuCallback(e.menu as Mp.PlayerContextMenuType)
+    }
+
+    if(e.renderer === "Playlist"){
+        playlistContextMenuCallback(e.menu as Mp.PlaylistContextMenuType)
     }
 }

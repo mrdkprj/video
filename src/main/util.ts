@@ -2,7 +2,7 @@ import fs from "fs"
 import path from "path";
 import crypto from "crypto"
 import ffmpeg from "fluent-ffmpeg"
-import { resolutions, rotations } from "../constants";
+import { Resolutions, Rotations } from "../constants";
 
 export const EmptyFile:Mp.MediaFile = {
     id:"",
@@ -234,8 +234,8 @@ export default class Util{
 
         const metadata = await this.getMediaMetadata(sourcePath);
 
-        const size = resolutions[options.frameSize] ? resolutions[options.frameSize] : await this.getSize(metadata)
-        const rotation = rotations[options.rotation] ? `transpose=${rotations[options.rotation]}` : "";
+        const size = Resolutions[options.frameSize] ? Resolutions[options.frameSize] : await this.getSize(metadata)
+        const rotation = Rotations[options.rotation] ? `transpose=${Rotations[options.rotation]}` : "";
 
         const bit_rate = metadata.streams[1].bit_rate;
         if(!bit_rate) throw new Error("No audio bitrate detected")

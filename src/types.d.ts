@@ -17,16 +17,16 @@ declare global {
         "minimize": Mp.Event;
         "toggle-maximize": Mp.Event;
         "close": Mp.CloseRequest;
+        "shortcut": Mp.ShortcutEvent;
         "drop": Mp.DropRequest;
         "load-file": Mp.LoadFileRequest;
         "progress": Mp.ProgressEvent;
-        "open-main-context": Mp.Event;
+        "open-player-context": Mp.Event;
         "play-status-change": Mp.ChangePlayStatusRequest;
         "reload": Mp.Event;
-        "save-image": Mp.SaveImageRequet;
+        "save-capture": Mp.CaptureEvent;
         "close-playlist": Mp.Event;
         "file-released": Mp.ReleaseFileRequest;
-        "remove-playlist-item": Mp.RemovePlaylistItemRequest;
         "open-playlist-context": Mp.Event;
         "change-playlist-order": Mp.ChangePlaylistOrderRequet;
         "toggle-play": Mp.Event;
@@ -48,6 +48,7 @@ declare global {
         "toggle-fullscreen": Mp.Event;
         "change-theme": Mp.ConfigChangeEvent;
         "change-display-mode": Mp.ConfigChangeEvent;
+        "capture-media": Mp.Event;
         "restart": Mp.Event;
         "release-file": Mp.ReleaseFileRequest;
         "log": Mp.Logging;
@@ -60,6 +61,7 @@ declare global {
         "clear-playlist": Mp.Event;
         "sort-type-change": Mp.SortType;
         "after-sort": Mp.SortResult;
+        "start-rename":Mp.Event;
         "after-rename": Mp.RenameResult;
         "after-sourcefile-select": Mp.FileSelectResult;
         "open-convert": Mp.OpenConvertDialogEvent;
@@ -84,8 +86,8 @@ declare global {
         type Theme = "dark" | "light";
         type ConvertFormat = "MP4" | "MP3"
         type ThumbButtonType = "Play" | "Pause" | "Previous" | "Next"
-        type MainContextMenuType = "PlaybackSpeed" | "SeekSpeed" | "TogglePlaylistWindow" | "FitToWindow" | "ToggleFullscreen" | "Theme"
-        type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "CopyFullpath" | "Reveal" | "Metadata" | "Convert" | "Sort"
+        type PlayerContextMenuType = "PlaybackSpeed" | "SeekSpeed" | "TogglePlaylistWindow" | "FitToWindow" | "ToggleFullscreen" | "Theme" | "Capture"
+        type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "CopyFullpath" | "Reveal" | "Metadata" | "Convert" | "Sort" | "Rename"
         type PlaybackSpeed = 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2;
         type SeekSpeed = 0.03 | 0.05 | 0.1 | 0.5 | 1 | 5 | 10 | 20;
         type SortType = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
@@ -101,6 +103,11 @@ declare global {
         type SecondInstanceState = {
             timeout:NodeJS.Timeout | undefined;
             requireInitPlaylist:boolean;
+        }
+
+        type ShortcutEvent = {
+            renderer:RendererName;
+            menu: PlayerContextMenuType | PlaylistContextMenuType
         }
 
         type Bounds = {
@@ -258,7 +265,7 @@ declare global {
             file:MediaFile;
         }
 
-        type SaveImageRequet = {
+        type CaptureEvent = {
             data:string;
             timestamp:number;
         }
@@ -281,12 +288,20 @@ declare global {
             selectedIds:string[]
         }
 
+        type TrashPlaylistItemRequest = {
+            selectedIds:string[]
+        }
+
         type RemovePlaylistItemResult = {
             removedFileIds:string[]
         }
 
         type ReleaseFileRequest = {
             fileIds:string[];
+        }
+
+        type CopyRequest = {
+            fullpath:boolean;
         }
 
         type RenameRequest = {

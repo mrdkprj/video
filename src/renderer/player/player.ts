@@ -1,5 +1,6 @@
 import { DomElement } from "../dom"
 import { FORWARD, BACKWARD } from "../../constants";
+import { handleShortcut } from "../shortcut";
 
 const Dom = {
     title: new DomElement("title"),
@@ -133,7 +134,7 @@ const onKeydown = (e:KeyboardEvent) => {
 
     if(e.ctrlKey && e.key === "r") e.preventDefault();
 
-    if(e.key === "F5") window.api.send("reload", {});
+    if(e.key === "F5") return window.api.send("reload", {});
 
     if(e.key === "ArrowRight"){
 
@@ -144,6 +145,8 @@ const onKeydown = (e:KeyboardEvent) => {
         }else{
             playFoward(0);
         }
+
+        return
     }
 
     if(e.key === "ArrowLeft"){
@@ -155,39 +158,35 @@ const onKeydown = (e:KeyboardEvent) => {
         }else{
             playBackward(0);
         }
+
+        return
     }
 
     if(e.key === "ArrowUp"){
-
         showControl();
         updateVolume(mediaState.videoVolume + 0.01)
+        return
     }
 
     if(e.key === "ArrowDown"){
         showControl();
         updateVolume(mediaState.videoVolume - 0.01)
-    }
-
-    if(e.key === "F11"){
-        e.preventDefault();
-        toggleFullscreen();
+        return
     }
 
     if(e.key === "Escape"){
-        exitFullscreen();
-    }
-
-    if(e.key === "p"){
-        captureScreen();
+        return exitFullscreen();
     }
 
     if(e.ctrlKey && e.key === "m"){
-        toggleMute();
+        return toggleMute();
     }
 
     if(e.key === "Enter"){
-        togglePlay();
+        return togglePlay();
     }
+
+    return handleShortcut("Player", e);
 }
 
 const onResize = () => {
@@ -201,7 +200,7 @@ const onResize = () => {
 const onContextMenu = (e:MouseEvent) => {
     if((e.target as HTMLElement).classList.contains("media")){
         e.preventDefault()
-        window.api.send("open-main-context", {})
+        window.api.send("open-player-context", {})
     }
 }
 
@@ -463,20 +462,23 @@ const changeSeekSpeed = (data:Mp.ChangeSeekSpeedRequest) => {
     mediaState.seekSpeed = data.seekSpeed;
 }
 
-const captureScreen = () => {
+const captureMedia = () => {
+
+    if(!Dom.video.element.duration) return;
+
     const canvas = document.createElement("canvas");
-    const width = parseInt(Dom.video.element.style.width.replace("px", ""));
-    const height = parseInt(Dom.video.element.style.height.replace("px", ""));
-    canvas.width = width;
-    canvas.height = height;
+    const rect = Dom.video.element.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
 
     const context = canvas.getContext("2d");
     if(context){
-        context.drawImage(Dom.video.element, 0, 0, width, height);
+        context.drawImage(Dom.video.element, 0, 0, rect.width, rect.height);
     }
     const image = canvas.toDataURL("image/jpeg").replace(/^data:image\/jpeg;base64,/, "");
 
-    window.api.send("save-image", {data:image, timestamp:Dom.video.element.currentTime})
+    window.api.send("save-capture", {data:image, timestamp:Dom.video.element.currentTime})
+
 }
 
 const toggleMute = () => {
@@ -646,28 +648,28 @@ const clearTimeTrackTooltip = () => {
 
 const prepareSliders = () => {
     sliders.Time = {
-        slider: new DomElement("time").fill(),
-        track: new DomElement("timeTrack").fill(),
-        thumb: new DomElement("timeThumb").fill(),
-        rect: new DomElement("time").fill().getBoundingClientRect(),
+        slider: new DomElement("time").element,
+        track: new DomElement("timeTrack").element,
+        thumb: new DomElement("timeThumb").element,
+        rect: new DomElement("time").element.getBoundingClientRect(),
         handler: updateTime,
     }
 
     sliders.Volume = {
-        slider:new DomElement("volume").fill(),
-        track:new DomElement("volumeTrack").fill(),
-        thumb:new DomElement("volumeThumb").fill(),
-        rect: new DomElement("volume").fill().getBoundingClientRect(),
-        trackValue:new DomElement("volumeValue").fill(),
+        slider:new DomElement("volume").element,
+        track:new DomElement("volumeTrack").element,
+        thumb:new DomElement("volumeThumb").element,
+        rect: new DomElement("volume").element.getBoundingClientRect(),
+        trackValue:new DomElement("volumeValue").element,
         handler:updateVolume
     }
 
     sliders.Amp = {
-        slider:new DomElement("amp").fill(),
-        track:new DomElement("ampTrack").fill(),
-        thumb:new DomElement("ampThumb").fill(),
-        rect: new DomElement("amp").fill().getBoundingClientRect(),
-        trackValue:new DomElement("ampValue").fill(),
+        slider:new DomElement("amp").element,
+        track:new DomElement("ampTrack").element,
+        thumb:new DomElement("ampThumb").element,
+        rect: new DomElement("amp").element.getBoundingClientRect(),
+        trackValue:new DomElement("ampValue").element,
         handler:updateAmpLevel
     }
 
@@ -689,6 +691,7 @@ window.api.receive("toggle-convert", toggleConvert)
 window.api.receive("change-playback-speed", changePlaybackSpeed)
 window.api.receive("change-seek-speed", changeSeekSpeed);
 window.api.receive("toggle-fullscreen", toggleFullscreen)
+window.api.receive("capture-media", captureMedia)
 window.api.receive("log", data => console.log(data.log))
 
 window.addEventListener("load", () => {

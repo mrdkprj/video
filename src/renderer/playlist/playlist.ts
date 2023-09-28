@@ -1,4 +1,5 @@
 import { DomElement } from "../dom"
+import { handleShortcut } from "../shortcut";
 
 const List_Item_Padding = 10;
 
@@ -48,42 +49,30 @@ const onContextMenu = (e:MouseEvent) => {
 
 const onKeydown = (e:KeyboardEvent) => {
 
-    if(e.ctrlKey && e.key === "r") e.preventDefault();
-
     if(RenameState.renaming) return;
 
     if(e.key === "Enter"){
-        window.api.send("toggle-play", {})
-    }
-
-    if(selection.selectedIds.length > 0){
-
-        if(e.key === "Delete"){
-            window.api.send("remove-playlist-item", {selectedIds:selection.selectedIds})
-        }
+        return window.api.send("toggle-play", {})
     }
 
     if(e.ctrlKey && e.key === "a"){
-        selectAll();
-    }
-
-    if(e.key == "F2"){
-        startEditFileName()
+        return selectAll();
     }
 
     if(e.ctrlKey && e.key === "z"){
-        undoRename();
+        return undoRename();
     }
 
     if(e.ctrlKey && e.key === "y"){
-        redoRename();
+        return redoRename();
     }
 
     if(e.key === "ArrowUp" || e.key === "ArrowDown"){
         e.preventDefault();
-        moveSelection(e.key);
+        return moveSelection(e.key);
     }
 
+    return handleShortcut("Playlist", e);
 }
 
 const onRenameInputKeyDown = (e:KeyboardEvent) => {
@@ -207,7 +196,7 @@ const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
 
 const removeFromPlaylist = (data:Mp.RemovePlaylistItemResult) => {
     clearSelection();
-    const targetNodes = data.removedFileIds.map(id => new DomElement(id).fill())
+    const targetNodes = data.removedFileIds.map(id => new DomElement(id).element)
     targetNodes.forEach(node => {
         if(currentElement && node.id === currentElement.id){
             currentElement = undefined;
@@ -276,7 +265,7 @@ const clearPlaylist = () => {
 }
 
 const clearSelection = () => {
-    selection.selectedIds.forEach(id => new DomElement(id).fill().classList.remove("selected"))
+    selection.selectedIds.forEach(id => new DomElement(id).element.classList.remove("selected"))
     selection.selectedIds.length = 0;
     window.api.send("playlist-item-selection-change", {selection})
 }
@@ -301,7 +290,7 @@ const select = (target:HTMLElement | string) => {
 
     clearSelection();
 
-    const targetElement = typeof target === "string" ? new DomElement(target).fill() : target;
+    const targetElement = typeof target === "string" ? new DomElement(target).element : target;
 
     selectedElement = targetElement;
 
@@ -379,9 +368,9 @@ const moveSelection = (key:string) => {
 
     let nextId;
     if(key === "ArrowDown"){
-        nextId = new DomElement(currentId).fill().nextElementSibling?.id
+        nextId = new DomElement(currentId).element.nextElementSibling?.id
     }else{
-        nextId = new DomElement(currentId).fill().previousElementSibling?.id
+        nextId = new DomElement(currentId).element.previousElementSibling?.id
     }
 
     if(!nextId) return;
@@ -423,7 +412,7 @@ const changeCurrent = (data:Mp.FileLoadEvent) => {
     }
 
     if(data.currentFile.id){
-        currentElement = new DomElement(data.currentFile.id).fill();
+        currentElement = new DomElement(data.currentFile.id).element;
         currentElement.classList.add("current");
         select(data.currentFile.id)
     }
@@ -603,24 +592,18 @@ window.api.receive("after-file-load", changeCurrent)
 window.api.receive("after-remove-playlist", removeFromPlaylist)
 window.api.receive("after-sort", onAfterSort)
 window.api.receive("after-rename", onRename);
+window.api.receive("start-rename", startEditFileName)
 window.api.receive("restart", onReset)
 window.api.receive("clear-playlist", clearPlaylist)
 
 window.addEventListener("load", () => {
 
-    Dom.playlist.fill()
-    Dom.playlistTitleBar.fill()
-    Dom.playlistFooter.fill()
-    Dom.fileList.fill()
-    Dom.fileListContainer.fill()
     Dom.fileListContainer.element.addEventListener("mousedown", onMouseDown)
     fileListContainerRect = Dom.fileListContainer.element.getBoundingClientRect();
-    Dom.renameInput.fill()
     Dom.renameInput.element.addEventListener("blur", endEditFileName)
     Dom.renameInput.element.addEventListener("keydown", onRenameInputKeyDown)
-    Dom.sortBtn.fill();
 
-    new DomElement("closePlaylistBtn").fill().addEventListener("click", () => window.api.send("close-playlist", {}))
+    new DomElement("closePlaylistBtn").element.addEventListener("click", () => window.api.send("close-playlist", {}))
 
     window.addEventListener("resize", onResize)
 

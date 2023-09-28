@@ -1,5 +1,5 @@
 
-export const videoFormats = [
+export const VideoFormats = [
     "mp4",
     "mov",
     "avi",
@@ -8,7 +8,7 @@ export const videoFormats = [
     "flv"
 ]
 
-export const videoExtentions = [
+export const VideoExtentions = [
     ".mp4",
     ".mov",
     ".avi",
@@ -17,19 +17,19 @@ export const videoExtentions = [
     ".flv"
 ]
 
-export const audioFormats = [
+export const AudioFormats = [
     "wav",
     "mp3",
     "webm",
 ]
 
-export const audioExtentions = [
+export const AudioExtentions = [
     ".wav",
     ".mp3",
     ".webm",
 ]
 
-export const resolutions = {
+export const Resolutions = {
     "SizeNone": "",
     "360p":"480x360",
     "480p":"640x480",
@@ -37,7 +37,7 @@ export const resolutions = {
     "1080p":"1920x1080",
 }
 
-export const rotations = {
+export const Rotations = {
     "RotationNone": 0,
     "90Clockwise": 1,
     "90CounterClockwise":2

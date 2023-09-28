@@ -1,5 +1,5 @@
 import { DomElement } from "../dom"
-import { audioExtentions } from "../../constants";
+import { AudioExtentions } from "../../constants";
 
 const Dom = {
     viewport: new DomElement("viewport"),
@@ -49,7 +49,7 @@ const closeDialog = () => {
 
 const setFile = (file:Mp.MediaFile) => {
     Dom.srcFileInput.element.value = file.fullPath
-    changeFormat(audioExtentions.includes(file.extension) ? "MP3" : "MP4")
+    changeFormat(AudioExtentions.includes(file.extension) ? "MP3" : "MP4")
     toggleFormatOption(file);
 }
 
@@ -71,7 +71,7 @@ const changeFormat = (format:Mp.ConvertFormat) => {
 }
 
 const toggleFormatOption = (file:Mp.MediaFile) => {
-    if(audioExtentions.includes(file.extension)){
+    if(AudioExtentions.includes(file.extension)){
         Dom.videoRadio.element.disabled = true;
     }else{
         Dom.videoRadio.element.disabled = false;
@@ -147,7 +147,6 @@ const onThemeChange = (e:Mp.ConfigChangeEvent) => {
 }
 
 const prepare = (e:Mp.ReadyEvent) => {
-    console.log("sdf")
     applyTheme(e.config.theme)
 }
 
@@ -158,17 +157,6 @@ window.api.receive("after-convert", onAfterConvert)
 window.api.receive("after-sourcefile-select", onSourceFileSelect)
 
 window.onload = () => {
-    Dom.viewport.fill();
-    Dom.srcFileInput.fill();
-    Dom.srcFileSelectBtn.fill();
-    Dom.videoRadio.fill();
-    Dom.audioRadio.fill();
-    Dom.maxVolumeCheckbox.fill();
-    Dom.volumeInput.fill();
-    Dom.volumeLabel.fill();
-    Dom.convertBtn.fill();
-    Dom.cancelBtn.fill();
-    Dom.message.fill();
 
     Dom.maxVolumeCheckbox.element.addEventListener("change", onMaxVolumeChange)
     Dom.volumeInput.element.addEventListener("input", onVolumeChange)

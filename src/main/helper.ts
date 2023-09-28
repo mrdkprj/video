@@ -1,12 +1,11 @@
 import { BrowserWindow, Menu, nativeImage } from "electron"
-//import { BrowserWindow, nativeImage } from "electron"
 import path from "path"
 //./ffmpeg.exe -i input.mp4 -metadata comment="The video titile" -c copy output.mp4
 export default class Helper{
 
-    createMainWindow(config:Mp.Config){
+    createPlayerWindow(config:Mp.Config){
 
-        const mainWindow = new BrowserWindow({
+        const window = new BrowserWindow({
             width: config.bounds.width,
             height: config.bounds.height,
             x:config.bounds.x,
@@ -23,15 +22,15 @@ export default class Helper{
             },
         });
 
-        mainWindow.loadURL(PLAYER_WINDOW_WEBPACK_ENTRY);
+        window.loadURL(PLAYER_WINDOW_WEBPACK_ENTRY);
 
-        return mainWindow
+        return window
 
     }
 
     createPlaylistWindow(parent:BrowserWindow, config:Mp.Config){
 
-        const playlist = new BrowserWindow({
+        const window = new BrowserWindow({
             parent,
             width: config.playlistBounds.width,
             height: config.playlistBounds.height,
@@ -51,14 +50,14 @@ export default class Helper{
             },
         })
 
-        playlist.loadURL(PLAYLIST_WINDOW_WEBPACK_ENTRY);
+        window.loadURL(PLAYLIST_WINDOW_WEBPACK_ENTRY);
 
-        return playlist;
+        return window;
     }
 
     createConvertWindow(parent:BrowserWindow){
 
-        const convertDialog = new BrowserWindow({
+        const window = new BrowserWindow({
             parent,
             width:640,
             height:700,
@@ -77,13 +76,13 @@ export default class Helper{
             },
         })
 
-        convertDialog.loadURL(CONVERT_WINDOW_WEBPACK_ENTRY);
+        window.loadURL(CONVERT_WINDOW_WEBPACK_ENTRY);
 
-        return convertDialog;
+        return window;
     }
 
-    createMainContextMenu(config:Mp.Config, onclick: (menu:Mp.MainContextMenuType, args?:any) => void){
-        const mainContextTemplate:Electron.MenuItemConstructorOptions[] = [
+    createPlayerContextMenu(config:Mp.Config, onclick: (menu:Mp.PlayerContextMenuType, args?:any) => void){
+        const template:Electron.MenuItemConstructorOptions[] = [
             {
                 label: "Playback Speed",
                 submenu: this.playbackSpeedMenu(onclick)
@@ -100,25 +99,33 @@ export default class Helper{
             },
             { type: 'separator' },
             {
-                label: "Open/Hide Playlist",
+                label: "Playlist",
+                accelerator: "CmdOrCtrl+P",
                 click: () => onclick("TogglePlaylistWindow")
             },
             {
                 label: "Toggle Fullscreen",
+                accelerator:"F11",
                 click: () => onclick("ToggleFullscreen"),
             },
             {
                 label: "Theme",
                 submenu:this.themeMenu(config, onclick)
             },
+            { type: 'separator' },
+            {
+                label: "Capture",
+                accelerator: "CmdOrCtrl+S",
+                click: () => onclick("Capture"),
+            },
         ]
 
-        return Menu.buildFromTemplate(mainContextTemplate)
+        return Menu.buildFromTemplate(template)
     }
 
-    private themeMenu(config:Mp.Config, onclick: (menu:Mp.MainContextMenuType, args?:Mp.ContextMenuSubType) => void){
+    private themeMenu(config:Mp.Config, onclick: (menu:Mp.PlayerContextMenuType, args?:Mp.ContextMenuSubType) => void){
         const type = "Theme"
-        const contextTemplate:Electron.MenuItemConstructorOptions[] = [
+        const template:Electron.MenuItemConstructorOptions[] = [
             {
                 id: "themeLight",
                 label:"Light",
@@ -135,13 +142,13 @@ export default class Helper{
             },
         ]
 
-        return Menu.buildFromTemplate(contextTemplate);
+        return Menu.buildFromTemplate(template);
     }
 
-    private playbackSpeedMenu(onclick: (menu:Mp.MainContextMenuType, args?:Mp.ContextMenuSubType) => void){
+    private playbackSpeedMenu(onclick: (menu:Mp.PlayerContextMenuType, args?:Mp.ContextMenuSubType) => void){
 
         const type = "PlaybackSpeed"
-        const contextTemplate:Electron.MenuItemConstructorOptions[] = [
+        const template:Electron.MenuItemConstructorOptions[] = [
             {
                 id: "playbackrate0",
                 label:"0.25",
@@ -193,13 +200,13 @@ export default class Helper{
             },
         ]
 
-        return Menu.buildFromTemplate(contextTemplate);
+        return Menu.buildFromTemplate(template);
     }
 
-    private seekSpeedMenu(onclick: (menu:Mp.MainContextMenuType, args?:Mp.ContextMenuSubType) => void){
+    private seekSpeedMenu(onclick: (menu:Mp.PlayerContextMenuType, args?:Mp.ContextMenuSubType) => void){
 
         const type = "SeekSpeed"
-        const contextTemplate:Electron.MenuItemConstructorOptions[] = [
+        const template:Electron.MenuItemConstructorOptions[] = [
             {
                 id: "seekspeed0",
                 label:"0.03sec",
@@ -251,32 +258,42 @@ export default class Helper{
             },
         ]
 
-        return Menu.buildFromTemplate(contextTemplate);
+        return Menu.buildFromTemplate(template);
     }
 
     createPlaylistContextMenu(config:Mp.Config, onclick: (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => void){
 
-        const playlistContextTemplate:Electron.MenuItemConstructorOptions[] = [
+        const template:Electron.MenuItemConstructorOptions[] = [
             {
                 label: "Remove",
+                accelerator: "Delete",
                 click: () => onclick("Remove")
             },
             {
                 label: "Trash",
+                accelerator: "Shift+Delete",
                 click: () => onclick("Trash")
             },
             { type: "separator" },
             {
                 label: "Copy Name",
+                accelerator: "CmdOrCtrl+C",
                 click: () => onclick("CopyFileName")
             },
             {
                 label: "Copy Full Path",
+                accelerator: "CmdOrCtrl+Shift+C",
                 click: () => onclick("CopyFullpath")
             },
             {
                 label: "Reveal in File Explorer",
+                accelerator: "CmdOrCtrl+R",
                 click: () => onclick("Reveal")
+            },
+            {
+                label: "Rename",
+                accelerator: "F2",
+                click: () => onclick("Rename")
             },
             { type: "separator" },
             {
@@ -294,13 +311,13 @@ export default class Helper{
             },
         ]
 
-        return Menu.buildFromTemplate(playlistContextTemplate);
+        return Menu.buildFromTemplate(template);
     }
 
     createPlaylistSortContextMenu(config:Mp.Config, onclick: (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => void){
 
         const type = "Sort"
-        const playlistSortMenuTemplate:Electron.MenuItemConstructorOptions[] = [
+        const template:Electron.MenuItemConstructorOptions[] = [
             {
                 id: "NameAsc",
                 label: "Name(Asc)",
@@ -331,7 +348,7 @@ export default class Helper{
             },
         ]
 
-        return Menu.buildFromTemplate(playlistSortMenuTemplate);
+        return Menu.buildFromTemplate(template);
     }
 
     createThumButtons(onclick: (button:Mp.ThumbButtonType) => void){
