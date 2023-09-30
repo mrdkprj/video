@@ -150,7 +150,12 @@ const afterSecondInstance = () => {
     if(Renderers.Player.isFullScreen()){
         respond("Player", "toggle-fullscreen", {})
     }
+
     Renderers.Player.show();
+
+    if(config.data.isMaximized){
+        Renderers.Player.maximize();
+    }
 }
 
 app.on("second-instance", (_event:Event, _argv:string[], _workingDirectory:string, additionalData:string[]) => {

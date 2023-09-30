@@ -20,12 +20,12 @@ build({
                 {
                     "ext": ["mp4","mov","avi","wmv","webm","flv"],
                     "icon": "src/static/img/icon.ico",
-                    "description": "Video File",
+                    //"description": "Video File",
                 },
                 {
                     "ext": "mp3",
                     "icon": "src/static/img/icon_audio.ico",
-                    "description": "Audio File"
+                    //"description": "Audio File"
                 },
 
             ]
@@ -38,12 +38,12 @@ build({
                 {
                     "ext": "mp4",
                     //"icon": "src/static/img/icon.ico",
-                    "description": "Video File",
+                    //"description": "Video File",
                   },
                   {
-                      "ext": "mp3",
-                      //"icon": "src/static/img/icon_audio.ico",
-                      "description": "Audio File"
+                    "ext": "mp3",
+                    //"icon": "src/static/img/icon_audio.ico",
+                    //"description": "Audio File"
                   }
             ]
         },
