@@ -742,10 +742,10 @@ const startConvert = async (data:Mp.ConvertRequest) => {
 const endConvert = (message?:string) => {
 
     if(message){
-        respond("Convert", "after-convert", {success:false, message})
-    }else{
-        respond("Convert", "after-convert", {success:true})
+        showErrorMessage(message)
     }
+
+    respond("Convert", "after-convert", {})
 
 }
 

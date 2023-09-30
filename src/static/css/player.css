@@ -264,6 +264,10 @@
     background-color: var(--slider-bgcolor);
 }
 
+.full-screen .slider{
+    background-color: var(--fullscreen-slider-bgcolor);
+}
+
 .slider.sliding,
 .slider:hover{
     height:6px;
@@ -385,11 +389,11 @@
     width: 45px;
     color: var(--slider-track-value-color);
 }
-
+/*
 .full-screen .track-value{
     color: var(--fullscreen-primary-color);
 }
-
+*/
 .canvas{
     display: none;
 }

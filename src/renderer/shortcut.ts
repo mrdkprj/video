@@ -23,6 +23,7 @@ const handlePlayerShortcut = (e:KeyboardEvent) => {
     if(e.ctrlKey && e.key === "p"){
         return window.api.send("shortcut", {renderer:"Player", menu:"TogglePlaylistWindow"})
     }
+
 }
 
 const handlePlaylistShortcut = (e:KeyboardEvent) => {

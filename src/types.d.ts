@@ -65,7 +65,7 @@ declare global {
         "after-rename": Mp.RenameResult;
         "after-sourcefile-select": Mp.FileSelectResult;
         "open-convert": Mp.OpenConvertDialogEvent;
-        "after-convert": Mp.ConvertResult;
+        "after-convert": Mp.Event;
     }
 
     interface Api {
@@ -326,11 +326,6 @@ declare global {
             sourcePath:string;
             convertFormat:ConvertFormat;
             options:ConvertOptions;
-        }
-
-        type ConvertResult = {
-            success:boolean;
-            message?:string;
         }
 
         type FileSelectResult = {

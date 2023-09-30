@@ -24,12 +24,6 @@
     -webkit-app-region: drag;
 }
 
-.status{
-    flex: 1 1 auto;
-    margin-left: 10px;
-    font-family: var(--font);
-}
-
 .convert-close-btn{
     position: absolute;
     top:0;
@@ -172,7 +166,7 @@
 }
 
 .option-area input:checked + label {
-    background-color: var(--radio-checked-color);
+    background-color: var(--primary-highlight-color);
     font-weight: 500;
     color: var(--primary-forecolor);
 }
@@ -195,8 +189,9 @@ button{
     padding: 5px 30px;
 }
 
-button:hover{
-    background-color: var(--button-hover-color);
+button:not([disabled]):hover{
+    background-color: var(--secondary-highlight-color);
+    color: var(--secondary-forecolor);
 }
 
 input[type=radio]:disabled + label{

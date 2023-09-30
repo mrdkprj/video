@@ -12,7 +12,6 @@ const Dom = {
     volumeLabel: new DomElement("volumeLabel"),
     convertBtn: new DomElement<HTMLButtonElement>("convertBtn"),
     cancelBtn: new DomElement<HTMLButtonElement>("cancelBtn"),
-    message: new DomElement("message"),
 }
 
 let convertFormat:Mp.ConvertFormat = "MP4";
@@ -96,8 +95,6 @@ const requestConvert = () => {
 
     lock();
 
-    Dom.message.element.textContent = ""
-
     const args:Mp.ConvertRequest = {
         sourcePath:Dom.srcFileInput.element.value,
         convertFormat,
@@ -117,16 +114,7 @@ const requestCancelConvert = () => {
     window.api.send("request-cancel-convert", {})
 }
 
-const onAfterConvert = (data:Mp.ConvertResult) => {
-
-    unlock();
-
-    if(data.success){
-        Dom.message.element.textContent = "Done"
-    }else{
-        Dom.message.element.textContent = `Error - ${data.message}`
-    }
-}
+const onAfterConvert = () => unlock();
 
 const onSourceFileSelect = (data:Mp.FileSelectResult) => {
     setFile(data.file)
