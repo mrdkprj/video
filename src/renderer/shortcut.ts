@@ -28,6 +28,7 @@ const handlePlayerShortcut = (e:KeyboardEvent) => {
 
 const handlePlaylistShortcut = (e:KeyboardEvent) => {
 
+
     if(e.key === "Delete"){
         return window.api.send("shortcut", {renderer:"Playlist", menu:"Remove"})
     }
@@ -36,7 +37,7 @@ const handlePlaylistShortcut = (e:KeyboardEvent) => {
         return window.api.send("shortcut", {renderer:"Playlist", menu:"Trash"})
     }
 
-    if(e.ctrlKey && e.shiftKey && e.key === "c"){
+    if(e.ctrlKey && e.shiftKey && e.key === "C"){
         return window.api.send("shortcut", {renderer:"Playlist", menu:"CopyFullpath"})
     }
 
