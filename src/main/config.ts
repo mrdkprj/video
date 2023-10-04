@@ -23,7 +23,8 @@ const defaultConfig :Mp.Config = {
     },
     path:{
         captureDestDir:"",
-        convertDestDir:""
+        convertDestDir:"",
+        playlistDestDir:"",
     }
 }
 

@@ -39,6 +39,7 @@ declare global {
         "rename-file": Mp.RenameRequest;
         "playlist-item-selection-change": Mp.PlaylistItemSelectionChange;
         "open-sort-context": Mp.Position;
+        "error": Mp.ErrorEvent;
     }
 
     type RendererChannelEventMap = {
@@ -66,6 +67,7 @@ declare global {
         "after-sourcefile-select": Mp.FileSelectResult;
         "open-convert": Mp.OpenConvertDialogEvent;
         "after-convert": Mp.Event;
+        "picture-in-picture":Mp.Event;
     }
 
     interface Api {
@@ -86,13 +88,14 @@ declare global {
         type Theme = "dark" | "light";
         type ConvertFormat = "MP4" | "MP3"
         type ThumbButtonType = "Play" | "Pause" | "Previous" | "Next"
-        type PlayerContextMenuType = "PlaybackSpeed" | "SeekSpeed" | "TogglePlaylistWindow" | "FitToWindow" | "ToggleFullscreen" | "Theme" | "Capture"
-        type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "CopyFullpath" | "Reveal" | "Metadata" | "Convert" | "Sort" | "Rename"
+        type PlayerContextMenuType = "PlaybackSpeed" | "SeekSpeed" | "TogglePlaylistWindow" | "FitToWindow" | "ToggleFullscreen" | "Theme" | "Capture" | "PictureInPicture"
+        type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "CopyFullpath" | "Reveal" | "Metadata" | "Convert" | "Sort" | "Rename" | "LoadList" | "SaveList"
         type PlaybackSpeed = 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2;
         type SeekSpeed = 0.03 | 0.05 | 0.1 | 0.5 | 1 | 5 | 10 | 20;
         type SortType = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
+        type FileDialogType = "Read" | "Write";
 
-        type ContextMenuSubType = PlaybackSpeed | SeekSpeed | SortType | Theme
+        type ContextMenuSubType = PlaybackSpeed | SeekSpeed | SortType | Theme | FileDialogType
 
         type VideoFrameSize = "SizeNone" | "360p" | "480p" | "720p" | "1080p";
         type VideoRotation = "RotationNone" | "90Clockwise" | "90CounterClockwise"
@@ -142,6 +145,7 @@ declare global {
             path:{
                 captureDestDir:string;
                 convertDestDir:string;
+                playlistDestDir:string;
             }
         }
 
@@ -338,6 +342,10 @@ declare global {
 
         type OpenFileDialogRequest = {
             fullPath:string;
+        }
+
+        type ErrorEvent = {
+            message:string;
         }
 
         type Event = {

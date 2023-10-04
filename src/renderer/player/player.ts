@@ -326,6 +326,7 @@ const beforeDelete = (data:Mp.ReleaseFileRequest) => {
 }
 
 const loadMedia = (e:Mp.FileLoadEvent) => {
+
     clearTimeTrackTooltip()
     currentFile = e.currentFile;
     Dom.video.element.src = currentFile.src ? `${currentFile.src}?${new Date().getTime()}` : ""
@@ -333,6 +334,7 @@ const loadMedia = (e:Mp.FileLoadEvent) => {
     Dom.video.element.muted = mediaState.mute;
     Dom.video.element.playbackRate = mediaState.playbackSpeed
     Dom.video.element.load();
+
 }
 
 const onMediaLoaded = () => {
@@ -451,6 +453,12 @@ const stop = () => {
     window.api.send("play-status-change", {status:"stopped"})
     Dom.buttons.element.classList.remove("playing")
     Dom.video.element.load();
+}
+
+const requestPIP = async () => {
+    if(Dom.video.element.src){
+        await Dom.video.element.requestPictureInPicture();
+    }
 }
 
 const changePlaybackSpeed = (data:Mp.ChangePlaybackSpeedRequest) => {
@@ -692,6 +700,7 @@ window.api.receive("change-playback-speed", changePlaybackSpeed)
 window.api.receive("change-seek-speed", changeSeekSpeed);
 window.api.receive("toggle-fullscreen", toggleFullscreen)
 window.api.receive("capture-media", captureMedia)
+window.api.receive("picture-in-picture", requestPIP)
 window.api.receive("log", data => console.log(data.log))
 
 window.addEventListener("load", () => {

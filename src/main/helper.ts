@@ -1,6 +1,6 @@
 import { BrowserWindow, Menu, nativeImage } from "electron"
 import path from "path"
-//./ffmpeg.exe -i input.mp4 -metadata comment="The video titile" -c copy output.mp4
+
 export default class Helper{
 
     createPlayerWindow(config:Mp.Config){
@@ -109,8 +109,8 @@ export default class Helper{
                 click: () => onclick("ToggleFullscreen"),
             },
             {
-                label: "Theme",
-                submenu:this.themeMenu(config, onclick)
+                label: "Picture In Picture",
+                click: () => onclick("PictureInPicture"),
             },
             { type: 'separator' },
             {
@@ -118,6 +118,12 @@ export default class Helper{
                 accelerator: "CmdOrCtrl+S",
                 click: () => onclick("Capture"),
             },
+            { type: 'separator' },
+            {
+                label: "Theme",
+                submenu:this.themeMenu(config, onclick)
+            },
+
         ]
 
         return Menu.buildFromTemplate(template)
@@ -290,12 +296,12 @@ export default class Helper{
                 accelerator: "CmdOrCtrl+R",
                 click: () => onclick("Reveal")
             },
+            { type: "separator" },
             {
                 label: "Rename",
                 accelerator: "F2",
                 click: () => onclick("Rename")
             },
-            { type: "separator" },
             {
                 label: "View Metadata",
                 click: () => onclick("Metadata")
@@ -303,6 +309,15 @@ export default class Helper{
             {
                 label: "Convert",
                 click: () => onclick("Convert")
+            },
+            { type: "separator" },
+            {
+                label: "Load Playlist",
+                click: () => onclick("LoadList")
+            },
+            {
+                label: "Save Playlist",
+                click: () => onclick("SaveList")
             },
             { type: "separator" },
             {

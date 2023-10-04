@@ -38,7 +38,7 @@ const secondInstanceState:Mp.SecondInstanceState = {
 
 let mediaPlayStatus:Mp.PlayStatus;
 let doShuffle = false;
-let currentIndex = 0;
+let currentIndex = -1;
 const playlistSelection:Mp.PlaylistItemSelection = {selectedId:"", selectedIds:[]};
 let randomIndices:number[] = [];
 
@@ -74,6 +74,9 @@ const playerContextMenuCallback = (menu:Mp.PlayerContextMenuType, args?:Mp.Conte
             break;
         case "FitToWindow":
             changeSizeMode();
+            break;
+        case "PictureInPicture":
+            respond("Player", "picture-in-picture", {});
             break;
         case "ToggleFullscreen":
             respond("Player", "toggle-fullscreen", {})
@@ -120,6 +123,13 @@ const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType, args?:Mp.C
             break;
         case "Rename":
             respond("Playlist", "start-rename", {})
+            break;
+        case "LoadList":
+            loadPlaylistFile();
+            break;
+        case "SaveList":
+            savePlaylistFile();
+            break;
     }
 }
 
@@ -284,6 +294,8 @@ const initPlaylist = (fullPaths:string[]) => {
 
     fullPaths.map(fullPath => util.toFile(fullPath)).forEach(file => playlistFiles.push(file))
 
+    if(!playlistFiles.length) return;
+
     currentIndex = 0;
 
     respond("Playlist", "playlist-change", {files:playlistFiles, clearPlaylist:true})
@@ -308,7 +320,8 @@ const addToPlaylist = (fullPaths:string[]) => {
 
     shuffleList();
 
-    if(currentIndex < 0){
+    if(playlistFiles.length && currentIndex < 0){
+        currentIndex = 0;
         loadMediaFile(false);
     }
 
@@ -751,6 +764,58 @@ const endConvert = (message?:string) => {
     }
 
     respond("Convert", "after-convert", {})
+
+}
+
+const loadPlaylistFile = () => {
+
+    if(!Renderers.Playlist) return;
+
+    const file = dialog.showOpenDialogSync(Renderers.Playlist, {
+        title: "Select file to load",
+        defaultPath: config.data.path.playlistDestDir,
+        filters: [
+            { name: "Playlist File", extensions: ["json"] },
+        ],
+        properties: ["openFile"]
+    })
+
+    if(!file) return;
+
+    config.data.path.playlistDestDir = path.dirname(file[0]);
+
+    const data = fs.readFileSync(file[0], "utf8")
+
+    addToPlaylist(fromPlaylistJson(data))
+
+}
+
+const savePlaylistFile = () => {
+
+    if(!Renderers.Playlist || !playlistFiles.length) return;
+
+    const selectedPath = dialog.showSaveDialogSync(Renderers.Playlist, {
+        defaultPath: config.data.path.playlistDestDir,
+        filters: [
+            { name: "Playlist File", extensions: ["json"] },
+        ],
+    })
+
+    if(!selectedPath) return
+
+    config.data.path.playlistDestDir = selectedPath;
+
+    const data = playlistFiles.map(file => file.fullPath)
+    fs.writeFileSync(selectedPath, JSON.stringify(data), {encoding:"utf8"})
+
+}
+
+const fromPlaylistJson = (jsonData:string) => {
+    try{
+        return JSON.parse(jsonData)
+    }catch(ex:any){
+        showErrorMessage(ex);
+    }
 
 }
 
