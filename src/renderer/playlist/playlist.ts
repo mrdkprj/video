@@ -159,41 +159,6 @@ const onFileDrop = (e:DragEvent) => {
     }
 }
 
-const createListItem = (file:Mp.MediaFile) => {
-
-    const item = document.createElement("div");
-    item.title = file.name
-    item.id = file.id;
-    item.textContent = file.name
-    item.draggable = true;
-    item.classList.add("playlist-item")
-    item.addEventListener("dblclick", onFileListItemClicked);
-    item.addEventListener("dragstart", onDragStart)
-    item.addEventListener("dragenter", onDragEnter)
-    item.addEventListener("dragend", onDragEnd)
-    return item
-}
-
-const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
-
-    if(data.clearPlaylist){
-        clearPlaylist();
-    }
-
-    if(!data.files.length) return;
-
-    const fragment = document.createDocumentFragment();
-
-    data.files.forEach(file => {
-
-        fragment.appendChild(createListItem(file));
-
-    });
-
-    Dom.fileList.element.appendChild(fragment)
-
-}
-
 const removeFromPlaylist = (data:Mp.RemovePlaylistItemResult) => {
     clearSelection();
     const targetNodes = data.removedFileIds.map(id => new DomElement(id).element)
@@ -545,52 +510,80 @@ const toggleShuffle = () => {
     window.api.send("toggle-shuffle", {})
 }
 
-const onAfterSort = (data:Mp.SortResult) => {
+const createListItem = (file:Mp.MediaFile) => {
 
-    const lists = Array.from(Dom.fileList.element.children)
-
-    if(!lists.length) return;
-
-    lists.sort((a,b) => data.fileIds.indexOf(a.id) - data.fileIds.indexOf(b.id))
-
-    Dom.fileList.element.innerHTML = "";
-
-    lists.forEach(li => Dom.fileList.element.appendChild(li))
-
-    scrollToElement(currentElement);
-
+    const item = document.createElement("div");
+    item.title = file.name
+    item.id = file.id;
+    item.textContent = file.name
+    item.draggable = true;
+    item.classList.add("playlist-item")
+    item.addEventListener("dblclick", onFileListItemClicked);
+    item.addEventListener("dragstart", onDragStart)
+    item.addEventListener("dragenter", onDragEnter)
+    item.addEventListener("dragend", onDragEnd)
+    return item
 }
 
-const applyTheme = (theme:Mp.Theme) => {
-    if(theme === "light"){
-        document.documentElement.removeAttribute("dark")
-        document.documentElement.setAttribute("light", "");
-    }else{
-        document.documentElement.removeAttribute("light")
-        document.documentElement.setAttribute("dark", "");
+const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
+
+    if(data.clearPlaylist){
+        clearPlaylist();
     }
+
+    if(!data.files.length) return;
+
+    const fragment = document.createDocumentFragment();
+
+    let key = data.files[0].dir
+
+    data.files.forEach(file => {
+
+        const item = createListItem(file);
+
+        if(file.dir != key){
+            key = file.dir;
+            item.classList.add("top-item")
+        }
+
+        if(file.id === currentElement?.id){
+            item.classList.add("current")
+            currentElement = item;
+        }
+
+        fragment.appendChild(item);
+
+    });
+
+    Dom.fileList.element.appendChild(fragment)
+
+    if(currentElement){
+        select(currentElement);
+    }
+
 }
 
-const applySortType = (sortType:Mp.SortType) => {
-    Dom.sortBtn.element.setAttribute("data-sort", sortType)
+const applySortType = (config:Mp.SortType) => {
+
+    Dom.sortBtn.element.setAttribute("data-sort", config.order)
+
+    Dom.fileList.element.classList.remove("group-by")
+    if(config.groupBy){
+        Dom.fileList.element.classList.add("group-by")
+    }
+
 }
 
-const onThemeChange = (e:Mp.ConfigChangeEvent) => {
-    applyTheme(e.config.theme)
-}
 
 const prepare = (e:Mp.ReadyEvent) => {
-    applyTheme(e.config.theme)
-    applySortType(e.config.sortType)
+    applySortType(e.config.sort)
 }
 
 window.api.receive("ready", prepare);
-window.api.receive("change-theme", onThemeChange)
 window.api.receive("sort-type-change", applySortType)
 window.api.receive("playlist-change", addToPlaylist)
 window.api.receive("after-file-load", changeCurrent)
 window.api.receive("after-remove-playlist", removeFromPlaylist)
-window.api.receive("after-sort", onAfterSort)
 window.api.receive("after-rename", onRename);
 window.api.receive("start-rename", startEditFileName)
 window.api.receive("restart", onReset)

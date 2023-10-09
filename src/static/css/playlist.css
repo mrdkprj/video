@@ -97,6 +97,10 @@
     font-size: 14px;
 }
 
+.group-by .top-item{
+    border-top: 1px solid var(--menu-bgcolor);
+}
+
 .draghover{
     background-color: var(--playlist-item-drag-bgcolor);
 }

@@ -10,7 +10,8 @@ export const EmptyFile:Mp.MediaFile = {
     src:"",
     name:"",
     date: 0,
-    extension:""
+    extension:"",
+    dir:"",
 }
 
 export default class Util{
@@ -65,6 +66,7 @@ export default class Util{
         return {
             id: crypto.randomUUID(),
             fullPath,
+            dir:path.dirname(fullPath),
             src: this.isDev ? `app://${encodedPath}` : encodedPath,
             name:decodeURIComponent(encodeURIComponent(path.basename(fullPath))),
             date:statInfo.mtimeMs,
@@ -79,6 +81,7 @@ export default class Util{
         return {
             id: currentFile.id,
             fullPath,
+            dir:path.dirname(fullPath),
             src: this.isDev ? `app://${encodedPath}` : encodedPath,
             name:decodeURIComponent(encodeURIComponent(path.basename(fullPath))),
             date:currentFile.date,
@@ -107,24 +110,41 @@ export default class Util{
         return a.name.replace(path.extname(a.name),"").localeCompare(b.name.replace(path.extname(a.name),""))
     }
 
-    sort(files:Mp.MediaFile[], sortType:Mp.SortType){
+    sort(files:Mp.MediaFile[], sortOrder:Mp.SortOrder){
 
         if(!files.length) return;
 
-        switch(sortType){
+        switch(sortOrder){
             case "NameAsc":
-                files.sort((a,b) => this.localCompareName(a,b))
-                break;
+                return files.sort((a,b) => this.localCompareName(a,b))
             case "NameDesc":
-                files.sort((a,b) => this.localCompareName(b,a))
-                break;
+                return files.sort((a,b) => this.localCompareName(b,a))
             case "DateAsc":
-                files.sort((a,b) => a.date - b.date || this.localCompareName(a,b))
-                break;
+                return files.sort((a,b) => a.date - b.date || this.localCompareName(a,b))
             case "DateDesc":
-                files.sort((a,b) => b.date - a.date || this.localCompareName(a,b))
-                break;
+                return files.sort((a,b) => b.date - a.date || this.localCompareName(a,b))
         }
+
+    }
+
+    groupBy<T>(items:T[], key:keyof T){
+
+        return items.reduce<{ [groupKey:string] : T[]}>((acc, current) => {
+              (acc[current[key] as unknown as string] = acc[current[key] as unknown as string] || []).push(current);
+              return acc;
+        }, {});
+
+    }
+
+    sortByGroup(files:Mp.MediaFile[], sortOrder:Mp.SortOrder){
+
+        if(!files.length) return;
+
+        const groups = this.groupBy(files, "dir")
+
+        const result = Object.values(groups).map(group => this.sort(group, sortOrder)).flat() as Mp.MediaFile[];
+        files.length = 0;
+        files.push(...result)
 
     }
 

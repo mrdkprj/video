@@ -10,7 +10,10 @@ const defaultConfig :Mp.Config = {
     isMaximized: false,
     playlistVisible:true,
     theme:"dark",
-    sortType: "NameAsc",
+    sort:{
+        order:"NameAsc",
+        groupBy:false,
+    },
     video:{
         playbackSpeed:1,
         seekSpeed:10,

@@ -93,6 +93,7 @@ const playerContextMenuCallback = (menu:Mp.PlayerContextMenuType, args?:Mp.Conte
  const playerMenu = helper.createPlayerContextMenu(config.data, playerContextMenuCallback)
 
 const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => {
+
     switch(menu){
         case "Remove":
             removeFromPlaylist(playlistSelection.selectedIds);
@@ -119,7 +120,7 @@ const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType, args?:Mp.C
             openConvertDialog();
             break;
         case "Sort":
-            sortPlayList(args as Mp.SortType);
+            changeSortOrder(args as Mp.SortOrder);
             break;
         case "Rename":
             respond("Playlist", "start-rename", {})
@@ -129,6 +130,9 @@ const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType, args?:Mp.C
             break;
         case "SaveList":
             savePlaylistFile();
+            break;
+        case "GroupBy":
+            toggleGroupBy();
             break;
     }
 }
@@ -275,7 +279,6 @@ const onPlayerReady = () => {
 
     respond("Player", "ready", {config:config.data});
     respond("Playlist", "ready", {config:config.data});
-    respond("Convert", "ready", {config:config.data});
 
     togglePlay();
 
@@ -300,7 +303,7 @@ const initPlaylist = (fullPaths:string[]) => {
 
     respond("Playlist", "playlist-change", {files:playlistFiles, clearPlaylist:true})
 
-    sortPlayList(config.data.sortType);
+    sortPlayList();
 
     shuffleList();
 
@@ -316,7 +319,7 @@ const addToPlaylist = (fullPaths:string[]) => {
 
     respond("Playlist", "playlist-change", {files:newFiles, clearPlaylist:false})
 
-    sortPlayList(config.data.sortType);
+    sortPlayList();
 
     shuffleList();
 
@@ -352,9 +355,6 @@ const changeSizeMode = () => {
 const changeTheme = (theme:Mp.Theme) => {
     nativeTheme.themeSource = theme
     config.data.theme = theme;
-    respond("Player", "change-theme", {config:config.data})
-    respond("Playlist", "change-theme", {config:config.data})
-    respond("Convert", "change-theme", {config:config.data})
 }
 
 const onUnmaximize = () => {
@@ -588,17 +588,29 @@ const copyFileNameToClipboard = (fullPath:boolean) => {
 
 }
 
-const sortPlayList = (sortType:Mp.SortType) => {
+const toggleGroupBy = () => {
+    config.data.sort.groupBy = !config.data.sort.groupBy
+    sortPlayList();
+}
 
-    respond("Playlist", "sort-type-change", sortType)
+const changeSortOrder = (sortOrder:Mp.SortOrder) => {
+    config.data.sort.order = sortOrder;
+    sortPlayList();
+}
+
+const sortPlayList = () => {
+
+    respond("Playlist", "sort-type-change", config.data.sort)
 
     const currentFileId = getCurrentFile().id;
 
-    config.data.sortType = sortType;
-
     if(!playlistFiles.length) return;
 
-    util.sort(playlistFiles, sortType)
+    if(config.data.sort.groupBy){
+        util.sortByGroup(playlistFiles, config.data.sort.order)
+    }else{
+        util.sort(playlistFiles, config.data.sort.order)
+    }
 
     const sortedIds = playlistFiles.map(file => file.id);
 
@@ -606,7 +618,7 @@ const sortPlayList = (sortType:Mp.SortType) => {
         currentIndex = sortedIds.findIndex(id => id === currentFileId);
     }
 
-    respond("Playlist", "after-sort", {fileIds:sortedIds})
+    respond("Playlist", "playlist-change", {files:playlistFiles, clearPlaylist:true})
 
 }
 

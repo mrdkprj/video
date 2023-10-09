@@ -6,10 +6,6 @@ declare global {
         api: Api;
     }
 
-    interface Crypto {
-        randomUUID: () => string;
-    }
-
     type RendererName = "Player" | "Playlist" | "Convert"
     type Renderer = {[key in RendererName] : Electron.BrowserWindow | undefined}
 
@@ -47,7 +43,6 @@ declare global {
         "after-file-load": Mp.FileLoadEvent;
         "toggle-play": Mp.Event;
         "toggle-fullscreen": Mp.Event;
-        "change-theme": Mp.ConfigChangeEvent;
         "change-display-mode": Mp.ConfigChangeEvent;
         "capture-media": Mp.Event;
         "restart": Mp.Event;
@@ -61,7 +56,6 @@ declare global {
         "after-remove-playlist": Mp.RemovePlaylistItemResult;
         "clear-playlist": Mp.Event;
         "sort-type-change": Mp.SortType;
-        "after-sort": Mp.SortResult;
         "start-rename":Mp.Event;
         "after-rename": Mp.RenameResult;
         "after-sourcefile-select": Mp.FileSelectResult;
@@ -89,13 +83,13 @@ declare global {
         type ConvertFormat = "MP4" | "MP3"
         type ThumbButtonType = "Play" | "Pause" | "Previous" | "Next"
         type PlayerContextMenuType = "PlaybackSpeed" | "SeekSpeed" | "TogglePlaylistWindow" | "FitToWindow" | "ToggleFullscreen" | "Theme" | "Capture" | "PictureInPicture"
-        type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "CopyFullpath" | "Reveal" | "Metadata" | "Convert" | "Sort" | "Rename" | "LoadList" | "SaveList"
+        type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "CopyFullpath" | "Reveal" | "Metadata" | "Convert" | "Sort" | "Rename" | "LoadList" | "SaveList" | "GroupBy"
         type PlaybackSpeed = 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2;
         type SeekSpeed = 0.03 | 0.05 | 0.1 | 0.5 | 1 | 5 | 10 | 20;
-        type SortType = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
+        type SortOrder = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
         type FileDialogType = "Read" | "Write";
 
-        type ContextMenuSubType = PlaybackSpeed | SeekSpeed | SortType | Theme | FileDialogType
+        type ContextMenuSubType = PlaybackSpeed | SeekSpeed | SortOrder | Theme | FileDialogType
 
         type VideoFrameSize = "SizeNone" | "360p" | "480p" | "720p" | "1080p";
         type VideoRotation = "RotationNone" | "90Clockwise" | "90CounterClockwise"
@@ -125,13 +119,18 @@ declare global {
             y:number;
         }
 
+        type SortType = {
+            order:SortOrder;
+            groupBy:boolean;
+        }
+
         type Config = {
             bounds: Bounds;
             playlistBounds:Bounds;
             theme: Mp.Theme;
             isMaximized:boolean;
             playlistVisible:boolean;
-            sortType:SortType;
+            sort:Mp.SortType;
             video:{
                 fitToWindow:boolean;
                 playbackSpeed:number;
@@ -152,6 +151,7 @@ declare global {
         type MediaFile = {
             id:string;
             fullPath:string;
+            dir:string;
             src:string;
             name:string;
             date:number;
@@ -316,10 +316,6 @@ declare global {
         type RenameResult = {
             file:MediaFile;
             error?:boolean;
-        }
-
-        type SortResult = {
-            fileIds:string[];
         }
 
         type OpenConvertDialogEvent = {

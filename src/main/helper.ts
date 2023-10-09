@@ -334,31 +334,39 @@ export default class Helper{
         const type = "Sort"
         const template:Electron.MenuItemConstructorOptions[] = [
             {
+                id:"groupby",
+                label: "Group By Directory",
+                type: "checkbox",
+                checked: config.sort.groupBy,
+                click: () => onclick("GroupBy")
+            },
+            { type: "separator" },
+            {
                 id: "NameAsc",
                 label: "Name(Asc)",
                 type: "checkbox",
-                checked: config.sortType === "NameAsc",
+                checked: config.sort.order === "NameAsc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "NameAsc"))
             },
             {
                 id: "NameDesc",
                 label: "Name(Desc)",
                 type: "checkbox",
-                checked: config.sortType === "NameDesc",
+                checked: config.sort.order === "NameDesc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type,"NameDesc"))
             },
             {
                 id: "DateAsc",
                 label: "Date(Asc)",
                 type: "checkbox",
-                checked: config.sortType === "DateAsc",
+                checked: config.sort.order === "DateAsc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type,"DateAsc"))
             },
             {
                 id: "DateDesc",
                 label: "Date(Desc)",
                 type: "checkbox",
-                checked: config.sortType === "DateDesc",
+                checked: config.sort.order === "DateDesc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type,"DateDesc"))
             },
         ]
