@@ -331,17 +331,25 @@ const moveSelection = (key:string) => {
 
     const currentId = selection.selectedId ? selection.selectedId : Dom.fileList.element.children[0].id
 
-    let nextId;
-    if(key === "ArrowDown"){
-        nextId = new DomElement(currentId).element.nextElementSibling?.id
-    }else{
-        nextId = new DomElement(currentId).element.previousElementSibling?.id
+    const findNext = (key:string, element:Element):Element | null => {
+
+        const nextElement = key === "ArrowDown" ? element.nextElementSibling : element.previousElementSibling
+
+        if(!nextElement) return null;
+
+        if(nextElement.classList.contains("separator")){
+            return findNext(key, nextElement);
+        }
+
+        return nextElement;
     }
 
-    if(!nextId) return;
+    const nextElement = findNext(key, new DomElement(currentId).element)
+
+    if(!nextElement) return;
 
     clearSelection();
-    select(nextId)
+    select(nextElement.id)
 }
 
 const onFileListItemClicked = (e:MouseEvent) => {
@@ -525,6 +533,25 @@ const createListItem = (file:Mp.MediaFile) => {
     return item
 }
 
+const createSeparator = (directory:string) => {
+
+    const separator = document.createElement("div");
+    separator.classList.add("separator");
+    separator.title = directory;
+
+    const left = document.createElement("div");
+    left.classList.add("left");
+    const mid = document.createElement("div");
+    mid.classList.add("mid");
+    mid.textContent = directory;
+    const right = document.createElement("div");
+    right.classList.add("right");
+
+    separator.append(left, mid, right)
+
+    return separator;
+}
+
 const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
 
     if(data.clearPlaylist){
@@ -535,7 +562,7 @@ const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
 
     const fragment = document.createDocumentFragment();
 
-    let key = data.files[0].dir
+    let key = ""
 
     data.files.forEach(file => {
 
@@ -543,7 +570,7 @@ const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
 
         if(file.dir != key){
             key = file.dir;
-            item.classList.add("top-item")
+            fragment.append(createSeparator(key));
         }
 
         if(file.id === currentElement?.id){
