@@ -106,11 +106,10 @@ const onMouseDown = (e:MouseEvent) => {
             }
         }
 
-        toggleSelect(e)
+        return toggleSelect(e)
 
-    }else{
-        clearSelection();
     }
+
 }
 
 const onDragStart = (e:DragEvent) => {
@@ -160,13 +159,23 @@ const onFileDrop = (e:DragEvent) => {
 }
 
 const removeFromPlaylist = (data:Mp.RemovePlaylistItemResult) => {
+
     clearSelection();
+
     const targetNodes = data.removedFileIds.map(id => new DomElement(id).element)
+    const dirSet = new Set<string>();
     targetNodes.forEach(node => {
         if(currentElement && node.id === currentElement.id){
             currentElement = undefined;
         }
+        dirSet.add(node.getAttribute("data-dir") ?? "")
         Dom.fileList.element.removeChild(node)
+    })
+
+    dirSet.forEach(dir => {
+        if(!Dom.fileList.element.querySelectorAll(`div[data-dir="${dir}"]`).length){
+            new DomElement(dir).element.remove();
+        }
     })
 }
 
@@ -178,6 +187,11 @@ const toggleHighlightDropTarget = (e:DragEvent) => {
 
     dragState.targetElement?.classList.remove("draghover");
 
+    if(dragState.startElement?.getAttribute("data-dir") !== e.target.getAttribute("data-dir")){
+        dragState.targetElement = undefined;
+        return;
+    }
+
     dragState.targetElement = e.target;
 
     if(dragState.targetElement.id === dragState.startElement?.id) return;
@@ -188,17 +202,21 @@ const toggleHighlightDropTarget = (e:DragEvent) => {
 
 const endDragPlaylistItem = (e:DragEvent) => {
 
-    dropPlaylistItem();
-    toggleHighlightDropTarget(e)
+    if(dragState.targetElement){
 
-    const args = {
-        start:dragState.startIndex,
-        end:getChildIndex(dragState.startElement),
-        currentIndex:getChildIndex(currentElement)
+        dropPlaylistItem();
+        toggleHighlightDropTarget(e)
+
+        const args = {
+            start:dragState.startIndex,
+            end:getChildIndex(dragState.startElement),
+            currentIndex:getChildIndex(currentElement)
+        }
+
+        window.api.send("change-playlist-order", args);
+        window.api.send("playlist-item-selection-change", {selection})
+
     }
-
-    window.api.send("change-playlist-order", args);
-    window.api.send("playlist-item-selection-change", {selection})
 
     dragState.dragging = false;
     dragState.startElement = undefined;
@@ -226,6 +244,8 @@ const dropPlaylistItem = () => {
 const clearPlaylist = () => {
     selection.selectedId = "";
     selection.selectedIds = []
+    currentElement = undefined;
+    selectedElement = undefined;
     Dom.fileList.element.innerHTML = "";
 }
 
@@ -280,18 +300,21 @@ const selectByShift = (e:MouseEvent) => {
     const range = [];
 
     if(selectedElement){
-        range.push(getChildIndex(selectedElement));
+        range.push(getChildNodeIndex(selectedElement));
     }else{
         range.push(0);
     }
 
-    range.push(getChildIndex(e.target as HTMLElement));
+    range.push(getChildNodeIndex(e.target as HTMLElement));
 
     range.sort((a,b) => a - b);
 
     for(let i = range[0]; i <= range[1]; i++){
-        selection.selectedIds.push(Dom.fileList.element.children[i].id);
-        Dom.fileList.element.children[i].classList.add("selected")
+        const node = Dom.fileList.element.children[i];
+        if(!node.classList.contains("group")){
+            selection.selectedIds.push(node.id);
+            node.classList.add("selected")
+        }
     }
 
     window.api.send("playlist-item-selection-change", {selection})
@@ -305,6 +328,9 @@ const selectByCtrl = (e:MouseEvent) => {
     }
 
     const target = (e.target as HTMLElement);
+
+    if(target.classList.contains("group")) return;
+
     selection.selectedIds.push(target.id)
 
     target.classList.add("selected")
@@ -317,6 +343,7 @@ const selectAll = () => {
     clearSelection();
 
     Array.from(Dom.fileList.element.children).forEach((node,_index) => {
+        if(node.classList.contains("group")) return;
         node.classList.add("selected")
         selection.selectedIds.push(node.id);
     })
@@ -337,7 +364,7 @@ const moveSelection = (key:string) => {
 
         if(!nextElement) return null;
 
-        if(nextElement.classList.contains("separator")){
+        if(nextElement.classList.contains("group")){
             return findNext(key, nextElement);
         }
 
@@ -357,10 +384,19 @@ const onFileListItemClicked = (e:MouseEvent) => {
     window.api.send("load-file", {index, isAbsolute:true});
 }
 
-function getChildIndex(node:HTMLElement | undefined) {
+const getChildIndex = (node:HTMLElement | undefined) => {
     if(!node) return -1;
 
-    return Array.prototype.indexOf.call(Dom.fileList.element.childNodes, node);
+    const childNodes = Array.from(Dom.fileList.element.children).filter(childNode => !childNode.classList.contains("group"))
+
+    return Array.prototype.indexOf.call(childNodes, node);
+}
+
+const getChildNodeIndex = (node:HTMLElement | undefined) => {
+
+    if(!node) return -1;
+
+    return Array.prototype.indexOf.call(Dom.fileList.element.children, node);
 }
 
 const scrollToElement = (element:HTMLElement | undefined) => {
@@ -535,21 +571,22 @@ const createListItem = (file:Mp.MediaFile) => {
 
 const createSeparator = (directory:string) => {
 
-    const separator = document.createElement("div");
-    separator.classList.add("separator");
-    separator.title = directory;
+    const group = document.createElement("div");
+    group.classList.add("group", "separator");
+    group.title = directory;
+    group.id = encodeURIComponent(directory);
 
     const left = document.createElement("div");
-    left.classList.add("left");
+    left.classList.add("left", "separator");
     const mid = document.createElement("div");
-    mid.classList.add("mid");
+    mid.classList.add("mid", "separator");
     mid.textContent = directory;
     const right = document.createElement("div");
-    right.classList.add("right");
+    right.classList.add("right", "separator");
 
-    separator.append(left, mid, right)
+    group.append(left, mid, right)
 
-    return separator;
+    return group;
 }
 
 const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
@@ -563,6 +600,7 @@ const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
     const fragment = document.createDocumentFragment();
 
     let key = ""
+    let group:HTMLDivElement;
 
     data.files.forEach(file => {
 
@@ -570,8 +608,11 @@ const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
 
         if(file.dir != key){
             key = file.dir;
-            fragment.append(createSeparator(key));
+            group = createSeparator(key)
+            fragment.append(group);
         }
+
+        item.setAttribute("data-dir", group.id)
 
         if(file.id === currentElement?.id){
             item.classList.add("current")
