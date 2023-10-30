@@ -591,6 +591,8 @@ const createSeparator = (directory:string) => {
 
 const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
 
+    const currentId = currentElement?.id;
+
     if(data.clearPlaylist){
         clearPlaylist();
     }
@@ -614,7 +616,8 @@ const addToPlaylist = (data:Mp.PlaylistChangeEvent) => {
 
         item.setAttribute("data-dir", group.id)
 
-        if(file.id === currentElement?.id){
+        if(file.id === currentId){
+
             item.classList.add("current")
             currentElement = item;
         }
@@ -636,6 +639,7 @@ const applySortType = (config:Mp.SortType) => {
     Dom.sortBtn.element.setAttribute("data-sort", config.order)
 
     Dom.fileList.element.classList.remove("group-by")
+
     if(config.groupBy){
         Dom.fileList.element.classList.add("group-by")
     }
