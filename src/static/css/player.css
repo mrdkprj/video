@@ -470,6 +470,7 @@
     color: var(--menu-color);
     background-color: var(--menu-bgcolor);
     font-size: 12px;
+    user-select: none;
 }
 
 .autohide{

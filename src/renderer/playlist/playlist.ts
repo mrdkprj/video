@@ -69,7 +69,11 @@ const onKeydown = (e:KeyboardEvent) => {
 
     if(e.key === "ArrowUp" || e.key === "ArrowDown"){
         e.preventDefault();
-        return moveSelection(e.key);
+        return moveSelection(e);
+    }
+
+    if(e.key === "Home" || e.key === "End"){
+        return moveSelectionUpto(e);
     }
 
     return handleShortcut("Playlist", e);
@@ -108,6 +112,10 @@ const onMouseDown = (e:MouseEvent) => {
 
         return toggleSelect(e)
 
+    }
+
+    if(!e.target.classList.contains("group")){
+        clearSelection();
     }
 
 }
@@ -258,16 +266,16 @@ const clearSelection = () => {
 const toggleSelect = (e:MouseEvent) => {
 
     if(e.ctrlKey){
-        selectByCtrl(e)
+        selectByCtrl(e.target as HTMLElement)
         return;
     }
 
     if(e.shiftKey){
-        selectByShift(e);
+        selectByShift(e.target as HTMLElement);
         return
     }
 
-    selectByClick(e);
+    selectByClick(e.target as HTMLElement);
 
 }
 
@@ -289,11 +297,11 @@ const select = (target:HTMLElement | string) => {
     window.api.send("playlist-item-selection-change", {selection})
 }
 
-const selectByClick = (e:MouseEvent) => {
-    select(e.target as HTMLElement);
+const selectByClick = (target:HTMLElement) => {
+    select(target);
 }
 
-const selectByShift = (e:MouseEvent) => {
+const selectByShift = (target:HTMLElement) => {
 
     clearSelection();
 
@@ -305,7 +313,7 @@ const selectByShift = (e:MouseEvent) => {
         range.push(0);
     }
 
-    range.push(getChildNodeIndex(e.target as HTMLElement));
+    range.push(getChildNodeIndex(target));
 
     range.sort((a,b) => a - b);
 
@@ -320,14 +328,12 @@ const selectByShift = (e:MouseEvent) => {
     window.api.send("playlist-item-selection-change", {selection})
 }
 
-const selectByCtrl = (e:MouseEvent) => {
+const selectByCtrl = (target:HTMLElement) => {
 
     if(!selectedElement){
-        selectByClick(e);
+        selectByClick(target);
         return;
     }
-
-    const target = (e.target as HTMLElement);
 
     if(target.classList.contains("group")) return;
 
@@ -343,33 +349,41 @@ const selectAll = () => {
     clearSelection();
 
     Array.from(Dom.fileList.element.children).forEach((node,_index) => {
-        if(node.classList.contains("group")) return;
-        node.classList.add("selected")
-        selection.selectedIds.push(node.id);
+        if(!node.classList.contains("group")){
+            node.classList.add("selected")
+            selection.selectedIds.push(node.id);
+        }
     })
 
     window.api.send("playlist-item-selection-change", {selection})
 
 }
 
-const moveSelection = (key:string) => {
+const findNext = (key:string, element:Element):HTMLElement | null => {
+
+    const nextElement = key === "ArrowDown" ? element.nextElementSibling : element.previousElementSibling
+
+    if(!nextElement) return null;
+
+    if(nextElement.classList.contains("group")){
+        return findNext(key, nextElement);
+    }
+
+    return nextElement as HTMLElement;
+
+}
+
+const moveSelection = (e:KeyboardEvent) => {
 
     if(!Dom.fileList.element.children.length) return;
 
-    const currentId = selection.selectedId ? selection.selectedId : Dom.fileList.element.children[0].id
+    const key = e.key;
 
-    const findNext = (key:string, element:Element):Element | null => {
-
-        const nextElement = key === "ArrowDown" ? element.nextElementSibling : element.previousElementSibling
-
-        if(!nextElement) return null;
-
-        if(nextElement.classList.contains("group")){
-            return findNext(key, nextElement);
-        }
-
-        return nextElement;
+    if(e.shiftKey){
+        return moveSelectionByShit(key);
     }
+
+    const currentId = selection.selectedId ? selection.selectedId : Dom.fileList.element.children[0].id
 
     const nextElement = findNext(key, new DomElement(currentId).element)
 
@@ -377,6 +391,36 @@ const moveSelection = (key:string) => {
 
     clearSelection();
     select(nextElement.id)
+}
+
+const moveSelectionByShit = (key:string) => {
+
+    if(!selection.selectedIds.length){
+        select(Dom.fileList.element.children[0].id);
+    }
+
+    const downward = selection.selectedId == selection.selectedIds[0];
+    const currentId = downward ? selection.selectedIds[selection.selectedIds.length -1] : selection.selectedIds[0]
+
+    const nextElement = findNext(key, new DomElement(currentId).element)
+
+    if(!nextElement) return;
+
+    return selectByShift(nextElement);
+}
+
+const moveSelectionUpto = (e:KeyboardEvent) => {
+
+    if(!Dom.fileList.element.children.length) return;
+
+    if(!e.shiftKey) return;
+
+    e.preventDefault();
+
+    const uptoElement = e.key === "Home" ? Dom.fileList.element.children[0] : Dom.fileList.element.children[Dom.fileList.element.children.length - 1]
+
+    selectByShift(uptoElement as HTMLElement);
+    scrollToElement(uptoElement as HTMLElement)
 }
 
 const onFileListItemClicked = (e:MouseEvent) => {
