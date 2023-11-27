@@ -81,6 +81,8 @@ const onKeydown = (e:KeyboardEvent) => {
 
 const onRenameInputKeyDown = (e:KeyboardEvent) => {
     if(RenameState.renaming && e.key === "Enter"){
+        e.stopPropagation();
+        e.preventDefault();
         endEditFileName();
     }
 }
