@@ -22,7 +22,7 @@ steps:
   displayName: 'npm install, run webpack'
 
 - script: |
-    npm run build
+    npx electron-forge package && ts-node build.ts
   workingDirectory: $(Build.SourcesDirectory)
   displayName: build
   
