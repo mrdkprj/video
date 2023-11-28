@@ -21,3 +21,6 @@ steps:
     npm install
     npx electron-forge package && ts-node build.ts
   displayName: 'npm install, run webpack'
+
+- publish: $(System.DefaultWorkingDirectory)/dist
+  artifact: WebApp
