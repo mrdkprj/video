@@ -19,9 +19,9 @@ steps:
     npm install -g webpack webpack-cli --save-dev
     npm install -g ts-node
     npm install
-    npx electron-forge package && ts-node build.ts
+    npm build
   displayName: 'npm install, run webpack'
-  
+    
 - script: dir
   workingDirectory: $(Build.SourcesDirectory)
   displayName: List contents of a folder
