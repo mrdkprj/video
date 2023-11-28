@@ -28,4 +28,4 @@ steps:
   inputs:
     targetPath: '$(Pipeline.Workspace)/dist'
     artifact: app
-    publishLocation:pipeline
+    publishLocation: pipeline
