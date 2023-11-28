@@ -7,7 +7,7 @@ trigger:
 - release
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: windows-latest
 
 steps:
 - task: NodeTool@0
@@ -17,6 +17,7 @@ steps:
 
 - script: |
     npm install -g webpack webpack-cli --save-dev
+    npm install -g ts-node
     npm install
     npx electron-forge package && ts-node build.ts
   displayName: 'npm install, run webpack'
