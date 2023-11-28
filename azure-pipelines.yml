@@ -22,7 +22,7 @@ steps:
   displayName: 'npm install, run webpack'
 
 - script: |
-    npm build
+    npm run build
   workingDirectory: $(Build.SourcesDirectory)
   displayName: build
   
