@@ -20,13 +20,9 @@ steps:
     npm install -g ts-node
     npm install -g electron-forge
     npm install
-  workingDirectory: $(Build.SourcesDirectory)
-  displayName: 'npm install, run webpack'
-
-- script: |
     npm run build
   workingDirectory: $(Build.SourcesDirectory)
-  displayName: build
+  displayName: 'npm install, run webpack'
   
 - script: dir
   workingDirectory: $(Build.SourcesDirectory)
