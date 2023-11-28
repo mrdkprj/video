@@ -6,11 +6,10 @@
 trigger:
 - release
 
-jobs:
- - job: run_build
 pool:
   vmImage: windows-latest
 
+steps:
 - task: NodeTool@0
   inputs:
     versionSpec: '18.x'
