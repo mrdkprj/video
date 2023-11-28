@@ -19,9 +19,13 @@ steps:
     npm install -g webpack webpack-cli --save-dev
     npm install -g ts-node
     npm install
-    npm build
   displayName: 'npm install, run webpack'
-    
+
+- script: |
+    npm build
+  workingDirectory: $(Build.SourcesDirectory)
+  displayName: build
+  
 - script: dir
   workingDirectory: $(Build.SourcesDirectory)
   displayName: List contents of a folder
