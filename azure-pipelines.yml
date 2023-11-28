@@ -18,11 +18,12 @@ steps:
 - script: |
     npm install -g webpack webpack-cli --save-dev
     npm install -g ts-node
+    npm install -g electron-forge
     npm install
   displayName: 'npm install, run webpack'
 
 - script: |
-    npx electron-forge package && ts-node build.ts
+    npm run build
   workingDirectory: $(Build.SourcesDirectory)
   displayName: build
   
