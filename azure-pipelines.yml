@@ -22,8 +22,14 @@ steps:
     npx electron-forge package && ts-node build.ts
   displayName: 'npm install, run webpack'
 
+- task: CopyFiles@2
+  inputs:
+    Contents: |
+      $(Build.SourcesDirectory)/dist/*.exe
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
 - task: PublishPipelineArtifact@1
   inputs:
-    targetPath: '$(Pipeline.Workspace)/dist'
+    targetPath: '$(Build.ArtifactStagingDirectory)'
     artifact: app
     publishLocation: pipeline
