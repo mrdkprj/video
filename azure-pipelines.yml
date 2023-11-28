@@ -6,6 +6,8 @@
 trigger:
 - release
 
+jobs:
+ - job: run_build
 pool:
   vmImage: windows-latest
 
@@ -22,5 +24,8 @@ steps:
     npx electron-forge package && ts-node build.ts
   displayName: 'npm install, run webpack'
 
-- publish: $(System.DefaultWorkingDirectory)/dist
-  artifact: WebApp
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(Pipeline.Workspace)/dist'
+    artifact: app
+    publishLocation:pipeline
