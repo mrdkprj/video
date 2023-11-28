@@ -21,11 +21,15 @@ steps:
     npm install
     npx electron-forge package && ts-node build.ts
   displayName: 'npm install, run webpack'
-
+  
+- script: dir
+  workingDirectory: $(Build.SourcesDirectory)
+  displayName: List contents of a folder
+    
 - task: CopyFiles@2
   inputs:
     Contents: |
-      $(Build.SourcesDirectory)/dist/*.exe
+      $(Build.SourcesDirectory)/dist/ALT MediaPlayer Setup 1.0.0.exe
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
 - task: PublishPipelineArtifact@1
