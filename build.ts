@@ -26,8 +26,7 @@ build({
                     "icon": "src/static/img/icon_audio.ico",
                 },
 
-            ],
-            publish:[]
+            ]
         },
         linux:{
             target: "deb",
