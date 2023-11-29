@@ -29,6 +29,8 @@ steps:
 - script: |
     yarn build
   workingDirectory: $(Build.SourcesDirectory)
+  env:
+    GH_TOKEN: $(GH_TOKEN)
   displayName: build
 
 - script: dir
