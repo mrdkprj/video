@@ -22,12 +22,12 @@ steps:
   displayName: 'npm install, run webpack'
 
 - script: |
-    npm install
+    yarn install
   workingDirectory: $(Build.SourcesDirectory)
   displayName: install
 
 - script: |
-    npm run build
+    yarn build
   workingDirectory: $(Build.SourcesDirectory)
   displayName: build
 
