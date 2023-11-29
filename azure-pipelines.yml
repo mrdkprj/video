@@ -23,10 +23,14 @@ steps:
 
 - script: |
     npm install
+  workingDirectory: $(Build.SourcesDirectory)
+  displayName: install
+
+- script: |
     npm run build
   workingDirectory: $(Build.SourcesDirectory)
   displayName: build
-  
+
 - script: dir
   workingDirectory: $(Build.SourcesDirectory)
   displayName: List contents of a folder
