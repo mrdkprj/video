@@ -40,8 +40,9 @@ steps:
 - task: CopyFiles@2
   inputs:
     Contents: |
-      $(Build.SourcesDirectory)/dist/ALT MediaPlayer Setup 1.0.0.exe
+      $(Build.SourcesDirectory)/dist/ALT MediaPlayer Setup*.exe
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    flattenFolders: true
 
 - task: PublishPipelineArtifact@1
   inputs:
