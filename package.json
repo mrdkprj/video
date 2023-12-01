@@ -1,6 +1,6 @@
 {
-  "name": "alt_mediaplayer",
-  "productName": "ALT MediaPlayer",
+  "name": "altmediaplayer",
+  "productName": "altmediaplayer",
   "version": "1.0.0",
   "description": "MediaPlayer",
   "main": ".webpack/main",

@@ -5,6 +5,8 @@ import { rendererConfig } from "./webpack.renderer.config";
 import fs from "fs/promises"
 import path from "path"
 
+const clean = false;
+
 const config: ForgeConfig = {
   plugins: [
       new WebpackPlugin({
@@ -43,7 +45,9 @@ const config: ForgeConfig = {
   hooks: {
     postPackage: async (_forgeConfig: any, packageResult: any) => {
         // remove out folder produced by Electron Forge
-        fs.rm(path.join(packageResult.outputPaths[0], ".."), {recursive:true})
+        if(clean){
+          fs.rm(path.join(packageResult.outputPaths[0], ".."), {recursive:true})
+        }
     }
   }
 };

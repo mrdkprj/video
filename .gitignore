@@ -31,3 +31,6 @@ temp/
 
 # Electron-builder
 dist/
+
+#package
+pack/
