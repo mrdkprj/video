@@ -15,8 +15,8 @@ const defaultConfig :Mp.Config = {
         groupBy:false,
     },
     video:{
-        playbackSpeed:1,
-        seekSpeed:10,
+        playbackSpeed:"1",
+        seekSpeed:"10",
         fitToWindow: true,
     },
     audio:{

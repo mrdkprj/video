@@ -3,13 +3,19 @@ import path from "path"
 
 export default class Helper{
 
-    createPlayerWindow(config:Mp.Config){
+    config:Mp.Config;
+
+    constructor(_config:Mp.Config){
+        this.config = _config;
+    }
+
+    createPlayerWindow(){
 
         const window = new BrowserWindow({
-            width: config.bounds.width,
-            height: config.bounds.height,
-            x:config.bounds.x,
-            y:config.bounds.y,
+            width: this.config.bounds.width,
+            height: this.config.bounds.height,
+            x:this.config.bounds.x,
+            y:this.config.bounds.y,
             autoHideMenuBar: true,
             show: false,
             icon: path.join(__dirname, "..", "static", "img", "icon.ico"),
@@ -28,14 +34,14 @@ export default class Helper{
 
     }
 
-    createPlaylistWindow(parent:BrowserWindow, config:Mp.Config){
+    createPlaylistWindow(parent:BrowserWindow){
 
         const window = new BrowserWindow({
             parent,
-            width: config.playlistBounds.width,
-            height: config.playlistBounds.height,
-            x:config.playlistBounds.x,
-            y:config.playlistBounds.y,
+            width: this.config.playlistBounds.width,
+            height: this.config.playlistBounds.height,
+            x:this.config.playlistBounds.x,
+            y:this.config.playlistBounds.y,
             autoHideMenuBar: true,
             show: false,
             frame:false,
@@ -81,7 +87,7 @@ export default class Helper{
         return window;
     }
 
-    createPlayerContextMenu(config:Mp.Config, onclick: (menu:Mp.PlayerContextMenuType, args?:any) => void){
+    createPlayerContextMenu(onclick: (menu:Mp.PlayerContextMenuType, args?:any) => void){
         const template:Electron.MenuItemConstructorOptions[] = [
             {
                 label: "Playback Speed",
@@ -94,7 +100,7 @@ export default class Helper{
             {
                 label: "Fit To Window Size",
                 type: "checkbox",
-                checked: config.video.fitToWindow,
+                checked: this.config.video.fitToWindow,
                 click: () => onclick("FitToWindow"),
             },
             { type: 'separator' },
@@ -121,7 +127,7 @@ export default class Helper{
             { type: 'separator' },
             {
                 label: "Theme",
-                submenu:this.themeMenu(config, onclick)
+                submenu:this.themeMenu(onclick)
             },
 
         ]
@@ -129,21 +135,21 @@ export default class Helper{
         return Menu.buildFromTemplate(template)
     }
 
-    private themeMenu(config:Mp.Config, onclick: (menu:Mp.PlayerContextMenuType, args?:Mp.ContextMenuSubType) => void){
+    private themeMenu(onclick: (menu:Mp.PlayerContextMenuType, args?:Mp.ContextMenuSubType) => void){
         const type = "Theme"
         const template:Electron.MenuItemConstructorOptions[] = [
             {
                 id: "themeLight",
                 label:"Light",
                 type:"checkbox",
-                checked: config.theme === "light",
+                checked: this.config.theme === "light",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "light"))
             },
             {
                 id: "themeDark",
                 label:"Dark",
                 type:"checkbox",
-                checked: config.theme === "dark",
+                checked: this.config.theme === "dark",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "dark"))
             },
         ]
@@ -159,50 +165,57 @@ export default class Helper{
                 id: "playbackrate0",
                 label:"0.25",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 0.25))
+                checked: this.config.video.playbackSpeed == "0.25",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "0.25"))
             },
             {
                 id: "playbackrate1",
                 label:"0.5",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 0.5))
+                checked: this.config.video.playbackSpeed == "0.5",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "0.5"))
             },
             {
                 id: "playbackrate2",
                 label:"0.75",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 0.75))
+                checked: this.config.video.playbackSpeed == "0.75",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "0.75"))
             },
             {
                 id: "playbackrate3",
                 label:"1 - Default",
                 type:"checkbox",
-                checked:true,
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 1))
+                checked: this.config.video.playbackSpeed == "1",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "1"))
             },
             {
                 id: "playbackrate4",
                 label:"1.25",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 1.25))
+                checked: this.config.video.playbackSpeed == "1.25",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "1.25"))
             },
             {
                 id: "playbackrate5",
                 label:"1.5",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 1.5))
+                checked: this.config.video.playbackSpeed == "1.5",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "1.5"))
             },
             {
                 id: "playbackrate6",
                 label:"1.75",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 1.75))
+                checked: this.config.video.playbackSpeed == "1.75",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "1.75"))
             },
             {
                 id: "playbackrate7",
                 label:"2",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 2))
+                checked: this.config.video.playbackSpeed == "2",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "2"))
             },
         ]
 
@@ -217,57 +230,64 @@ export default class Helper{
                 id: "seekspeed0",
                 label:"0.03sec",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 0.03))
+                checked: this.config.video.seekSpeed == "0.03",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "0.03"))
             },
             {
                 id: "seekspeed1",
                 label:"0.05sec",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 0.05))
+                checked: this.config.video.seekSpeed == "0.05",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "0.05"))
             },
             {
                 id: "seekspeed2",
                 label:"0.1sec",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 0.1))
+                checked: this.config.video.seekSpeed == "0.1",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "0.1"))
             },
             {
                 id: "seekspeed3",
                 label:"0.5sec",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 0.5))
+                checked: this.config.video.seekSpeed == "0.5",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "0.5"))
             },
             {
                 id: "seekspeed4",
                 label:"1sec",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 1))
+                checked: this.config.video.seekSpeed == "1",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "1"))
             },
             {
                 id: "seekspeed5",
                 label:"5sec",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 5))
+                checked: this.config.video.seekSpeed == "5",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "5"))
             },
             {
                 id: "seekspeed6",
                 label:"10sec - Default",
                 type:"checkbox",
-                checked:true,
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 10))
+                checked: this.config.video.seekSpeed == "10",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "10"))
             },
             {
                 id: "seekspeed7",
                 label:"20sec",
                 type:"checkbox",
-                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, 20))
+                checked: this.config.video.seekSpeed == "20",
+                click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "20"))
             },
         ]
 
         return Menu.buildFromTemplate(template);
     }
 
-    createPlaylistContextMenu(config:Mp.Config, onclick: (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => void){
+    createPlaylistContextMenu(onclick: (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => void){
 
         const template:Electron.MenuItemConstructorOptions[] = [
             {
@@ -329,7 +349,7 @@ export default class Helper{
         return Menu.buildFromTemplate(template);
     }
 
-    createPlaylistSortContextMenu(config:Mp.Config, onclick: (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => void){
+    createPlaylistSortContextMenu(onclick: (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => void){
 
         const type = "Sort"
         const template:Electron.MenuItemConstructorOptions[] = [
@@ -337,7 +357,7 @@ export default class Helper{
                 id:"groupby",
                 label: "Group By Directory",
                 type: "checkbox",
-                checked: config.sort.groupBy,
+                checked: this.config.sort.groupBy,
                 click: () => onclick("GroupBy")
             },
             { type: "separator" },
@@ -345,28 +365,28 @@ export default class Helper{
                 id: "NameAsc",
                 label: "Name(Asc)",
                 type: "checkbox",
-                checked: config.sort.order === "NameAsc",
+                checked: this.config.sort.order === "NameAsc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type, "NameAsc"))
             },
             {
                 id: "NameDesc",
                 label: "Name(Desc)",
                 type: "checkbox",
-                checked: config.sort.order === "NameDesc",
+                checked: this.config.sort.order === "NameDesc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type,"NameDesc"))
             },
             {
                 id: "DateAsc",
                 label: "Date(Asc)",
                 type: "checkbox",
-                checked: config.sort.order === "DateAsc",
+                checked: this.config.sort.order === "DateAsc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type,"DateAsc"))
             },
             {
                 id: "DateDesc",
                 label: "Date(Desc)",
                 type: "checkbox",
-                checked: config.sort.order === "DateDesc",
+                checked: this.config.sort.order === "DateDesc",
                 click: (menuItem) => this.toggleMenuItemCheckbox(menuItem, () => onclick(type,"DateDesc"))
             },
         ]

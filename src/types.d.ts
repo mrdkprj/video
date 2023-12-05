@@ -84,8 +84,8 @@ declare global {
         type ThumbButtonType = "Play" | "Pause" | "Previous" | "Next"
         type PlayerContextMenuType = "PlaybackSpeed" | "SeekSpeed" | "TogglePlaylistWindow" | "FitToWindow" | "ToggleFullscreen" | "Theme" | "Capture" | "PictureInPicture"
         type PlaylistContextMenuType = "Remove" | "RemoveAll" | "Trash" | "CopyFileName" | "CopyFullpath" | "Reveal" | "Metadata" | "Convert" | "Sort" | "Rename" | "LoadList" | "SaveList" | "GroupBy"
-        type PlaybackSpeed = 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2;
-        type SeekSpeed = 0.03 | 0.05 | 0.1 | 0.5 | 1 | 5 | 10 | 20;
+        type PlaybackSpeed = "0.25" | "0.5" | "0.75" | "1" | "1.25" | "1.5" | "1.75" | "2";
+        type SeekSpeed = "0.03" | "0.05" | "0.1" | "0.5" | "1" | "5" | "10" | "20";
         type SortOrder = "NameAsc" | "NameDesc" | "DateAsc" | "DateDesc"
         type FileDialogType = "Read" | "Write";
 
@@ -133,8 +133,8 @@ declare global {
             sort:Mp.SortType;
             video:{
                 fitToWindow:boolean;
-                playbackSpeed:number;
-                seekSpeed:number;
+                playbackSpeed:Mp.PlaybackSpeed;
+                seekSpeed:Mp.SeekSpeed;
             };
             audio:{
                 volume:number;

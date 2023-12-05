@@ -19,9 +19,9 @@ protocol.registerSchemesAsPrivileged([
     { scheme: "app", privileges: { bypassCSP: true } },
 ])
 
-const helper = new Helper();
-const util = new Util();
 const config = new Config(app.getPath("userData"));
+const helper = new Helper(config.data);
+const util = new Util();
 
 const Renderers:Renderer = {
     Player:undefined,
@@ -90,7 +90,7 @@ const playerContextMenuCallback = (menu:Mp.PlayerContextMenuType, args?:Mp.Conte
     }
 }
 
- const playerMenu = helper.createPlayerContextMenu(config.data, playerContextMenuCallback)
+ const playerMenu = helper.createPlayerContextMenu(playerContextMenuCallback)
 
 const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType, args?:Mp.ContextMenuSubType) => {
 
@@ -137,8 +137,8 @@ const playlistContextMenuCallback = (menu:Mp.PlaylistContextMenuType, args?:Mp.C
     }
 }
 
-const playlistMenu = helper.createPlaylistContextMenu(config.data, playlistContextMenuCallback)
-const sortContext = helper.createPlaylistSortContextMenu(config.data, playlistContextMenuCallback)
+const playlistMenu = helper.createPlaylistContextMenu(playlistContextMenuCallback)
+const sortContext = helper.createPlaylistSortContextMenu(playlistContextMenuCallback)
 
 const setSecondInstanceTimeout = () => {
     secondInstanceState.timeout = setTimeout(() => {
@@ -199,8 +199,8 @@ app.on("ready", () => {
         callback(filePath);
     });
 
-    Renderers.Player = helper.createPlayerWindow(config.data);
-    Renderers.Playlist = helper.createPlaylistWindow(Renderers.Player, config.data)
+    Renderers.Player = helper.createPlayerWindow();
+    Renderers.Playlist = helper.createPlaylistWindow(Renderers.Player)
     Renderers.Convert = helper.createConvertWindow(Renderers.Player)
 
     Renderers.Player.on("ready-to-show", () => {
@@ -387,6 +387,8 @@ const saveConfig = (data:Mp.MediaState) => {
         config.data.audio.ampLevel = data.ampLevel;
         config.data.video.fitToWindow = data.fitToWindow;
         config.data.audio.mute = data.mute;
+        config.data.video.playbackSpeed = String(data.playbackSpeed) as Mp.PlaybackSpeed;
+        config.data.video.seekSpeed = String(data.seekSpeed) as Mp.SeekSpeed;
 
         config.save();
     }catch(ex){
